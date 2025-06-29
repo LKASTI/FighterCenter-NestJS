@@ -9,7 +9,6 @@ import { StartGGStrategy } from "./strategies/startgg.strategy";
 import { JwtStrategy } from "./strategies/jwt.strategy";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 
-console.log('');
 @Module({
 	imports: [
 		StartggUserModule,
