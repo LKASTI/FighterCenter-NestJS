@@ -8,10 +8,7 @@ import { BasicAuth } from './authentication/basicAuth';
 async function bootstrap() {
     const app = await NestFactory.create(AppModule);
 
-    if(process.env.NODE_ENV === 'development') {
-        const basicAuthMiddleware = new BasicAuth();
-        app.use(basicAuthMiddleware.use.bind(basicAuthMiddleware));
-    }
+
 
     app.useGlobalPipes(new ValidationPipe({ transform: true }));
     app.enableCors({
@@ -20,9 +17,22 @@ async function bootstrap() {
         ],
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
         credentials: true,
+        allowedHeaders: [
+            'Origin',
+            'X-Requested-With',
+            'Content-Type',
+            'Accept',
+            'Authorization',
+            'Cache-Control'
+        ]
     });
 
     app.use(cookieParser())
+
+    if(process.env.NODE_ENV === 'development') {
+        const basicAuthMiddleware = new BasicAuth();
+        app.use(basicAuthMiddleware.use.bind(basicAuthMiddleware));
+    }
 
     await app.listen(process.env.PORT ?? 3000, '0.0.0.0');
 }

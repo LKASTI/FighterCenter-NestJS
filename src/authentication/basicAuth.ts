@@ -9,11 +9,28 @@ export class BasicAuth implements NestMiddleware {
             return next();
         }
 
+        // Skip basic auth for OAuth routes
+        const oauthPaths = [
+            '/auth/startgg',           // OAuth initiation
+            '/auth/startgg/callback',  // OAuth callback
+            '/health',                 // Health checks
+            '/ping',                    // Status endpoints
+            '/client/media'
+        ];
+
+        // Check if current path should skip auth
+        const shouldSkipAuth = oauthPaths.some(path => req.path.startsWith(path));
+
+        if (shouldSkipAuth) {
+            console.log(`Skipping basic auth for OAuth route: ${req.path}`);
+            return next();
+        }
+
         const auth = req.headers.authorization;
 
         // Check if Authorization header exists and is Basic auth
         if (!auth || !auth.startsWith('Basic ')) {
-            res.setHeader('WWW-Authenticate', 'Basic realm="Dev Environment"');
+
             return res.status(401).json({
                 statusCode: 401,
                 message: 'Authentication required for development environment',
@@ -42,7 +59,7 @@ export class BasicAuth implements NestMiddleware {
             if (username === validUsername && password === validPassword) {
                 next(); // Authentication successful
             } else {
-                res.setHeader('WWW-Authenticate', 'Basic realm="Dev Environment"');
+
                 return res.status(401).json({
                     statusCode: 401,
                     message: 'Invalid credentials',
@@ -51,7 +68,7 @@ export class BasicAuth implements NestMiddleware {
             }
         } catch (error) {
             console.error('Basic auth parsing error:', error);
-            res.setHeader('WWW-Authenticate', 'Basic realm="Dev Environment"');
+
             return res.status(401).json({
                 statusCode: 401,
                 message: 'Invalid authorization header format',
