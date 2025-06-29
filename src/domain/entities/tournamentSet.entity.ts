@@ -15,7 +15,7 @@ import { TournamentMatch } from './tournamentMatch.entity';
 @Entity('tournament_set')
 export class TournamentSet {
   /* Attributes */
-  @PrimaryGeneratedColumn({ name: 'tournament_set_id' })
+  @PrimaryGeneratedColumn({ name: 'tournament_set_id', type: 'integer' })
   tournamentSetID: number;
 
   @Column('integer', { name: 'tournament_id' })

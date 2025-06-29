@@ -14,7 +14,7 @@ import { SFSixRankedCharacter } from './sfsixRankedCharacter.entity';
 @Entity('sf6_ranked_character_ranking')
 export class SFSixRankedCharacterRanking {
   /* Attributes */
-  @PrimaryGeneratedColumn({ name: 'sf6_ranked_character_ranking_id' })
+  @PrimaryGeneratedColumn({ name: 'sf6_ranked_character_ranking_id', type: 'integer' })
   sfsixRankedCharacterRankingID: number;
 
   @Column('varchar', { name: 'league', length: 30 })

@@ -14,7 +14,7 @@ import { SFSixRankedCharacter } from './sfsixRankedCharacter.entity';
 @Entity('sf6_ranked_profile')
 export class SFSixRankedProfile {
   /* Attributes */
-  @PrimaryColumn({ name: 'usercode' })
+  @PrimaryColumn({ name: 'usercode', type: 'integer' })
   usercode: number;
 
   @Column('varchar', { name: 'cfn', length: 100, nullable: false })

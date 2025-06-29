@@ -4,7 +4,7 @@ import { Tournament } from './tournament.entity';
 @Entity('event')
 export class Event {
   /* Attributes */
-  @PrimaryGeneratedColumn({ name: 'event_id' })
+  @PrimaryGeneratedColumn({ name: 'event_id', type: 'integer' })
   eventID: number;
 
   @Column('varchar', { name: 'event_name', length: 300, nullable: false })
