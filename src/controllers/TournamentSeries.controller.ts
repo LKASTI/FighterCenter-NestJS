@@ -11,7 +11,7 @@ export class TournamentSeriesController {
         return await this.service.findPlayersByTournamentId(id);
     }
 
-    @Post('findTopXPlayersByTournamentIds')
+    @Get('findTopXPlayersByTournamentIds')
     async findTopXPlayersByTournamentIds(
         @Body(new ValidationPipe({ transform: true }))
         tournamentSeriesTopXPlayersDTO: TournamentSeriesTopXPlayersDTO
