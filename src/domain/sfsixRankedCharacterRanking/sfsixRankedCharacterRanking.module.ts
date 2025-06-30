@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Logger, Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { SFSixRankedCharacterRankingController } from 'src/controllers/sfsixRankedCharacterRanking.controller';
 import { SFSixRankedCharacterRanking } from 'src/domain/entities/sfsixRankedCharacterRanking.entity';
@@ -10,6 +10,7 @@ import { SFSixRankedCharacterRankingService } from 'src/domain/sfsixRankedCharac
   providers: [
     SFSixRankedCharacterRankingService,
     SFSixRankedCharacterRankingRepository,
+    Logger
   ],
   controllers: [SFSixRankedCharacterRankingController],
   exports: [SFSixRankedCharacterRankingService],
