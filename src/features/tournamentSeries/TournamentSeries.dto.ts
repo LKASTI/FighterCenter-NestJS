@@ -1,4 +1,4 @@
-import { IsArray, IsInt, IsOptional, IsString } from 'class-validator';
+import { IsArray, IsInt, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 import { Expose, Type } from 'class-transformer';
 
 export class TournamentSeriesPlayerDTO {
@@ -7,6 +7,12 @@ export class TournamentSeriesPlayerDTO {
     @IsInt()
     @Expose()
     playerId?: number;
+
+    @IsOptional()
+    @Type(() => Number)
+    @IsInt()
+    @Expose()
+    tournamentID?: number;
 
     @IsOptional()
     @IsString()
@@ -47,3 +53,12 @@ export class TournamentSeriesPlayerDTO {
     @Expose()
     tournamentId?: number;
 }
+
+export class TournamentSeriesTopXPlayersDTO {
+    @IsOptional()
+    tournamentIDs: number[];
+
+    @IsOptional()
+    x: number;
+}
+

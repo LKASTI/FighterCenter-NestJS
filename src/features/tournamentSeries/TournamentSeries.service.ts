@@ -14,4 +14,8 @@ export class TournamentSeriesService {
     public async findPlayersByTournamentId(id: number): Promise<TournamentSeriesPlayerDTO []> {
         return await this.tournamentSeriesRepository.findPlayersByTournamentId(id);
     }
+
+    public async findTopXPlayersByTournamentIds(x: number, tournamentIDs: number[]): Promise<TournamentSeriesPlayerDTO[]> {
+        return await this.tournamentSeriesRepository.findTopXPlayersByTournamentIds(x, tournamentIDs);
+    }
 }

@@ -32,4 +32,27 @@ export class TournamentSeriesRepository {
 
         return data;
     }
+
+    public async findTopXPlayersByTournamentIds(x: number, tournamentIds: number []) {
+        const placeholders = tournamentIds.map((_, index) => `$${index + 2}`).join(',');
+        const data = await this.playerTournamentRunRepository.query(
+            `
+                SELECT 
+                    ptr.player_id AS "playerID",
+                    ptr.tournament_id AS "tournamentID",
+                    ptr.player_entry_name AS "playerName",
+                    ptr.seed AS "seed",
+                    ptr.characters_used AS "charactersUsed",
+                    ptr.placement AS "placement"
+                FROM player_tournament_run ptr
+                WHERE ptr.placement <= $1
+                  AND ptr.tournament_id IN (${placeholders})
+                ORDER BY ptr.tournament_id, ptr.placement ASC
+                ;
+            `,
+            [x, ...tournamentIds]
+        )
+
+        return data;
+    }
 }
