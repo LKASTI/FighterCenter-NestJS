@@ -17,7 +17,7 @@ export class TournamentSeriesRepository {
                 SELECT p.player_id AS "playerID",
                        p.startgg_profile_image_url AS "startggProfileImageURL",
                        p.country AS "country",
-                       ptr.player_entry_name AS "playerEntryName",
+                       ptr.player_entry_name AS "playerName",
                        ptr.seed AS "seed",
                        ptr.characters_used AS "charactersUsed",
                        ptr.placement AS "placement"
