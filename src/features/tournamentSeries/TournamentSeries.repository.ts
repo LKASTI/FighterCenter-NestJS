@@ -13,13 +13,13 @@ export class TournamentSeriesRepository {
     public async findPlayersByTournamentId(id: number): Promise<TournamentSeriesPlayerDTO> {
         const data = await this.playerTournamentRunRepository.query(
             `
-                SELECT p.player_id,
-                       p.startgg_profile_image_url,
-                       p.country,
-                       ptr.player_entry_name,
-                       ptr.seed,
-                       ptr.characters_used,
-                       ptr.placement
+                SELECT p.player_id AS playerID,
+                       p.startgg_profile_image_url AS startggProfileImageURL,
+                       p.country AS country,
+                       ptr.player_entry_name AS playerEntryName,
+                       ptr.seed AS seed,
+                       ptr.characters_used AS charactersUsed,
+                       ptr.placement AS placement
                 FROM player p
                          JOIN player_tournament_run ptr
                               ON p.player_id = ptr.player_id
