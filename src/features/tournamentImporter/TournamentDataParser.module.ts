@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import  { Module } from '@nestjs/common';
 import { TournamentModule } from '../../domain/tournament/tournament.module';
 import { TournamentSetModule } from '../../domain/tournamentSet/tournamentSet.module';
 import { TournamentMatchModule } from '../../domain/tournamentMatch/tournamentMatch.module';

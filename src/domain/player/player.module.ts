@@ -9,6 +9,6 @@ import { PlayerService } from 'src/domain/player/player.service';
   imports: [TypeOrmModule.forFeature([Player])],
   providers: [PlayerService, PlayerRepository],
   controllers: [PlayerController],
-  exports: [PlayerService],
+  exports: [PlayerService, PlayerRepository],
 })
 export class PlayerModule {}

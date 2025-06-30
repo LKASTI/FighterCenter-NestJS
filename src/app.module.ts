@@ -20,6 +20,7 @@ import { join } from 'path';
 import { StartggUserModule } from "./domain/startggUser/startggUser.module";
 import { AuthModule } from "./authentication/Auth.module";
 import * as Joi from 'joi';
+import { TournamentSeriesModule } from './features/tournamentSeries/TournamentSeries.module';
 
 
 @Module({
@@ -72,6 +73,7 @@ import * as Joi from 'joi';
     TournamentSetModule,
     TournamentMatchModule,
       StartggUserModule,
+      TournamentSeriesModule,
     // data parsing modules
     TournamentDataParserModule,
     RankedDataParserModule,

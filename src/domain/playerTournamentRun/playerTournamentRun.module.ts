@@ -9,6 +9,6 @@ import { PlayerTournamentRunService } from 'src/domain/playerTournamentRun/playe
   imports: [TypeOrmModule.forFeature([PlayerTournamentRun])],
   providers: [PlayerTournamentRunService, PlayerTournamentRunRepository],
   controllers: [PlayerTournamentRunController],
-  exports: [PlayerTournamentRunService],
+  exports: [PlayerTournamentRunService, PlayerTournamentRunRepository],
 })
 export class PlayerTournamentRunModule {}
