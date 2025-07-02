@@ -34,7 +34,7 @@ export class AuthController {
 
 		res.cookie('auth-token', token, {
 			httpOnly: true,
-			secure: false, // HTTPS in production
+			secure: process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT_NAME, // HTTPS in production
 			sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
 			maxAge: parseInt(process.env.COOKIE_EXPIRATION_DURATION) * 1000 , //TODO:
 		});
