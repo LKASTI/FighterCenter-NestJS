@@ -5,7 +5,28 @@ import { Reflector} from "@nestjs/core";
 import { StartggUserService } from "../../domain/startggUser/startggUser.service";
 
 @Injectable()
-export class JwtAuthGuard extends AuthGuard('jwt') {}
+export class JwtAuthGuard extends AuthGuard('jwt') {
+    canActivate(context: ExecutionContext) {
+        console.log('JwtAuthGuard - canActivate called');
+        const request = context.switchToHttp().getRequest();
+        console.log('JwtAuthGuard - Cookie present:', !!request.cookies['auth-token']);
+
+        return super.canActivate(context);
+    }
+
+    handleRequest(err: any, user: any, info: any) {
+        console.log('JwtAuthGuard - handleRequest called');
+        console.log('JwtAuthGuard - Error:', err);
+        console.log('JwtAuthGuard - User:', user);
+        console.log('JwtAuthGuard - Info:', info);
+
+        if (err || !user) {
+            console.log('JwtAuthGuard - Authentication failed', err);
+            throw err || new UnauthorizedException('Authentication failed');
+        }
+        return user;
+    }
+}
 
 @Injectable()
 export class SeriesAuthGuard implements CanActivate {
@@ -61,7 +82,7 @@ export class SeriesAuthGuard implements CanActivate {
 				}
 			}
 
-
+            console.log('series auth guard passed')
 			request.user = payload;
 			return true;
 		} catch (error) {

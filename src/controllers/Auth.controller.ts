@@ -30,6 +30,8 @@ export class AuthController {
 
 		const token = this.jwtService.sign(payload);
 
+        console.log('env detected:', process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT_NAME);
+
 		res.cookie('auth-token', token, {
 			httpOnly: true,
 			secure: process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT_NAME, // HTTPS in production
