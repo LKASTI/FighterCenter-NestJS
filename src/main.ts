@@ -9,6 +9,8 @@ async function bootstrap() {
     const app = await NestFactory.create(AppModule);
 
     app.useGlobalPipes(new ValidationPipe({ transform: true }));
+    const expressApp = app.getHttpAdapter().getInstance();
+    expressApp.set('trust proxy', 1);
     app.enableCors({
         origin: [
             process.env.FRONTEND_URL,
