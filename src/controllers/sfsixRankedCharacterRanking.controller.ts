@@ -50,8 +50,8 @@ export class SFSixRankedCharacterRankingController {
     @Query(new ValidationPipe({ transform: true }))
     query: FindSFSixRankedCharacterRankingsQueryDTO,
   ) {
-      console.log(`Query: ${JSON.stringify(query)}`);
-      this.logger.log(`Query: ${JSON.stringify(query)}`, 'SFSixRankedCharacterRankingController');
+      // console.log(`Query: ${JSON.stringify(query)}`);
+      // this.logger.log(`Query: ${JSON.stringify(query)}`, 'SFSixRankedCharacterRankingController');
     if (!query.phase)
       throw new BadRequestException(`Request must contain a phase and date`);
     if (!query.date)
@@ -69,8 +69,8 @@ export class SFSixRankedCharacterRankingController {
   @Get('findAllWeeklyDatesByPhase/:phase')
   async findAllWeeklyDatesByPhase(@Param('phase', ParseIntPipe) phase: number) {
     const dates = await this.service.findAllWeeklyDatesByPhase(phase);
-    console.log(dates);
-    this.logger.log(`Found ${dates} dates for phase ${phase}`, 'SFSixRankedCharacterRankingController');
+    // console.log(dates);
+    // this.logger.log(`Found ${dates} dates for phase ${phase}`, 'SFSixRankedCharacterRankingController');
     return dates;
   }
 
