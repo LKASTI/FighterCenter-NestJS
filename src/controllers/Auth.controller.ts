@@ -34,11 +34,11 @@ export class AuthController {
         console.log('Frontend URL:', process.env.FRONTEND_URL);
         console.log('Request Origin:', req.get('Origin'));
         console.log('Request Host:', req.get('Host'));
-        console.log('Railway Environment:', process.env.RAILWAY_ENVIRONMENT_NAME);
+        console.log('Railway Environment:', process.env.USING_RAILWAY);
         console.log('Node Environment:', process.env.NODE_ENV);
         const cookieOptions = {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT_NAME, // HTTPS in production
+            secure: process.env.NODE_ENV === 'production' || process.env.USING_RAILWAY, // HTTPS in production
             sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
             maxAge: parseInt(process.env.COOKIE_EXPIRATION_DURATION) * 1000 , //TODO:
             path: '/',
