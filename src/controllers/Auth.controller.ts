@@ -30,15 +30,27 @@ export class AuthController {
 
 		const token = this.jwtService.sign(payload);
 
-        console.log('env detected:', process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT_NAME);
-
-		res.cookie('auth-token', token, {
-			httpOnly: true,
-			secure: process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT_NAME, // HTTPS in production
-			sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
-			maxAge: parseInt(process.env.COOKIE_EXPIRATION_DURATION) * 1000 , //TODO:
-		});
-
+        console.log('=== COOKIE DEBUG ===');
+        console.log('Frontend URL:', process.env.FRONTEND_URL);
+        console.log('Request Origin:', req.get('Origin'));
+        console.log('Request Host:', req.get('Host'));
+        console.log('Railway Environment:', process.env.RAILWAY_ENVIRONMENT_NAME);
+        console.log('Node Environment:', process.env.NODE_ENV);
+        const cookieOptions = {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT_NAME, // HTTPS in production
+            sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+            maxAge: parseInt(process.env.COOKIE_EXPIRATION_DURATION) * 1000 , //TODO:
+            path: '/',
+        }
+        res.cookie('auth-token', token, cookieOptions);
+		// res.cookie('auth-token', token, {
+		// 	httpOnly: true,
+		// 	secure: process.env.NODE_ENV === 'production' || process.env.RAILWAY_ENVIRONMENT_NAME, // HTTPS in production
+		// 	sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax',
+		// 	maxAge: parseInt(process.env.COOKIE_EXPIRATION_DURATION) * 1000 , //TODO:
+		// });
+        console.log('Response headers before redirect:', res.getHeaders());
 		res.redirect(`${process.env.FRONTEND_URL}/auth/callback`);
 	}
 
