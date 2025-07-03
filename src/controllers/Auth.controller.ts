@@ -30,6 +30,12 @@ export class AuthController {
 
 		const token = this.jwtService.sign(payload);
 
+        // const isLocalDevelopment = process.env.FRONTEND_URL?.includes('localhost');
+        // if(isLocalDevelopment) {
+        //     console.log('Development mode: passing token via URL');
+        //     res.redirect(`${process.env.FRONTEND_URL}/auth/callback?token=${token}`);
+        // }
+
         console.log('=== COOKIE DEBUG ===');
         console.log('Frontend URL:', process.env.FRONTEND_URL);
         console.log('Request Origin:', req.get('Origin'));
