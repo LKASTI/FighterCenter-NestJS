@@ -44,7 +44,7 @@ export class AuthController {
         console.log('Node Environment:', process.env.NODE_ENV);
         const cookieOptions = {
             httpOnly: true,
-            secure: process.env.NODE_ENV === 'production' || process.env.USING_RAILWAY, // HTTPS in production
+            secure: process.env.NODE_ENV === 'production' || true, // HTTPS in production
             sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'none',
             maxAge: parseInt(process.env.COOKIE_EXPIRATION_DURATION) * 1000 , //TODO:
             path: '/',
