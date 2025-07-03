@@ -9,8 +9,13 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
 	) {
 		super({
 			jwtFromRequest: ExtractJwt.fromExtractors([(request: Request) => {
-
-				return request?.cookies?.['auth-token'];
+                // use cookies in production, headers in development
+                if(process.env.NODE_ENV === 'production') {
+				    return request?.cookies?.['auth-token'];
+                } else if (process.env.NODE_ENV === 'development') {
+                    return ExtractJwt.fromAuthHeaderAsBearerToken()(request);
+                }
+                return '';
 			}]),
 			ignoreExpiration: false,
 			secretOrKey: process.env.JWT_SECRET,
@@ -22,7 +27,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
 			id: payload.sub,
 			username: payload.username,
 			gamerTag: payload.gamerTag,
-			roles: payload.roles, //TODO
+			roles: payload.roles,
 			tournamentSeriesAssigned: payload.tournamentSeriesAssigned,
 		};
 	}

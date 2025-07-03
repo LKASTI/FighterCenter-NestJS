@@ -8,13 +8,30 @@ import { BasicAuth } from './authentication/basicAuth';
 async function bootstrap() {
     const app = await NestFactory.create(AppModule);
 
-    app.useGlobalPipes(new ValidationPipe({ transform: true }));
+    app.useGlobalPipes(new ValidationPipe({
+        transform: true,
+        whitelist: true,
+        forbidNonWhitelisted: true,
+    }));
+
+    const expressApp = app.getHttpAdapter().getInstance();
+    expressApp.set('trust proxy', 1);
+
+    const allowedOrigins = [
+        process.env.FRONTEND_URL,
+    ];
+
+    // Add localhost variants for development
+    if (process.env.NODE_ENV === 'development') {
+        allowedOrigins.push(
+            'http://localhost:5173',
+            'https://localhost:5173',
+        );
+    }
 
     app.enableCors({
-        origin: [
-            process.env.FRONTEND_URL,
-        ],
-        methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+        origin: allowedOrigins,
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
         credentials: true,
         allowedHeaders: [
             'Origin',
@@ -23,7 +40,8 @@ async function bootstrap() {
             'Accept',
             'Authorization',
             'Cache-Control'
-        ]
+        ],
+        optionsSuccessStatus: 200, // Some legacy browsers choke on 204
     });
 
     app.use(cookieParser())
