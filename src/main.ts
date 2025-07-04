@@ -38,7 +38,8 @@ async function bootstrap() {
             'X-Requested-With',
             'Content-Type',
             'Accept',
-            'Authorization',
+            'X-Auth-Token', // Custom header for JWT auth
+            'Authorization', // For dev with basic auth
             'Cache-Control'
         ],
         optionsSuccessStatus: 200, // Some legacy browsers choke on 204
