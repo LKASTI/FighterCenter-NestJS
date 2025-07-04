@@ -42,7 +42,14 @@ export class SeriesAuthGuard implements CanActivate {
 		const requiredRoles = this.reflector.get<string[]>('roles', context.getHandler());
 
 		// Get token from cookies
-		const token = request.cookies['auth-token'];
+		let token = '';
+        if( process.env.NODE_ENV === 'production') {
+            token = request.cookies['auth-token'];
+        } else if (process.env.NODE_ENV === 'development') {
+            const authToken = request.headers['x-auth-token'] as string;
+            token = authToken.startsWith('Bearer ') ? authToken.slice(7) : authToken;
+        }
+
 
 		if (!token) {
 			throw new UnauthorizedException('No token provided');
