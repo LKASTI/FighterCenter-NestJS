@@ -30,7 +30,7 @@ export class AuthController {
 
 		const token = this.jwtService.sign(payload);
 
-        const isLocalDevelopment = process.env.FRONTEND_URL?.includes('localhost') && process.env.NODE_ENV === 'development';
+        const isLocalDevelopment = process.env.NODE_ENV === 'development';
 
         if(isLocalDevelopment) {
             console.log('Development mode: passing token via URL');
