@@ -26,6 +26,7 @@ async function bootstrap() {
         allowedOrigins.push(
             'http://localhost:5173',
             'https://localhost:5173',
+            process.env.VERCEL_URL
         );
     }
 
