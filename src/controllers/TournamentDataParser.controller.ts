@@ -1,4 +1,4 @@
-import { Body, Controller, Param, Post, UseGuards } from "@nestjs/common";
+import { Body, Controller, Get, Param, Post, UseGuards } from '@nestjs/common';
 import { TournamentDataParserService } from 'src/features/tournamentImporter/TournamentDataParser.service';
 import {
 	// StartGGTournamentDataParserDTO,
@@ -28,4 +28,11 @@ export class TournamentDataParserController {
 	) {
 		return this.service.parseStartGGTournamentDataV2(body);
 	}
+
+    @Get('healthcheck')
+    @UseGuards(SeriesAuthGuard)
+    @Roles('TOURNAMENT_ORGANIZER', 'SUPER_ADMIN')
+    async healthcheck() {
+        return 'TournamentDataParser controller ok';
+    }
 }
