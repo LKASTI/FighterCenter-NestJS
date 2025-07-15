@@ -46,6 +46,9 @@ export class SeriesAuthGuard implements CanActivate {
         if( process.env.NODE_ENV === 'production') {
             token = request.cookies['auth-token'];
         } else if (process.env.NODE_ENV === 'development') {
+            console.log('Request headers/cookies: ')
+            console.log(request.headers);
+            console.log(request.cookies);
             const authToken = request.headers['x-auth-token'] as string;
             token = authToken.startsWith('Bearer ') ? authToken.slice(7) : authToken;
         }
