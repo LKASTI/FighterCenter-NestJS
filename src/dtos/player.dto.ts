@@ -1,77 +1,77 @@
-import { Type } from 'class-transformer';
+import { Type } from "class-transformer";
 import {
-  IsInt,
-  IsNotEmpty,
-  IsOptional,
-  IsString,
-  Min,
-  IsNumber,
-} from 'class-validator';
+    IsInt,
+    IsNotEmpty,
+    IsOptional,
+    IsString,
+    Min,
+    IsNumber,
+} from "class-validator";
 
 export class CreatePlayerDTO {
-  @IsNotEmpty()
-  @IsString()
-  readonly playerName: string;
+    @IsNotEmpty()
+    @IsString()
+    readonly playerName: string;
 
-  @IsOptional()
-  @IsString()
-  readonly country?: string;
+    @IsOptional()
+    @IsString()
+    readonly country?: string;
 
-  @IsOptional()
-  @IsNumber()
-  readonly startggPlayerID?: number;
+    @IsOptional()
+    @IsNumber()
+    readonly startggPlayerID?: number;
 
-  @IsOptional()
-  @IsString()
-  readonly startggProfileImageURL?: string;
+    @IsOptional()
+    @IsString()
+    readonly startggProfileImageURL?: string;
 }
 
 export class FindPlayersQueryDTO {
-  @IsOptional()
-  @IsString()
-  playerName?: string;
+    @IsOptional()
+    @IsString()
+    playerName?: string;
 
-  @IsOptional()
-  @IsString()
-  country?: string;
+    @IsOptional()
+    @IsString()
+    country?: string;
 
-  @IsOptional()
-  @IsNumber()
-  startggPlayerID?: number;
+    @IsOptional()
+    @IsNumber()
+    startggPlayerID?: number;
 
-  @IsOptional()
-  @IsString()
-  startggProfileImageURL?: string;
+    @IsOptional()
+    @IsString()
+    startggProfileImageURL?: string;
 
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  limit?: number = 1000;
+    @IsOptional()
+    @Type(() => Number)
+    @IsInt()
+    @Min(1)
+    limit?: number = 1000;
 
-  @IsOptional()
-  @IsString()
-  sortBy?: string = 'playerName';
+    @IsOptional()
+    @IsString()
+    sortBy?: string = "playerName";
 
-  @IsOptional()
-  @IsString()
-  order?: 'ASC' | 'DESC' = 'ASC';
+    @IsOptional()
+    @IsString()
+    order?: "ASC" | "DESC" = "ASC";
 }
 
 export class UpdatePlayerDTO {
-  @IsOptional()
-  @IsString()
-  readonly playerName?: string;
+    @IsOptional()
+    @IsString()
+    readonly playerName?: string;
 
-  @IsOptional()
-  @IsString()
-  readonly country?: string;
+    @IsOptional()
+    @IsString()
+    readonly country?: string;
 
-  @IsOptional()
-  @IsNumber()
-  readonly startggPlayerID?: number;
+    @IsOptional()
+    @IsNumber()
+    readonly startggPlayerID?: number;
 
-  @IsOptional()
-  @IsString()
-  readonly startggProfileImageURL?: string;
+    @IsOptional()
+    @IsString()
+    readonly startggProfileImageURL?: string;
 }

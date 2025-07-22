@@ -1,70 +1,70 @@
-import { InjectRepository } from '@nestjs/typeorm';
+import { InjectRepository } from "@nestjs/typeorm";
 import {
-  CreateTournamentSetDTO,
-  FindTournamentSetsQueryDTO,
-} from 'src/dtos/tournamentSet.dto';
-import { TournamentSet } from 'src/domain/entities/tournamentSet.entity';
-import { Repository } from 'typeorm';
-import { Player } from 'src/domain/entities/player.entity';
-import { Tournament } from 'src/domain/entities/tournament.entity';
-import { NotFoundException } from '@nestjs/common/exceptions/not-found.exception';
-import { totalmem } from 'os';
+    CreateTournamentSetDTO,
+    FindTournamentSetsQueryDTO,
+} from "src/dtos/tournamentSet.dto";
+import { TournamentSet } from "src/domain/entities/tournamentSet.entity";
+import { Repository } from "typeorm";
+import { Player } from "src/domain/entities/player.entity";
+import { Tournament } from "src/domain/entities/tournament.entity";
+import { NotFoundException } from "@nestjs/common/exceptions/not-found.exception";
+import { totalmem } from "os";
 
 export class TournamentSetRepository extends Repository<TournamentSet> {
-  constructor(
-    @InjectRepository(TournamentSet)
-    private repository: Repository<TournamentSet>,
-  ) {
-    super(repository.target, repository.manager, repository.queryRunner);
-  }
+    constructor(
+        @InjectRepository(TournamentSet)
+        private repository: Repository<TournamentSet>,
+    ) {
+        super(repository.target, repository.manager, repository.queryRunner);
+    }
 
-  public async createAndSave(
-    tournamentSet: CreateTournamentSetDTO,
-  ): Promise<TournamentSet> {
-    const playerOne = await this.manager
-      .getRepository(Player)
-      .findOneBy({ playerID: tournamentSet.playerOneID });
+    public async createAndSave(
+        tournamentSet: CreateTournamentSetDTO,
+    ): Promise<TournamentSet> {
+        const playerOne = await this.manager
+            .getRepository(Player)
+            .findOneBy({ playerID: tournamentSet.playerOneID });
 
-    if (!playerOne)
-      throw new NotFoundException(
-        `Player with playerID ${tournamentSet.playerOneID} not found`,
-      );
+        if (!playerOne)
+            throw new NotFoundException(
+                `Player with playerID ${tournamentSet.playerOneID} not found`,
+            );
 
-    const playerTwo = await this.manager
-      .getRepository(Player)
-      .findOneBy({ playerID: tournamentSet.playerTwoID });
+        const playerTwo = await this.manager
+            .getRepository(Player)
+            .findOneBy({ playerID: tournamentSet.playerTwoID });
 
-    if (!playerTwo)
-      throw new NotFoundException(
-        `Player with playerID ${tournamentSet.playerTwoID} not found`,
-      );
+        if (!playerTwo)
+            throw new NotFoundException(
+                `Player with playerID ${tournamentSet.playerTwoID} not found`,
+            );
 
-    const tournament = await this.manager
-      .getRepository(Tournament)
-      .findOneBy({ tournamentID: tournamentSet.tournamentID });
+        const tournament = await this.manager
+            .getRepository(Tournament)
+            .findOneBy({ tournamentID: tournamentSet.tournamentID });
 
-    if (!tournament)
-      throw new NotFoundException(
-        `Tournament with tournamentID ${tournamentSet.tournamentID} not found`,
-      );
+        if (!tournament)
+            throw new NotFoundException(
+                `Tournament with tournamentID ${tournamentSet.tournamentID} not found`,
+            );
 
-    const newTournamentSet = this.create({
-      tournamentID: tournamentSet.tournamentID,
-      playerOneID: tournamentSet.playerOneID,
-      playerTwoID: tournamentSet.playerTwoID,
-      matchesToWin: tournamentSet.matchesToWin,
-      bracketName: tournamentSet.bracketName,
-      bracketRound: tournamentSet.bracketRound,
-      winnerName: tournamentSet.winnerName,
-      winnerID: tournamentSet.winnerID,
-    });
+        const newTournamentSet = this.create({
+            tournamentID: tournamentSet.tournamentID,
+            playerOneID: tournamentSet.playerOneID,
+            playerTwoID: tournamentSet.playerTwoID,
+            matchesToWin: tournamentSet.matchesToWin,
+            bracketName: tournamentSet.bracketName,
+            bracketRound: tournamentSet.bracketRound,
+            winnerName: tournamentSet.winnerName,
+            winnerID: tournamentSet.winnerID,
+        });
 
-    return await this.save(newTournamentSet);
-  }
+        return await this.save(newTournamentSet);
+    }
 
-  public async findAllByTournamentID(tournamentID: number) {
-    const data = await this.query(
-      `
+    public async findAllByTournamentID(tournamentID: number) {
+        const data = await this.query(
+            `
             SELECT
                 ts.tournament_set_id,
                 ts.bracket_name,
@@ -86,85 +86,94 @@ export class TournamentSetRepository extends Repository<TournamentSet> {
                 ts.bracket_name DESC,
                 ts.bracket_round ASC;
         `,
-      [tournamentID],
-    );
+            [tournamentID],
+        );
 
-    return {
-      data: data,
-      meta: {
-        total: data.length,
-      },
-    };
-  }
-
-  public async findAll(query: FindTournamentSetsQueryDTO) {
-    const queryBuilder = this.createQueryBuilder('tournamentSet');
-
-    // Apply filters if provided
-    if (query.tournamentID) {
-      queryBuilder.andWhere('tournamentSet.tournamentID = :tournamentID', {
-        tournamentID: query.tournamentID,
-      });
+        return {
+            data: data,
+            meta: {
+                total: data.length,
+            },
+        };
     }
 
-    if (query.playerOneID) {
-      queryBuilder.andWhere('tournamentSet.playerOneID = :playerOneID', {
-        playerOneID: query.playerOneID,
-      });
+    public async findAll(query: FindTournamentSetsQueryDTO) {
+        const queryBuilder = this.createQueryBuilder("tournamentSet");
+
+        // Apply filters if provided
+        if (query.tournamentID) {
+            queryBuilder.andWhere(
+                "tournamentSet.tournamentID = :tournamentID",
+                {
+                    tournamentID: query.tournamentID,
+                },
+            );
+        }
+
+        if (query.playerOneID) {
+            queryBuilder.andWhere("tournamentSet.playerOneID = :playerOneID", {
+                playerOneID: query.playerOneID,
+            });
+        }
+
+        if (query.playerTwoID) {
+            queryBuilder.andWhere("tournamentSet.playerTwoID = :playerTwoID", {
+                playerTwoID: query.playerTwoID,
+            });
+        }
+
+        if (query.bracketName) {
+            queryBuilder.andWhere("tournamentSet.bracketName = :bracketName", {
+                bracketName: query.bracketName,
+            });
+        }
+
+        if (query.bracketRound) {
+            queryBuilder.andWhere(
+                "tournamentSet.bracketRound = :bracketRound",
+                {
+                    bracketRound: query.bracketRound,
+                },
+            );
+        }
+
+        if (query.matchesToWin) {
+            queryBuilder.andWhere(
+                "tournamentSet.matchesToWin = :matchesToWin",
+                {
+                    matchesToWin: query.matchesToWin,
+                },
+            );
+        }
+
+        if (query.winnerID) {
+            queryBuilder.andWhere("tournamentSet.winnerID = :winnerID", {
+                winnerID: query.winnerID,
+            });
+        }
+
+        if (query.winnerName) {
+            queryBuilder.andWhere("tournamentSet.winnerName = :winnerName", {
+                winnerName: query.winnerName,
+            });
+        }
+
+        // Add sorting
+        if (query.sortBy) {
+            queryBuilder.orderBy(`tournamentSet.${query.sortBy}`, query.order);
+        }
+
+        // Add limit
+        queryBuilder.take(query.limit);
+
+        const [tournamentSets, count] = await queryBuilder.getManyAndCount();
+
+        return {
+            data: tournamentSets,
+            meta: {
+                limit: query.limit,
+                total: count,
+            },
+        };
     }
-
-    if (query.playerTwoID) {
-      queryBuilder.andWhere('tournamentSet.playerTwoID = :playerTwoID', {
-        playerTwoID: query.playerTwoID,
-      });
-    }
-
-    if (query.bracketName) {
-      queryBuilder.andWhere('tournamentSet.bracketName = :bracketName', {
-        bracketName: query.bracketName,
-      });
-    }
-
-    if (query.bracketRound) {
-      queryBuilder.andWhere('tournamentSet.bracketRound = :bracketRound', {
-        bracketRound: query.bracketRound,
-      });
-    }
-
-    if (query.matchesToWin) {
-      queryBuilder.andWhere('tournamentSet.matchesToWin = :matchesToWin', {
-        matchesToWin: query.matchesToWin,
-      });
-    }
-
-    if (query.winnerID) {
-      queryBuilder.andWhere('tournamentSet.winnerID = :winnerID', {
-        winnerID: query.winnerID,
-      });
-    }
-
-    if (query.winnerName) {
-      queryBuilder.andWhere('tournamentSet.winnerName = :winnerName', {
-        winnerName: query.winnerName,
-      });
-    }
-
-    // Add sorting
-    if (query.sortBy) {
-      queryBuilder.orderBy(`tournamentSet.${query.sortBy}`, query.order);
-    }
-
-    // Add limit
-    queryBuilder.take(query.limit);
-
-    const [tournamentSets, count] = await queryBuilder.getManyAndCount();
-
-    return {
-      data: tournamentSets,
-      meta: {
-        limit: query.limit,
-        total: count,
-      },
-    };
-  }
 }

@@ -1,17 +1,17 @@
-import { PlayerTournamentRunRepository } from '../../domain/playerTournamentRun/playerTournamentRun.repository';
-import { TournamentSeriesPlayerDTO } from './TournamentSeries.dto';
-import { Injectable } from '@nestjs/common';
-import { plainToInstance } from 'class-transformer';
+import { PlayerTournamentRunRepository } from "../../domain/playerTournamentRun/playerTournamentRun.repository";
+import { TournamentSeriesPlayerDTO } from "./TournamentSeries.dto";
+import { Injectable } from "@nestjs/common";
+import { plainToInstance } from "class-transformer";
 
 @Injectable()
 export class TournamentSeriesRepository {
     constructor(
-
         private readonly playerTournamentRunRepository: PlayerTournamentRunRepository,
-
     ) {}
 
-    public async findPlayersByTournamentId(id: number): Promise<TournamentSeriesPlayerDTO []> {
+    public async findPlayersByTournamentId(
+        id: number,
+    ): Promise<TournamentSeriesPlayerDTO[]> {
         const data = await this.playerTournamentRunRepository.query(
             `
                 SELECT p.player_id AS "playerID",
@@ -27,14 +27,19 @@ export class TournamentSeriesRepository {
                 WHERE ptr.tournament_id = $1
                 ORDER BY ptr.placement;
             `,
-            [id]
+            [id],
         );
 
         return data;
     }
 
-    public async findTopXPlayersByTournamentIds(x: number, tournamentIds: number []) {
-        const placeholders = tournamentIds.map((_, index) => `$${index + 2}`).join(',');
+    public async findTopXPlayersByTournamentIds(
+        x: number,
+        tournamentIds: number[],
+    ) {
+        const placeholders = tournamentIds
+            .map((_, index) => `$${index + 2}`)
+            .join(",");
         const data = await this.playerTournamentRunRepository.query(
             `
                 SELECT 
@@ -50,8 +55,8 @@ export class TournamentSeriesRepository {
                 ORDER BY ptr.tournament_id, ptr.placement ASC
                 ;
             `,
-            [x, ...tournamentIds]
-        )
+            [x, ...tournamentIds],
+        );
 
         return data;
     }
