@@ -9,7 +9,7 @@ import {
     ParseIntPipe,
     Patch,
     Post,
-    Query,
+    Query, UseGuards,
     ValidationPipe,
 } from "@nestjs/common";
 import {
@@ -19,11 +19,15 @@ import {
 } from "src/dtos/player.dto";
 import { Player } from "src/domain/entities/player.entity";
 import { PlayerService } from "src/domain/player/player.service";
+import { FeatureFlagGuard } from "../authentication/guards/feature-flag.guard";
+import { DisableEndpoint } from "../decorators/endpoint-status-toggles";
 
 @Controller("player")
+@UseGuards(FeatureFlagGuard)
 export class PlayerController {
     constructor(private readonly playerService: PlayerService) {}
 
+    @DisableEndpoint()
     @Post()
     async create(
         @Body(new ValidationPipe()) createPlayerDTO: CreatePlayerDTO,
@@ -48,6 +52,7 @@ export class PlayerController {
         return player;
     }
 
+    @DisableEndpoint()
     @Patch(":id")
     async update(
         @Param("id", ParseIntPipe) id: number,
@@ -60,6 +65,7 @@ export class PlayerController {
         return player;
     }
 
+    @DisableEndpoint()
     @Delete(":id")
     @HttpCode(204) // No Content
     async remove(@Param("id", ParseIntPipe) id: number): Promise<void> {

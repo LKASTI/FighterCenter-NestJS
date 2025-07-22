@@ -10,7 +10,7 @@ import {
     NotFoundException,
     Patch,
     Delete,
-    HttpCode,
+    HttpCode, UseGuards,
 } from "@nestjs/common";
 import {
     CreateEventDTO,
@@ -19,8 +19,11 @@ import {
 } from "src/dtos/event.dto";
 import { Event } from "src/domain/entities/event.entity";
 import { EventService } from "src/domain/event/event.service";
+import { DisableEndpoint } from "../decorators/endpoint-status-toggles";
+import { FeatureFlagGuard } from "../authentication/guards/feature-flag.guard";
 
 @Controller("event")
+@UseGuards(FeatureFlagGuard)
 export class EventController {
     constructor(private readonly service: EventService) {}
 
@@ -49,6 +52,7 @@ export class EventController {
         return event;
     }
 
+    @DisableEndpoint()
     @Patch(":id")
     async update(
         @Param("id", ParseIntPipe) id: number,
@@ -62,6 +66,7 @@ export class EventController {
         return event;
     }
 
+    @DisableEndpoint()
     @Delete(":id")
     @HttpCode(204) // No Content
     async remove(@Param("id", ParseIntPipe) id: number): Promise<void> {

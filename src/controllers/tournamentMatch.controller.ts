@@ -9,7 +9,7 @@ import {
     NotFoundException,
     Patch,
     Delete,
-    HttpCode,
+    UseGuards,
 } from "@nestjs/common";
 import {
     CreateTournamentMatchDTO,
@@ -18,11 +18,15 @@ import {
 } from "src/dtos/tournamentMatch.dto";
 import { TournamentMatchService } from "src/domain/tournamentMatch/tournamentMatch.service";
 import { TournamentMatch } from "src/domain/entities/tournamentMatch.entity";
+import { DisableEndpoint } from "../decorators/endpoint-status-toggles";
+import { FeatureFlagGuard } from "../authentication/guards/feature-flag.guard";
 
 @Controller("tournamentMatch")
+@UseGuards(FeatureFlagGuard)
 export class TournamentMatchController {
     constructor(private readonly service: TournamentMatchService) {}
 
+    @DisableEndpoint()
     @Post()
     async create(
         @Body() createTournamentMatch: CreateTournamentMatchDTO,
@@ -49,6 +53,7 @@ export class TournamentMatchController {
         return tournamentMatch;
     }
 
+    @DisableEndpoint()
     @Patch(":id")
     async update(
         @Param("id", ParseIntPipe) id: number,
@@ -68,6 +73,7 @@ export class TournamentMatchController {
         return tournamentMatch;
     }
 
+    @DisableEndpoint()
     @Delete(":id")
     async remove(@Param("id", ParseIntPipe) id: number): Promise<void> {
         const result = await this.service.remove(id);

@@ -9,7 +9,7 @@ import {
     ParseIntPipe,
     Patch,
     Post,
-    Query,
+    Query, UseGuards,
     ValidationPipe,
 } from "@nestjs/common";
 import {
@@ -19,11 +19,15 @@ import {
 } from "src/dtos/tournament.dto";
 import { Tournament } from "src/domain/entities/tournament.entity";
 import { TournamentService } from "src/domain/tournament/tournament.service";
+import { DisableEndpoint } from "../decorators/endpoint-status-toggles";
+import { FeatureFlagGuard } from "../authentication/guards/feature-flag.guard";
 
 @Controller("tournament")
+@UseGuards(FeatureFlagGuard)
 export class TournamentController {
     constructor(private readonly service: TournamentService) {}
 
+    @DisableEndpoint()
     @Post()
     async create(
         @Body(new ValidationPipe({ transform: true }))
@@ -56,6 +60,7 @@ export class TournamentController {
         return await this.service.findAllGamePatchesByEventId(eventID);
     }
 
+    @DisableEndpoint()
     @Patch(":id")
     async update(
         @Param("id", ParseIntPipe) id: number,
@@ -69,6 +74,7 @@ export class TournamentController {
         return tournament;
     }
 
+    @DisableEndpoint()
     @Delete(":id")
     @HttpCode(204) // No Content
     async remove(@Param("id", ParseIntPipe) id: number): Promise<void> {

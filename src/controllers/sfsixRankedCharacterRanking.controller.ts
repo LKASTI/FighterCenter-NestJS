@@ -12,7 +12,7 @@ import {
     HttpCode,
     Patch,
     BadRequestException,
-    Logger,
+    Logger, UseGuards,
 } from "@nestjs/common";
 import {
     CreateSFSixRankedCharacterRankingDTO,
@@ -21,14 +21,18 @@ import {
 } from "src/dtos/sfsixRankedCharacterRanking.dto";
 import { SFSixRankedCharacterRanking } from "src/domain/entities/sfsixRankedCharacterRanking.entity";
 import { SFSixRankedCharacterRankingService } from "src/domain/sfsixRankedCharacterRanking/sfsixRankedCharacterRanking.service";
+import { FeatureFlagGuard } from "../authentication/guards/feature-flag.guard";
+import { DisableEndpoint } from "../decorators/endpoint-status-toggles";
 
 @Controller("sfsixRankedCharacterRanking")
+@UseGuards(FeatureFlagGuard)
 export class SFSixRankedCharacterRankingController {
     constructor(
         private readonly service: SFSixRankedCharacterRankingService,
         private readonly logger: Logger,
     ) {}
 
+    @DisableEndpoint()
     @Post()
     async create(
         @Body()
@@ -105,6 +109,7 @@ export class SFSixRankedCharacterRankingController {
         return rankedCharacter;
     }
 
+    @DisableEndpoint()
     @Patch(":id")
     async update(
         @Param("id", ParseIntPipe) id: number,
@@ -123,6 +128,7 @@ export class SFSixRankedCharacterRankingController {
         return rankedCharacter;
     }
 
+    @DisableEndpoint()
     @Delete(":id")
     @HttpCode(204) // No Content
     async remove(@Param("id", ParseIntPipe) id: number): Promise<void> {

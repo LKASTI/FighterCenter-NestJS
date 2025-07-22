@@ -10,7 +10,7 @@ import {
     NotFoundException,
     Patch,
     Delete,
-    HttpCode,
+    HttpCode, UseGuards,
 } from "@nestjs/common";
 import { PlayerTournamentRunService } from "src/domain/playerTournamentRun/playerTournamentRun.service";
 import { PlayerTournamentRun } from "src/domain/entities/playerTournamentRun.entity";
@@ -19,11 +19,15 @@ import {
     FindPlayerTournamentRunsQueryDTO,
     UpdatePlayerTournamentRunDTO,
 } from "src/dtos/playerTournamentRun.dto";
+import { DisableEndpoint } from "src/decorators/endpoint-status-toggles";
+import { FeatureFlagGuard } from "../authentication/guards/feature-flag.guard";
 
 @Controller("playerTournamentRun")
+@UseGuards(FeatureFlagGuard)
 export class PlayerTournamentRunController {
     constructor(private readonly service: PlayerTournamentRunService) {}
 
+    @DisableEndpoint()
     @Post()
     async create(
         @Body(new ValidationPipe({ transform: true }))
@@ -56,6 +60,7 @@ export class PlayerTournamentRunController {
         return tmp;
     }
 
+    @DisableEndpoint()
     @Patch()
     async update(
         @Body(new ValidationPipe({ transform: true }))
@@ -76,6 +81,7 @@ export class PlayerTournamentRunController {
         return playerTournamentRun;
     }
 
+    @DisableEndpoint()
     @Delete(":playerID/:tournamentID")
     @HttpCode(204) // No Content
     async remove(
