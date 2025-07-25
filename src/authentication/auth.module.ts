@@ -1,10 +1,10 @@
 import { Module } from "@nestjs/common";
 import { HttpModule } from "@nestjs/axios";
-import { TournamentDataParserModule } from "../features/tournamentImporter/TournamentDataParser.module";
+import { TournamentDataParserModule } from "../features/tournamentImporter/tournamentDataParser.module";
 import { StartggUserModule } from "../domain/startggUser/startggUser.module";
 import { PassportModule } from "@nestjs/passport";
 import { JwtModule } from "@nestjs/jwt";
-import { AuthController } from "../controllers/Auth.controller";
+import { AuthController } from "../controllers/auth.controller";
 import { StartGGStrategy } from "./strategies/startgg.strategy";
 import { JwtStrategy } from "./strategies/jwt.strategy";
 import { ConfigModule, ConfigService } from "@nestjs/config";

@@ -7,8 +7,8 @@ import {
     Post,
     ValidationPipe,
 } from "@nestjs/common";
-import { TournamentSeriesService } from "../features/tournamentSeries/TournamentSeries.service";
-import { TournamentSeriesTopXPlayersDTO } from "../features/tournamentSeries/TournamentSeries.dto";
+import { TournamentSeriesService } from "../features/tournamentSeries/tournamentSeries.service";
+import { TournamentSeriesTopXPlayersDTO } from "../features/tournamentSeries/tournamentSeries.dto";
 
 @Controller("tournamentSeries")
 export class TournamentSeriesController {

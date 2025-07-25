@@ -1,6 +1,6 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { TournamentSeriesPlayerDTO } from "./TournamentSeries.dto";
-import { TournamentSeriesRepository } from "./TournamentSeries.repository";
+import { TournamentSeriesPlayerDTO } from "./tournamentSeries.dto";
+import { TournamentSeriesRepository } from "./tournamentSeries.repository";
 
 @Injectable()
 export class TournamentSeriesService {

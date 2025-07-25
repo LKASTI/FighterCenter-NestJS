@@ -13,14 +13,14 @@ import { TournamentModule } from "./domain/tournament/tournament.module";
 import { PlayerTournamentRunModule } from "./domain/playerTournamentRun/playerTournamentRun.module";
 import { TournamentSetModule } from "./domain/tournamentSet/tournamentSet.module";
 import { TournamentMatchModule } from "./domain/tournamentMatch/tournamentMatch.module";
-import { TournamentDataParserModule } from "./features/tournamentImporter/TournamentDataParser.module";
+import { TournamentDataParserModule } from "./features/tournamentImporter/tournamentDataParser.module";
 import { HttpModule } from "@nestjs/axios";
 import { ServeStaticModule } from "@nestjs/serve-static";
 import { join } from "path";
 import { StartggUserModule } from "./domain/startggUser/startggUser.module";
-import { AuthModule } from "./authentication/Auth.module";
+import { AuthModule } from "./authentication/auth.module";
 import * as Joi from "joi";
-import { TournamentSeriesModule } from "./features/tournamentSeries/TournamentSeries.module";
+import { TournamentSeriesModule } from "./features/tournamentSeries/tournamentSeries.module";
 import { EncryptionModule } from "./authentication/encryption/encryption.module";
 
 @Module({

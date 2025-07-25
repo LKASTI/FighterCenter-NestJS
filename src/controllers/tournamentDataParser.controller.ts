@@ -1,9 +1,9 @@
 import { Body, Controller, Get, Param, Post, UseGuards } from "@nestjs/common";
-import { TournamentDataParserService } from "src/features/tournamentImporter/TournamentDataParser.service";
+import { TournamentDataParserService } from "src/features/tournamentImporter/tournamentDataParser.service";
 import {
     // StartGGTournamentDataParserDTO,
     StartGGTournamentDataV2ParserDTO,
-} from "src/dtos/TournamentDataParser.dto";
+} from "src/dtos/tournamentDataParser.dto";
 import { SeriesAuthGuard } from "../authentication/guards/jwtAuth.guard";
 import { Roles } from "../decorators/roles.decorator";
 

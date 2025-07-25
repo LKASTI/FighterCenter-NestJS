@@ -5,8 +5,8 @@ import { TournamentMatchModule } from "../../domain/tournamentMatch/tournamentMa
 import { PlayerModule } from "../../domain/player/player.module";
 import { PlayerTournamentRunModule } from "../../domain/playerTournamentRun/playerTournamentRun.module";
 import { EventModule } from "../../domain/event/event.module";
-import { TournamentDataParserController } from "src/controllers/TournamentDataParser.controller";
-import { TournamentDataParserService } from "src/features/tournamentImporter/TournamentDataParser.service";
+import { TournamentDataParserController } from "src/controllers/tournamentDataParser.controller";
+import { TournamentDataParserService } from "src/features/tournamentImporter/tournamentDataParser.service";
 import { HttpModule } from "@nestjs/axios";
 import { PassportModule } from "@nestjs/passport";
 import { JwtModule } from "@nestjs/jwt";
@@ -30,7 +30,9 @@ import { StartggUserModule } from "../../domain/startggUser/startggUser.module";
             useFactory: (configService: ConfigService) => ({
                 secret: configService.get<string>("JWT_SECRET"),
                 signOptions: {
-                    expiresIn: "7d", // Match your cookie expiration
+                    expiresIn: parseInt(
+                        configService.get<string>("COOKIE_EXPIRATION_DURATION"),
+                    ), // Match your cookie expiration
                 },
             }),
         }),
@@ -41,4 +43,4 @@ import { StartggUserModule } from "../../domain/startggUser/startggUser.module";
     controllers: [TournamentDataParserController],
     exports: [TournamentDataParserService],
 })
-export class TournamentDataParserModule {}
+export class TournamentSeriesImporterModule {}

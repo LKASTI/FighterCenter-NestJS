@@ -14,7 +14,7 @@ import { TournamentMatchService } from "../../domain/tournamentMatch/tournamentM
 import {
     StartGGTournamentDataParserDTO,
     StartGGTournamentDataV2ParserDTO,
-} from "src/dtos/TournamentDataParser.dto";
+} from "src/dtos/tournamentDataParser.dto";
 import {
     StartGGTournamentPlayerRecord,
     StartGGTournamentSetRecord,
@@ -22,7 +22,7 @@ import {
     StartGGEventRecord,
     StartGGTournamentDataRecord,
     StartGGTournamentSetNodeRecord,
-} from "src/features/tournamentImporter/TournamentDataParsingTypes";
+} from "src/features/tournamentImporter/tournamentDataParsingTypes";
 
 import * as path from "path";
 import * as fs from "fs/promises";
@@ -41,7 +41,7 @@ import {
     startggTournamentEventNamesBody,
     startggTournamentEventsBody,
     startggTournamentSetsBody,
-} from "src/features/tournamentImporter/TournamentDataParsing.static";
+} from "src/features/tournamentImporter/tournamentDataParsing.static";
 import { ConfigService } from "@nestjs/config";
 
 import { firstValueFrom } from "rxjs";
