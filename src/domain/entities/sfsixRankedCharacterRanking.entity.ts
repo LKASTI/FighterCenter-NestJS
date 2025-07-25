@@ -42,7 +42,7 @@ export class SFSixRankedCharacterRanking {
                 return value.toISOString().split("T")[0]; // Returns YYYY-MM-DD
             },
             from: (value: string): Date => {
-                return new Date(value);
+                return new Date(value); //TODO new Date auto converts to UTC
             },
         },
     })
