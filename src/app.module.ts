@@ -21,6 +21,7 @@ import { StartggUserModule } from "./domain/startggUser/startggUser.module";
 import { AuthModule } from "./authentication/Auth.module";
 import * as Joi from "joi";
 import { TournamentSeriesModule } from "./features/tournamentSeries/TournamentSeries.module";
+import { EncryptionModule } from "./authentication/encryption/encryption.module";
 
 @Module({
     imports: [
@@ -78,6 +79,8 @@ import { TournamentSeriesModule } from "./features/tournamentSeries/TournamentSe
         RankedDataParserModule,
         // auth modules
         AuthModule,
+        // encryption module
+        EncryptionModule
     ],
     controllers: [AppController],
     providers: [AppService],

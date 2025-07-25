@@ -14,7 +14,7 @@ export class EncryptionService {
 
     private loadEncryptionKeys() {
         const currentKey = this.configService.get<string>('ENCRYPTION_KEY');
-        const currentVersion = this.configService.get<number>('ENCRYPTION_KEY_VERSION');
+        const currentVersion = parseInt(this.configService.get<string>('ENCRYPTION_KEY_VERSION'));
 
         if (currentKey) {
             this.keys.set(currentVersion, Buffer.from(currentKey, 'hex'));
@@ -35,10 +35,16 @@ export class EncryptionService {
 
     }
 
+    /**
+     * Encrypts the given text using AES-256-GCM.
+     * The encrypted data includes the key version, IV, auth tag, and encrypted text.
+     * Always encrypts with the current key version.
+     * @param text - The plaintext to encrypt.
+     * @return The encrypted text in the format "version:iv:authTag:encryptedData".
+     */
     encrypt(text: string): string {
-        // Generate random initialization vector
         const iv = crypto.randomBytes(16);
-        // Get current key based on version
+
         const key = this.keys.get(this.currentKeyVersion);
 
         if (!key) {
@@ -52,11 +58,15 @@ export class EncryptionService {
 
         const authTag = cipher.getAuthTag();
 
-        // Include key version in the encrypted data
-        // Format: version:iv:authTag:encryptedData
         return `${this.currentKeyVersion}:${iv.toString('hex')}:${authTag.toString('hex')}:${encrypted}`;
     }
 
+    /**
+     * Decrypts the given encrypted text using AES-256-GCM.
+     * The encrypted text must be in the format "version:iv:authTag:encryptedData".
+     * It uses the key corresponding to the version specified in the encrypted text.
+     * @param encryptedData - The encrypted text in the format "version:iv:authTag:encryptedData".
+     */
     decrypt(encryptedData: string): string {
         try {
             const parts = encryptedData.split(':');
@@ -96,6 +106,10 @@ export class EncryptionService {
         }
     }
 
+    /**
+     * Checks if the encrypted data needs re-encryption.
+     * @param encryptedData - The encrypted text in the format "version:iv:authTag:encryptedData".
+     */
     needsReEncryption(encryptedData: string): boolean {
         try {
             const parts = encryptedData.split(':');
