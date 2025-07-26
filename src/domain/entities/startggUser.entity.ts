@@ -15,6 +15,15 @@ export class StartggUser {
     @Column("varchar", { name: "startgg_id" })
     startggId: string;
 
+    @Column("varchar", { name: "startgg_encrypted_token" })
+    startggEncryptedToken: string;
+
+    @Column("varchar", { name: "startgg_encrypted_refresh_token" })
+    startggEncryptedRefreshToken: string;
+
+    @Column("varchar", { name: "startgg_token_expire_date" })
+    startggTokenExpireDate: Date;
+
     @Column("varchar", { name: "startgg_username", length: 100 })
     startggUsername: string;
 
