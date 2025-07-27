@@ -12,6 +12,7 @@ import { PassportModule } from "@nestjs/passport";
 import { JwtModule } from "@nestjs/jwt";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { StartggUserModule } from "../../domain/startggUser/startggUser.module";
+import { EncryptionModule } from "../../authentication/encryption/encryption.module";
 
 @Module({
     imports: [
@@ -22,6 +23,7 @@ import { StartggUserModule } from "../../domain/startggUser/startggUser.module";
         PlayerModule,
         PlayerTournamentRunModule,
         StartggUserModule,
+        EncryptionModule,
 
         PassportModule.register({ defaultStrategy: "jwt" }),
         JwtModule.registerAsync({

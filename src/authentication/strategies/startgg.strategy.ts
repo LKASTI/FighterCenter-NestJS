@@ -4,12 +4,14 @@ import { PassportStrategy } from "@nestjs/passport";
 import { Strategy } from "passport-oauth2";
 import { HttpService } from "@nestjs/axios";
 import { StartggUserService } from "../../domain/startggUser/startggUser.service";
+import { EncryptionService } from "../encryption/encryption.service";
 
 @Injectable()
 export class StartGGStrategy extends PassportStrategy(Strategy, "startgg") {
     constructor(
         private httpService: HttpService,
         private startggUserService: StartggUserService,
+        private encryptionService: EncryptionService,
     ) {
         super({
             authorizationURL: "https://start.gg/oauth/authorize",
@@ -29,13 +31,21 @@ export class StartGGStrategy extends PassportStrategy(Strategy, "startgg") {
     ): Promise<any> {
         const userData = await this.fetchStartGGUser(accessToken);
 
+        const tokenExpiresIn = Date.now() + (6 * 24 * 60 * 60 * 1000);
+        const encryptedAccessToken = this.encryptionService.encrypt(accessToken);
+        const encryptedRefreshToken = this.encryptionService.encrypt(refreshToken);
+
         const user = await this.startggUserService.findOrCreate({
             startggId: userData.player?.id.toString(),
+            startggEncryptedToken: encryptedAccessToken,
+            startggEncryptedRefreshToken: encryptedRefreshToken,
+            startggTokenExpiresIn: tokenExpiresIn,
             startggUsername: userData.slug,
             startggGamerTag: userData.player?.gamerTag,
             roles: [],
             tournamentSeriesAssigned: [],
         });
+
         console.log("startgg strategy validated user:", user);
         return user;
     }

@@ -45,6 +45,8 @@ import {
 import { ConfigService } from "@nestjs/config";
 
 import { firstValueFrom } from "rxjs";
+import { EncryptionService } from "../../authentication/encryption/encryption.service";
+import { StartggUser } from "../../domain/entities";
 
 @Injectable()
 export class TournamentDataParserService {
@@ -58,6 +60,8 @@ export class TournamentDataParserService {
 
         private readonly httpService: HttpService,
         private readonly configService: ConfigService,
+
+        private readonly encryptionService: EncryptionService
     ) {}
 
     private readonly setsPath: string =
@@ -83,12 +87,23 @@ export class TournamentDataParserService {
 
     private setLimit: number = 999999999;
 
-    //TODO: add option to not parse sets
+    private req: any;
+    private startggApiToken: string;
 
     public async parseStartGGTournamentDataV2(
         params: StartGGTournamentDataV2ParserDTO,
+        req: any
     ) {
         try {
+            this.req = req;
+            if(this.req && this.req.user && this.req.user.startggEncryptedToken) {
+                this.startggApiToken = this.encryptionService.decrypt((req.user as StartggUser).startggEncryptedToken);
+                if(!this.startggApiToken) {
+                    throw new BadRequestException(
+                        "StartGG API token is not set or invalid.",
+                    );
+                }
+            }
             // Initialize API request limiting fields (perPage, delay)
             if (params.requestDelay)
                 this.startggRequestDelayMs = params.requestDelay;
@@ -457,7 +472,7 @@ export class TournamentDataParserService {
                     {
                         headers: {
                             "Content-Type": "application/json",
-                            Authorization: `Bearer ${this.configService.get("STARTGG_API_KEY")}`,
+                            Authorization: `Bearer ${this.startggApiToken}`,
                         },
                     },
                 ),
@@ -506,7 +521,7 @@ export class TournamentDataParserService {
                 {
                     headers: {
                         "Content-Type": "application/json",
-                        Authorization: `Bearer ${this.configService.get("STARTGG_API_KEY")}`,
+                        Authorization: `Bearer ${this.startggApiToken}`,
                     },
                 },
             ),
@@ -528,7 +543,7 @@ export class TournamentDataParserService {
                 {
                     headers: {
                         "Content-Type": "application/json",
-                        Authorization: `Bearer ${this.configService.get("STARTGG_API_KEY")}`,
+                        Authorization: `Bearer ${this.startggApiToken}`,
                     },
                 },
             ),

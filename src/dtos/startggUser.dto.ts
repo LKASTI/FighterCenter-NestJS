@@ -15,6 +15,27 @@ export class CreateStartggUserDTO {
     @IsString()
     readonly startggId: string;
 
+    @IsOptional()
+    @IsString()
+    readonly startggToken?: string;
+
+    @IsOptional()
+    @IsString()
+    readonly startggRefreshToken?: string;
+
+    @IsOptional()
+    @IsString()
+    readonly startggEncryptedToken?: string;
+
+    @IsOptional()
+    @IsString()
+    readonly startggEncryptedRefreshToken?: string;
+
+    @IsDate()
+    @Type(() => Date)
+    @IsNotEmpty()
+    readonly startggTokenExpiresIn: number;
+
     @IsNotEmpty()
     @IsString()
     readonly startggUsername: string;
@@ -65,6 +86,27 @@ export class FindStartggUsersQueryDTO {
     @IsString()
     @Type(() => String)
     startggId?: string;
+
+    @IsOptional()
+    @IsString()
+    startggToken: string;
+
+    @IsOptional()
+    @IsString()
+    startggRefreshToken: string;
+
+    @IsOptional()
+    @IsString()
+    startggEncryptedToken: string;
+
+    @IsOptional()
+    @IsString()
+    startggEncryptedRefreshToken: string;
+
+    @IsDate()
+    @Type(() => Date)
+    @IsOptional()
+    startggTokenExpiresIn: number;
 
     @IsOptional()
     @IsString()
@@ -129,6 +171,27 @@ export class UpdateStartggUserDTO {
     @IsOptional()
     @IsString()
     readonly startggId?: string;
+
+    @IsOptional()
+    @IsString()
+    readonly startggToken: string;
+
+    @IsOptional()
+    @IsString()
+    readonly startggRefreshToken: string;
+
+    @IsOptional()
+    @IsString()
+    readonly startggEncryptedToken: string;
+
+    @IsOptional()
+    @IsString()
+    readonly startggEncryptedRefreshToken: string;
+
+    @IsDate()
+    @Type(() => Date)
+    @IsOptional()
+    readonly startggTokenExpiresIn: number;
 
     @IsOptional()
     @IsString()

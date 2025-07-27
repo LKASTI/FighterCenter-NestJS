@@ -1,17 +1,21 @@
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { StartggUserRepository } from "./startggUser.repository";
-import {
-    CreateStartggUserDTO,
-    FindStartggUsersQueryDTO,
-} from "../../dtos/startggUser.dto";
+import { CreateStartggUserDTO, FindStartggUsersQueryDTO, UpdateStartggUserDTO } from "../../dtos/startggUser.dto";
 import { StartggUser } from "../entities/startggUser.entity";
+import { EncryptionService } from "../../authentication/encryption/encryption.service";
+import { StartggRefreshTokenResponse } from "./startggUser.interfaces";
+import { HttpService } from "@nestjs/axios";
+import { ConfigService } from "@nestjs/config";
 
 @Injectable()
 export class StartggUserService {
     constructor(
         @InjectRepository(StartggUserRepository)
         private readonly startggUserRepository: StartggUserRepository,
+        private readonly encryptionService: EncryptionService,
+        private readonly httpService: HttpService,
+        private readonly configService: ConfigService,
     ) {}
 
     public async create(
@@ -30,6 +34,12 @@ export class StartggUserService {
         });
 
         if (!user) {
+            // encrypt token and refresh token
+            const encryptedToken = this.encryptionService.encrypt(createStartggUserDTO.startggToken);
+            const encryptedRefreshToken = this.encryptionService.encrypt(createStartggUserDTO.startggRefreshToken);
+            user.startggEncryptedToken = encryptedToken;
+            user.startggEncryptedRefreshToken = encryptedRefreshToken;
+            // save
             user =
                 await this.startggUserRepository.createAndSave(
                     createStartggUserDTO,
@@ -37,6 +47,58 @@ export class StartggUserService {
         }
 
         return user;
+    }
+
+    /**
+     * Refresh the StartGG access token and update user record
+     * @param encryptedRefreshToken the encrypted StartGG refresh token
+     * @param startggUserId the StartGG user to update
+     * @return the newly encrypted token, refresh token, and expire time
+     */
+    public async refreshStartggToken(encryptedRefreshToken: string, startggUserId: string): Promise<StartggRefreshTokenResponse> {
+        const decryptedRefreshToken = this.encryptionService.decrypt(encryptedRefreshToken);
+        if(!decryptedRefreshToken) {
+            console.error('Failed to decrypt StartGG refresh token');
+            return null;
+        }
+        try {
+            const response = await this.httpService.axiosRef.post(
+                'https://api.start.gg/oauth/refresh',
+                {
+                    grant_type: 'refresh_token',
+                    refresh_token: decryptedRefreshToken,
+                    client_id: this.configService.get("STARTGG_CLIENT_ID"),
+                    client_secret: this.configService.get("STARTGG_CLIENT_SECRET"),
+                    scope: 'user.identity user.email',
+                    redirect_uri: this.configService.get("STARTGG_CALLBACK_URL")
+                },
+                {
+                    headers: { 'Content-Type': 'application/json' }
+                }
+            );
+
+            const { accessToken, refreshToken, expiresIn } = response.data;
+
+            const expire = Date.now() + (expiresIn || 604800) * 1000;
+            const encToken = this.encryptionService.encrypt(accessToken);
+            const encRefreshToken = this.encryptionService.encrypt(refreshToken);
+
+            // update user
+            await this.update(startggUserId, {
+                startggEncryptedToken: encToken,
+                startggEncryptedRefreshToken: encRefreshToken,
+                startggTokenExpiresIn: expire
+            } as UpdateStartggUserDTO)
+
+            return {
+                encryptedAccessToken: encToken,
+                encryptedRefreshToken: encRefreshToken,
+                expiresIn: expire
+            };
+        } catch (error) {
+            console.error('Failed to refresh StartGG token:', error);
+            return null;
+        }
     }
 
     public async findAll(query: FindStartggUsersQueryDTO) {
@@ -55,7 +117,7 @@ export class StartggUserService {
 
     public async update(
         id: string,
-        updateStartggUserDTO: CreateStartggUserDTO,
+        updateStartggUserDTO: UpdateStartggUserDTO,
     ): Promise<StartggUser> {
         const startggUser = await this.startggUserRepository.findOneBy({
             startggUserID: id,

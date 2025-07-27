@@ -8,11 +8,13 @@ import { AuthController } from "../controllers/auth.controller";
 import { StartGGStrategy } from "./strategies/startgg.strategy";
 import { JwtStrategy } from "./strategies/jwt.strategy";
 import { ConfigModule, ConfigService } from "@nestjs/config";
+import { EncryptionModule } from "./encryption/encryption.module";
 
 @Module({
     imports: [
         StartggUserModule,
         TournamentDataParserModule,
+        EncryptionModule,
 
         PassportModule.register({ defaultStrategy: "jwt" }),
         ConfigModule.forRoot(), // Make sure this is included to load environment variables
