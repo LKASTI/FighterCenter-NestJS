@@ -34,12 +34,6 @@ export class StartggUserService {
         });
 
         if (!user) {
-            // encrypt token and refresh token
-            const encryptedToken = this.encryptionService.encrypt(createStartggUserDTO.startggToken);
-            const encryptedRefreshToken = this.encryptionService.encrypt(createStartggUserDTO.startggRefreshToken);
-            user.startggEncryptedToken = encryptedToken;
-            user.startggEncryptedRefreshToken = encryptedRefreshToken;
-            // save
             user =
                 await this.startggUserRepository.createAndSave(
                     createStartggUserDTO,
