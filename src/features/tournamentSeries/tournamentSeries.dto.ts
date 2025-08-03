@@ -1,11 +1,10 @@
 import {
     IsArray,
     IsInt,
-    IsNotEmpty,
     IsOptional,
     IsString,
 } from "class-validator";
-import { Expose, Type } from "class-transformer";
+import { Expose, Transform, Type } from "class-transformer";
 
 export class TournamentSeriesPlayerDTO {
     @IsOptional()
@@ -66,4 +65,17 @@ export class TournamentSeriesTopXPlayersDTO {
 
     @IsOptional()
     x: number;
+}
+
+export class FindLatestTournamentsQueryDTO {
+    @IsOptional()
+    @Transform(({ value }) => {
+        if (typeof value === 'string') {
+            return value.split(',');
+        }
+        return Array.isArray(value) ? value : [value];
+    })
+    @IsArray()
+    @IsString({ each: true })
+    eventSeriesIds?: string[];
 }
