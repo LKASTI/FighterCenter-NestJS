@@ -80,8 +80,8 @@ export class SFSixRankedCharacterRankingController {
         @Param("phase", ParseIntPipe) phase: number,
     ) {
         const dates = await this.service.findAllWeeklyDatesByPhase(phase);
-        // console.log(dates);
-        this.logger.log(`Found ${dates} dates for phase ${phase}`, 'SFSixRankedCharacterRankingController');
+        console.log(dates);
+        this.logger.log(`Found ${JSON.stringify(dates)} dates for phase ${phase}`, 'SFSixRankedCharacterRankingController');
         return dates;
     }
 
