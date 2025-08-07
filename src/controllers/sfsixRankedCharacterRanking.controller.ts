@@ -81,7 +81,7 @@ export class SFSixRankedCharacterRankingController {
     ) {
         const dates = await this.service.findAllWeeklyDatesByPhase(phase);
         // console.log(dates);
-        // this.logger.log(`Found ${dates} dates for phase ${phase}`, 'SFSixRankedCharacterRankingController');
+        this.logger.log(`Found ${dates} dates for phase ${phase}`, 'SFSixRankedCharacterRankingController');
         return dates;
     }
 
