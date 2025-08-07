@@ -39,11 +39,9 @@ export class SFSixRankedCharacterRanking {
         name: "date",
         transformer: {
             to: (value: Date): string => {
-                console.log("Transforming date to string:", value);
                 return value.toISOString().split("T")[0]; // Returns YYYY-MM-DD
             },
             from: (value: string): Date => {
-                console.log("Transforming string to date:", value);
                 return new Date(value); //TODO new Date auto converts to UTC
             },
         },
