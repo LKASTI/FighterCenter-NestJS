@@ -54,8 +54,9 @@ export class SFSixRankedCharacterRankingController {
         @Query(new ValidationPipe({ transform: true }))
         query: FindSFSixRankedCharacterRankingsQueryDTO,
     ) {
-        // console.log(`Query: ${JSON.stringify(query)}`);
-        // this.logger.log(`Query: ${JSON.stringify(query)}`, 'SFSixRankedCharacterRankingController');
+        console.log(`Query: ${JSON.stringify(query)}`);
+        this.logger.log(`Query: ${JSON.stringify(query)}`, 'SFSixRankedCharacterRankingController');
+        console.log("ISO Date", query.date.toISOString());
         if (!query.phase)
             throw new BadRequestException(
                 `Request must contain a phase and date`,
