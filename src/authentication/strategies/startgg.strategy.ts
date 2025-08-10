@@ -31,9 +31,14 @@ export class StartGGStrategy extends PassportStrategy(Strategy, "startgg") {
     ): Promise<any> {
         const userData = await this.fetchStartGGUser(accessToken);
 
-        const tokenExpiresIn = Date.now() + (6 * 24 * 60 * 60 * 1000);
+        const tokenExpiresIn = Date.now() + (3 * 24 * 60 * 60 * 1000);
         const encryptedAccessToken = this.encryptionService.encrypt(accessToken);
         const encryptedRefreshToken = this.encryptionService.encrypt(refreshToken);
+        console.log("startgg strategy encrypted tokens:", {
+            encryptedAccessToken,
+            encryptedRefreshToken,
+            tokenExpiresIn,
+        });
 
         const user = await this.startggUserService.findOrCreate({
             startggId: userData.player?.id.toString(),
