@@ -72,7 +72,11 @@ export class StartggUserService {
             );
 
             const { accessToken, refreshToken, expiresIn } = response.data;
-
+            console.log('startgg refresh response:', response.data);
+            if (!accessToken || !refreshToken) {
+                console.error('StartGG refresh response missing tokens:', response.data);
+                throw new Error('Invalid StartGG refresh response' + JSON.stringify(response.data));
+            }
             const expire = Date.now() + (expiresIn || 604800) * 1000;
             const encToken = this.encryptionService.encrypt(accessToken);
             const encRefreshToken = this.encryptionService.encrypt(refreshToken);
