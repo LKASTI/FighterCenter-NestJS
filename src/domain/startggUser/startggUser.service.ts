@@ -32,7 +32,7 @@ export class StartggUserService {
         let user = await this.startggUserRepository.findOne({
             where: { startggId: createStartggUserDTO.startggId },
         });
-
+        console.log("findOrCreate user:", user);
         if (!user) {
             user =
                 await this.startggUserRepository.createAndSave(
@@ -110,7 +110,9 @@ export class StartggUserService {
     }
 
     public async findByStartggId(id: string): Promise<StartggUser> {
-        return await this.startggUserRepository.findOneBy({ startggId: id });
+        return await this.startggUserRepository.findOneBy({
+            startggId: String(id).trim()
+        });
     }
 
     public async update(
