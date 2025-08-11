@@ -92,7 +92,8 @@ export class TournamentDataParserService {
 
     public async parseStartGGTournamentDataV2(
         params: StartGGTournamentDataV2ParserDTO,
-        req: any
+        req: any,
+        tournamentSeriesId: number
     ) {
         try {
             this.req = req;
@@ -145,6 +146,7 @@ export class TournamentDataParserService {
             // Create event
             const newEvent = await this.createEvent(
                 params.eventName,
+                tournamentSeriesId,
                 params.eventRegion,
                 params.eventDates,
             );
@@ -558,19 +560,21 @@ export class TournamentDataParserService {
     //#region Methods to update database with
     private async createEvent(
         eventName: string,
+        tournamentSeriesId: number,
         eventRegion: string | null,
         eventDates: Date[] | null,
     ): Promise<Event> {
         let event: Event;
-        const eventsQuery = await this.eventService.findAll({
-            eventName: eventName,
-            dates: eventDates,
-            region: eventRegion,
-        });
+        // const eventsQuery = await this.eventService.findAll({
+        //     eventName: eventName,
+        //     dates: eventDates,
+        //     region: eventRegion,
+        // });
+        const eventsQuery = await this.eventService.findById(tournamentSeriesId);
 
-        if (eventsQuery.meta["total"] >= 1) {
-            event = eventsQuery.data[0];
-        } else if (eventsQuery.meta["total"] === 0) {
+        if (eventsQuery) {
+            event = eventsQuery;
+        } else {
             event = await this.eventService.create({
                 eventName: eventName,
                 region: eventRegion,
@@ -861,64 +865,64 @@ export class TournamentDataParserService {
     }
 
     // (DEPRECATED) Use only with sets JSON files
-    public async parseStartGGTournamentData(
-        params: StartGGTournamentDataParserDTO,
-    ) {
-        try {
-            // Retrieve sets and players files
-            const setsFilePath = path.join(
-                process.cwd(),
-                this.setsPath,
-                `${params.tournamentSetsFileName}.json`,
-            );
-            // const playersFilePath = path.join(process.cwd(), this.playersPath, `${params.tournamentPlayersFileName}.json`) // DEPRECATED
-
-            const setsFileContent = await fs.readFile(setsFilePath, "utf-8");
-            // const playersFileContent = await fs.readFile(playersFilePath, 'utf-8') // DEPRECATED
-
-            const setsJSONdata: StartGGTournamentSetRecord[] =
-                JSON.parse(setsFileContent);
-            // const playersJSONdata: StartGGTournamentPlayerRecord[] = JSON.parse(playersFileContent) // DEPRECATED
-
-            // Create the event
-            const newEvent = await this.createEvent(
-                params.eventName,
-                params.eventRegion,
-                params.eventDates,
-            );
-
-            // Create the tournament
-            const newTournament = await this.createTournament({
-                tournamentName: params.tournamentName,
-                dates: params.tournamentDates,
-                gameName: params.gameName,
-                gameSeason: null,
-                gamePatch: null,
-                vodLink: params.vodLink,
-                tournamentType: params.tournamentType,
-                isOnline: Boolean(params.isOnline),
-                eventID: newEvent.eventID,
-            });
-            if (!newTournament)
-                throw new BadRequestException(
-                    "Tournament for given data already exists",
-                );
-
-            // Parse players
-            await this.createPlayers(newTournament.tournamentID, setsJSONdata);
-
-            // Create Sets and Matches
-            const res = await this.createSets(
-                setsJSONdata,
-                newTournament.tournamentID,
-            );
-
-            // return stats
-            return this.responseStats;
-        } catch (error) {
-            console.error(error);
-            throw error;
-        }
-    }
+    // public async parseStartGGTournamentData(
+    //     params: StartGGTournamentDataParserDTO,
+    // ) {
+    //     try {
+    //         // Retrieve sets and players files
+    //         const setsFilePath = path.join(
+    //             process.cwd(),
+    //             this.setsPath,
+    //             `${params.tournamentSetsFileName}.json`,
+    //         );
+    //         // const playersFilePath = path.join(process.cwd(), this.playersPath, `${params.tournamentPlayersFileName}.json`) // DEPRECATED
+    //
+    //         const setsFileContent = await fs.readFile(setsFilePath, "utf-8");
+    //         // const playersFileContent = await fs.readFile(playersFilePath, 'utf-8') // DEPRECATED
+    //
+    //         const setsJSONdata: StartGGTournamentSetRecord[] =
+    //             JSON.parse(setsFileContent);
+    //         // const playersJSONdata: StartGGTournamentPlayerRecord[] = JSON.parse(playersFileContent) // DEPRECATED
+    //
+    //         // Create the event
+    //         const newEvent = await this.createEvent(
+    //             params.eventName,
+    //             params.eventRegion,
+    //             params.eventDates,
+    //         );
+    //
+    //         // Create the tournament
+    //         const newTournament = await this.createTournament({
+    //             tournamentName: params.tournamentName,
+    //             dates: params.tournamentDates,
+    //             gameName: params.gameName,
+    //             gameSeason: null,
+    //             gamePatch: null,
+    //             vodLink: params.vodLink,
+    //             tournamentType: params.tournamentType,
+    //             isOnline: Boolean(params.isOnline),
+    //             eventID: newEvent.eventID,
+    //         });
+    //         if (!newTournament)
+    //             throw new BadRequestException(
+    //                 "Tournament for given data already exists",
+    //             );
+    //
+    //         // Parse players
+    //         await this.createPlayers(newTournament.tournamentID, setsJSONdata);
+    //
+    //         // Create Sets and Matches
+    //         const res = await this.createSets(
+    //             setsJSONdata,
+    //             newTournament.tournamentID,
+    //         );
+    //
+    //         // return stats
+    //         return this.responseStats;
+    //     } catch (error) {
+    //         console.error(error);
+    //         throw error;
+    //     }
+    // }
     //#endregion
 }

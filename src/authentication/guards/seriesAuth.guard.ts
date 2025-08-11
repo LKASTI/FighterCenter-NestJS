@@ -49,6 +49,11 @@ export class SeriesAuthGuard implements CanActivate {
             const user = await this.startggUserService.findByStartggId(
                 payload.sub,
             );
+
+            if (!user) {
+                throw new UnauthorizedException("User not found");
+            }
+
             // TODO check if token expired
             if(Date.now() >= user.startggTokenExpiresIn) {
                 const res: StartggRefreshTokenResponse = await this.startggUserService.refreshStartggToken(user.startggEncryptedRefreshToken, user.startggUserID);
@@ -57,9 +62,7 @@ export class SeriesAuthGuard implements CanActivate {
                 user.startggEncryptedToken = res.encryptedAccessToken;
             }
 
-            if (!user) {
-                throw new UnauthorizedException("User not found");
-            }
+
             //TODO
             const userRoles = user.roles || [];
             const userTournamentSeriesAssigned =
@@ -97,7 +100,7 @@ export class SeriesAuthGuard implements CanActivate {
             if (error.name === "TokenExpiredError") {
                 throw new UnauthorizedException("Token expired");
             }
-            throw new UnauthorizedException("Invalid token: ", error);
+            throw new UnauthorizedException("Error encountered: ", error);
         }
     }
 }

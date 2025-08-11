@@ -38,6 +38,24 @@ export class StartggUserService {
                 await this.startggUserRepository.createAndSave(
                     createStartggUserDTO,
                 );
+        } else if(Date.now() >= user.startggTokenExpiresIn) {
+            // Try to refresh token
+            try {
+                const res: StartggRefreshTokenResponse = await this.refreshStartggToken(
+                    user.startggEncryptedRefreshToken,
+                    user.startggUserID
+                );
+                user.startggEncryptedRefreshToken = res.encryptedRefreshToken;
+                user.startggEncryptedToken = res.encryptedAccessToken;
+                user.startggTokenExpiresIn = res.expiresIn;
+            } catch (error) {
+                console.error('Failed to refresh token for existing user:', error);
+                await this.update(user.startggUserID, {
+                    startggEncryptedRefreshToken: createStartggUserDTO.startggEncryptedRefreshToken,
+                    startggEncryptedToken: createStartggUserDTO.startggEncryptedToken,
+                    startggTokenExpiresIn: createStartggUserDTO.startggTokenExpiresIn
+                } as UpdateStartggUserDTO);
+            }
         }
 
         return user;

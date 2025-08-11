@@ -18,7 +18,7 @@ export class TournamentDataParserController {
         @Body() body: StartGGTournamentDataV2ParserDTO,
         @Req() req: Request
     ) {
-        return this.service.parseStartGGTournamentDataV2(body, req);
+        return this.service.parseStartGGTournamentDataV2(body, req, parseInt(tournamentSeriesId));
     }
 
     @Get("healthcheck")

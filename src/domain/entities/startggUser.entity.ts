@@ -21,7 +21,13 @@ export class StartggUser {
     @Column("varchar", { name: "startgg_encrypted_refresh_token" })
     startggEncryptedRefreshToken: string;
 
-    @Column("bigint", { name: "startgg_token_expire_in" })
+    @Column("bigint", {
+        name: "startgg_token_expire_in",
+        transformer: {
+            to: (value: number) => value,
+            from: (value: string) => parseInt(value, 10)
+        }
+    })
     startggTokenExpiresIn: number;
 
     @Column("varchar", { name: "startgg_username", length: 100 })
