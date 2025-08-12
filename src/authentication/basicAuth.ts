@@ -9,21 +9,7 @@ export class BasicAuth implements NestMiddleware {
             return next();
         }
 
-        // Skip basic auth for OAuth routes
-        const oauthPaths = [
-            "/auth/startgg", // OAuth initiation
-            "/auth/startgg/callback", // OAuth callback
-            "/health", // Health checks
-            "/ping", // Status endpoints
-            "/client/media",
-        ];
-
-        // Check if current path should skip auth
-        const shouldSkipAuth = oauthPaths.some((path) =>
-            req.path.startsWith(path),
-        );
-
-        if (shouldSkipAuth) {
+        if (this.shouldSkipAuth(req)) {
             // console.log(`Skipping basic auth for OAuth route: ${req.path}`);
             return next();
         }
@@ -77,5 +63,22 @@ export class BasicAuth implements NestMiddleware {
                 error: "Unauthorized",
             });
         }
+    }
+
+    private shouldSkipAuth(req: Request): boolean {
+        // Skip basic auth for certain paths
+        const skippablePaths = [
+            "/auth/startgg", // OAuth initiation
+            "/auth/startgg/callback", // OAuth callback
+            "/health",
+            "/ping",
+            "/client/media",
+            "/twitterShare/share"
+        ];
+
+        // Check if current path should skip auth
+        return skippablePaths.some((path) =>
+            req.path.startsWith(path),
+        );
     }
 }
