@@ -22,6 +22,7 @@ import { AuthModule } from "./authentication/auth.module";
 import * as Joi from "joi";
 import { TournamentSeriesModule } from "./features/tournamentSeries/tournamentSeries.module";
 import { EncryptionModule } from "./authentication/encryption/encryption.module";
+import { TwitterShareModule } from "./domain/twitterShare/twitterShare.module";
 
 @Module({
     imports: [
@@ -77,6 +78,8 @@ import { EncryptionModule } from "./authentication/encryption/encryption.module"
         // data parsing modules
         TournamentDataParserModule,
         RankedDataParserModule,
+        // twitter share module
+        TwitterShareModule,
         // auth modules
         AuthModule,
         // encryption module

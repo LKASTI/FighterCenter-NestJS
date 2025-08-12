@@ -73,7 +73,7 @@ export class BasicAuth implements NestMiddleware {
             "/health",
             "/ping",
             "/client/media",
-            "/twitterShare/findShare"
+            "/twitterShare/share"
         ];
 
         // Check if current path should skip auth

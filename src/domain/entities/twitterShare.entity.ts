@@ -14,7 +14,7 @@ export class TwitterShare {
     @Column("varchar", { name: "page_url" })
     pageUrl: string;
 
-    @Column("varchar", { name: "imageUrl" })
+    @Column("varchar", { name: "image_url" })
     imageUrl: string;
 
     @Column("varchar", { name: "title" })

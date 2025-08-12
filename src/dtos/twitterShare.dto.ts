@@ -25,11 +25,11 @@ export class CreateTwitterShareDto {
 
     @IsOptional()
     @Type(() => Date)
-    readonly createDate?: Date;
+    createDate?: Date;
 
     @IsOptional()
     @Type(() => Date)
-    readonly updateDate?: Date;
+    updateDate?: Date;
 }
 
 export class FindTwitterShareDto {
