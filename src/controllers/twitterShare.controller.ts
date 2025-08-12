@@ -64,6 +64,7 @@ export class TwitterShareController {
             </html>
         `
         console.log("Twitter read share page for ID:", sharedId);
+        console.log(html);
         res.setHeader('Content-Type', 'text/html');
         res.send(html);
     }
