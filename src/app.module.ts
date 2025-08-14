@@ -23,6 +23,7 @@ import * as Joi from "joi";
 import { TournamentSeriesModule } from "./features/tournamentSeries/tournamentSeries.module";
 import { EncryptionModule } from "./authentication/encryption/encryption.module";
 import { TwitterShareModule } from "./domain/twitterShare/twitterShare.module";
+import { StartggApiModule } from "./features/startggApi/startggApi.module";
 
 @Module({
     imports: [
@@ -83,7 +84,9 @@ import { TwitterShareModule } from "./domain/twitterShare/twitterShare.module";
         // auth modules
         AuthModule,
         // encryption module
-        EncryptionModule
+        EncryptionModule,
+        // startgg api module
+        StartggApiModule
     ],
     controllers: [AppController],
     providers: [AppService],
