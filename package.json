@@ -38,7 +38,7 @@
         "cookie-parser": "^1.4.7",
         "dotenv": "^16.4.7",
         "graphql": "^16.11.0",
-        "graphql-request": "^7.2.0",
+        "graphql-request": "^5.2.0",
         "joi": "^17.13.3",
         "passport": "^0.7.0",
         "passport-jwt": "^4.0.1",
@@ -52,7 +52,6 @@
     "devDependencies": {
         "@graphql-codegen/cli": "^5.0.7",
         "@graphql-codegen/typescript": "^4.1.6",
-        "@graphql-codegen/typescript-graphql-request": "^6.3.0",
         "@graphql-codegen/typescript-operations": "^4.6.1",
         "@nestjs/cli": "^10.0.0",
         "@nestjs/schematics": "^10.0.0",
