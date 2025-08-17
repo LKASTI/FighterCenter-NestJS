@@ -42,7 +42,7 @@ import { Top8MakerModule } from "./features/top8maker/top8maker.module";
             }),
         }),
         ServeStaticModule.forRoot({
-            rootPath: join(__dirname, "..", "client"),
+            rootPath: join(__dirname, "..", "..", "client"),
             serveRoot: "/client",
         }),
         TypeOrmModule.forRootAsync({
