@@ -24,6 +24,7 @@ import { TournamentSeriesModule } from "./features/tournamentSeries/tournamentSe
 import { EncryptionModule } from "./authentication/encryption/encryption.module";
 import { TwitterShareModule } from "./domain/twitterShare/twitterShare.module";
 import { StartggApiModule } from "./features/startggApi/startggApi.module";
+import { Top8MakerModule } from "./features/top8maker/top8maker.module";
 
 @Module({
     imports: [
@@ -86,7 +87,9 @@ import { StartggApiModule } from "./features/startggApi/startggApi.module";
         // encryption module
         EncryptionModule,
         // startgg api module
-        StartggApiModule
+        StartggApiModule,
+        // top 8 maker module
+        Top8MakerModule
     ],
     controllers: [AppController],
     providers: [AppService],

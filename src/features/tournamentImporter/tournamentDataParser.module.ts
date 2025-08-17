@@ -26,13 +26,16 @@ import { EncryptionModule } from "../../authentication/encryption/encryption.mod
         EncryptionModule,
 
         PassportModule.register({ defaultStrategy: "jwt" }),
+        ConfigModule.forRoot(), // Make sure this is included to load environment variables
         JwtModule.registerAsync({
             imports: [ConfigModule],
             inject: [ConfigService],
             useFactory: (configService: ConfigService) => ({
                 secret: configService.get<string>("JWT_SECRET"),
                 signOptions: {
-                    expiresIn: "7d", // Match your cookie expiration
+                    expiresIn: parseInt(
+                        configService.get<string>("COOKIE_EXPIRATION_DURATION"),
+                    ), // Match your cookie expiration
                 },
             }),
         }),
