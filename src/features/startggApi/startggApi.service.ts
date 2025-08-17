@@ -9,18 +9,10 @@ import { EncryptionService } from "../../authentication/encryption/encryption.se
 
 @Injectable({ scope: Scope.REQUEST })
 export class StartggApiService {
-    private gqlClient: GraphQLClient;
-
     constructor(
         @Inject(REQUEST) private request: Request,
         private readonly encryptionService: EncryptionService
     ) {
-        const token = this.getTokenFromRequest();
-        this.gqlClient = new GraphQLClient('https://api.start.gg/gql/alpha', {
-            headers: {
-                Authorization: `Bearer ${token}`,
-            }
-        })
     }
 
     private getTokenFromRequest(): string {
@@ -39,17 +31,30 @@ export class StartggApiService {
         }
     }
 
+    private initializeGqlClient(): GraphQLClient {
+        const token = this.getTokenFromRequest();
+        return new GraphQLClient('https://api.start.gg/gql/alpha', {
+            headers: {
+                Authorization: `Bearer ${token}`,
+            }
+        })
+    }
+
     public async getEvent(slug: string): Promise<Event | null> {
+        const client = this.initializeGqlClient();
+
         const query = GetEventQuery;
         const variables: QueryEventArgs = {slug};
-        const response: { event: Event } = await this.gqlClient.request(query, variables);
+        const response: { event: Event } = await client.request(query, variables);
         return response.event;
     }
 
     public async getTop8PlayerData(eventId: string) {
+        const client = this.initializeGqlClient();
+
         const query = GetEventTop8PlayerDataQuery;
         const variables: QueryEventArgs = { id: eventId };
-        const response: { event: Event } = await this.gqlClient.request(query, variables);
+        const response: { event: Event } = await client.request(query, variables);
         return response.event;
     }
 }

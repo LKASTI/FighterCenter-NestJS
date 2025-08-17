@@ -10,7 +10,10 @@ export const GetEventQuery = gql`
                         id,
                         name
                     },
-                    numEntrants
+                    numEntrants,
+                    tournament {
+                        name,
+                    }
                 }
             }
         `;
