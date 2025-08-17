@@ -43,7 +43,6 @@ export class SeriesAuthGuard implements CanActivate {
 
             // Verify token
             const payload = this.jwtService.verify(token);
-            // TODO check if token expired
 
             // Get roles and assigned tournament serieses from user service
             const user = await this.startggUserService.findByStartggId(
