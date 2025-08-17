@@ -9,6 +9,7 @@ import { StartGGStrategy } from "./strategies/startgg.strategy";
 import { JwtStrategy } from "./strategies/jwt.strategy";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { EncryptionModule } from "./encryption/encryption.module";
+import { SeriesAuthGuard } from "./guards/seriesAuth.guard";
 
 @Module({
     imports: [
@@ -37,8 +38,10 @@ import { EncryptionModule } from "./encryption/encryption.module";
         // Strategies
         StartGGStrategy,
         JwtStrategy,
+        // Guards
+        SeriesAuthGuard
     ],
     controllers: [AuthController],
-    exports: [JwtModule],
+    exports: [JwtModule, SeriesAuthGuard, StartggUserModule],
 })
 export class AuthModule {}
