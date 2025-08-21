@@ -25,6 +25,7 @@ import { EncryptionModule } from "./authentication/encryption/encryption.module"
 import { TwitterShareModule } from "./domain/twitterShare/twitterShare.module";
 import { StartggApiModule } from "./features/startggApi/startggApi.module";
 import { Top8MakerModule } from "./features/top8maker/top8maker.module";
+import { SFSixGamePatchModule } from "./domain/sfsixGamePatch/sfsixGamePatch.module";
 
 @Module({
     imports: [
@@ -77,6 +78,7 @@ import { Top8MakerModule } from "./features/top8maker/top8maker.module";
         TournamentMatchModule,
         StartggUserModule,
         TournamentSeriesModule,
+        SFSixGamePatchModule,
         // data parsing modules
         TournamentDataParserModule,
         RankedDataParserModule,
