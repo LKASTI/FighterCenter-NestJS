@@ -1,6 +1,5 @@
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { SFSixGamePatch } from "../entities/sfsixGamePatch.entity";
 import { SFSixGamePatchRepository } from "./sfsixGamePatch.repository";
 import { FindSFSixGamePatchDTO } from "../../dtos/sfsixGamePatch.dto";
 

@@ -13,6 +13,7 @@ import { JwtModule } from "@nestjs/jwt";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { StartggUserModule } from "../../domain/startggUser/startggUser.module";
 import { EncryptionModule } from "../../authentication/encryption/encryption.module";
+import { SFSixGamePatchModule } from "../../domain/sfsixGamePatch/sfsixGamePatch.module";
 
 @Module({
     imports: [
@@ -22,6 +23,7 @@ import { EncryptionModule } from "../../authentication/encryption/encryption.mod
         TournamentMatchModule,
         PlayerModule,
         PlayerTournamentRunModule,
+        SFSixGamePatchModule,
         StartggUserModule,
         EncryptionModule,
 

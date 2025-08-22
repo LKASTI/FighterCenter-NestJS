@@ -47,6 +47,10 @@ import { ConfigService } from "@nestjs/config";
 import { firstValueFrom } from "rxjs";
 import { EncryptionService } from "../../authentication/encryption/encryption.service";
 import { StartggUser } from "../../domain/entities";
+import { SFSixGamePatchService } from "../../domain/sfsixGamePatch/sfsixGamePatch.service";
+import { FindSFSixGamePatchDTO } from "../../dtos/sfsixGamePatch.dto";
+import { SFSixGamePatch } from "../../domain/entities/sfsixGamePatch.entity";
+import { toWords } from "number-to-words";
 
 @Injectable()
 export class TournamentDataParserService {
@@ -57,6 +61,7 @@ export class TournamentDataParserService {
         private readonly playerTournamentRunService: PlayerTournamentRunService,
         private readonly tournamentSetService: TournamentSetService,
         private readonly tournamentMatchService: TournamentMatchService,
+        private readonly sfsixGamePatchService: SFSixGamePatchService,
 
         private readonly httpService: HttpService,
         private readonly configService: ConfigService,
@@ -96,28 +101,9 @@ export class TournamentDataParserService {
         tournamentSeriesId: number
     ) {
         try {
-            this.req = req;
-            if(this.req && this.req.user && this.req.user.startggEncryptedToken) {
-                this.startggApiToken = this.encryptionService.decrypt((req.user as StartggUser).startggEncryptedToken);
-                if(!this.startggApiToken) {
-                    throw new BadRequestException(
-                        "StartGG API token is not set or invalid.",
-                    );
-                }
-            }
-            // Initialize API request limiting fields (perPage, delay)
-            if (params.requestDelay)
-                this.startggRequestDelayMs = params.requestDelay;
-            if (params.perPageCount) this.startggPerPage = params.perPageCount;
-            // Initialize updater fields
-            if (params.mustUpdatePlayerProfileImage)
-                this.mustUpdatePlayerProfileImage =
-                    params.mustUpdatePlayerProfileImage;
-            if (params.mustUpdatePlayerCountry)
-                this.mustUpdatePlayerCountry = params.mustUpdatePlayerCountry;
-            // Initialize set limit for startgg api
-            if (params.setLimit) this.setLimit = params.setLimit;
+            this.initializeVariables(params, req);
 
+            // Parse startgg url
             const startggUrlSplit = params.startggUrl.split("/");
             let startggSlug = params.startggSlug
                 ? params.startggSlug
@@ -150,41 +136,40 @@ export class TournamentDataParserService {
                 params.eventRegion,
                 params.eventDates,
             );
-            if (!tournamentData.events)
+            if (!tournamentData.events) {
                 throw new NotFoundException(
                     `No tournaments found for ${startggSlug}`,
                 );
+            }
 
             // Create tournament
             const tData: StartGGEventRecord = tournamentData.events[0];
-            const startggEventID = tData.id; // An event in startgg is a tournament in app domain
+            const startggEventID = tData.id;
+            // An event in startgg is a tournament in app domain
             // StartGG tournament with multiple events (multiple tournaments in app domain), must distinguish the name being stored
+
+            // Get dates, patch, and season
+            const startDate = new Date(tournamentData.startAt * 1000);
+            const endDate = new Date(tournamentData.endAt * 1000);
+            const [correctPatch, correctSeason] = await this.getPatchAndSeason(startDate, params);
+
             const parsedTournamentName = hasMultipleTournaments
                 ? tournamentData.name + " " + tData.name
                 : tData.name;
             const newTournament = await this.createTournament({
-                tournamentName: params.tournamentName
-                    ? params.tournamentName
-                    : parsedTournamentName,
-                tournamentRegion: params.tournamentRegion
-                    ? params.tournamentRegion
-                    : tournamentData.countryCode,
-                dates: [
-                    new Date(tournamentData.startAt * 1000),
-                    new Date(tournamentData.endAt * 1000),
-                ],
+                tournamentName: params.tournamentName ?? parsedTournamentName,
+                tournamentRegion: params.tournamentRegion ?? tournamentData.countryCode,
+                dates: [startDate, endDate],
                 numEntrants: tData.numEntrants,
                 gameName: tData.videogame.displayName,
-                gamePatch: params.gamePatch ? params.gamePatch : null,
-                gameSeason: params.gameSeason ? params.gameSeason : null,
+                gamePatch: correctPatch,
+                gameSeason: correctSeason,
                 eventID: newEvent.eventID,
                 isOnline: tData.isOnline === true,
                 tournamentType: params.tournamentType,
                 vodLink: params.vodLink,
-                tournamentTop8GraphicImage: params.top8GraphicUrl
-                    ? params.top8GraphicUrl
-                    : null,
-                top8GraphicIsFile: params.top8GraphicUrl ? false : true,
+                tournamentTop8GraphicImage: params.top8GraphicUrl ?? null,
+                top8GraphicIsFile: !params.top8GraphicUrl,
             });
             if (!newTournament)
                 throw new BadRequestException(
@@ -217,6 +202,57 @@ export class TournamentDataParserService {
             console.error(error);
             throw error;
         }
+    }
+
+    private initializeVariables(params: StartGGTournamentDataV2ParserDTO, req: any): void {
+        this.req = req;
+        if(this.req && this.req.user && this.req.user.startggEncryptedToken) {
+            this.startggApiToken = this.encryptionService.decrypt((req.user as StartggUser).startggEncryptedToken);
+            if(!this.startggApiToken) {
+                throw new BadRequestException(
+                    "StartGG API token is not set or invalid.",
+                );
+            }
+        }
+        // Initialize API request limiting fields (perPage, delay)
+        if (params.requestDelay)
+            this.startggRequestDelayMs = params.requestDelay;
+        if (params.perPageCount) this.startggPerPage = params.perPageCount;
+        // Initialize updater fields
+        if (params.mustUpdatePlayerProfileImage)
+            this.mustUpdatePlayerProfileImage =
+                params.mustUpdatePlayerProfileImage;
+        if (params.mustUpdatePlayerCountry)
+            this.mustUpdatePlayerCountry = params.mustUpdatePlayerCountry;
+        // Initialize set limit for startgg api
+        if (params.setLimit) this.setLimit = params.setLimit;
+    }
+
+    private async getPatchAndSeason(startDate: Date, params: StartGGTournamentDataV2ParserDTO): Promise<[ patch: string, season: string ]> {
+        // Get patch and season based on start date
+        const gamePatchesResponse = await this.sfsixGamePatchService.findAll(new FindSFSixGamePatchDTO());
+        const patches = gamePatchesResponse.data as SFSixGamePatch[];
+
+        let correctPatch = '';
+        let correctSeason = '';
+        if(patches && patches.length > 1) {
+            let prevEle = patches[0];
+            for(let i = 1; i <= patches.length; i += 1) {
+                const currentEle = patches[i];
+                if(startDate > currentEle.date) {
+                    prevEle = patches[i];
+                    continue;
+                }
+                correctPatch = prevEle.patch;
+                const convertedSeason = toWords(prevEle.patchSeason);
+                correctSeason = convertedSeason.charAt(0).toUpperCase() + convertedSeason.slice(1);
+                break
+            }
+        } else {
+            correctPatch = params.gamePatch ?? null;
+            correctSeason = params.gameSeason ?? null;
+        }
+        return [correctPatch, correctSeason];
     }
 
     private parseStartGGSetNodeRecord(

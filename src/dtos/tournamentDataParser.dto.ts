@@ -64,29 +64,29 @@ export class StartGGTournamentDataV2ParserDTO {
     // @ApiProperty({description: "The delay in milliseconds between each startgg api page request", example: 1000}, )
     @IsOptional()
     @IsNumber()
-    readonly requestDelay: number;
+    readonly requestDelay: number = 1000;
 
     // @ApiProperty({description: "The number of sets to fetch per page", example: 10}, )
     @IsOptional()
     @IsNumber()
-    readonly perPageCount: number;
+    readonly perPageCount: number = 10;
 
     // @ApiProperty({description: "The maximum number of sets to fetch", example: 200}, )
     @IsOptional()
     @IsNumber()
-    readonly setLimit: number;
+    readonly setLimit: number = 200;
 
     // @ApiProperty({description: "If the player's profile image should be updated from startgg api", example: true}, )
     @IsOptional()
     @Type(() => Boolean)
     @IsBoolean()
-    readonly mustUpdatePlayerProfileImage?: boolean;
+    readonly mustUpdatePlayerProfileImage?: boolean = true;
 
     // @ApiProperty({description: "If the player's country should be updated from startgg api", example: true, }, )
     @IsOptional()
     @Type(() => Boolean)
     @IsBoolean()
-    readonly mustUpdatePlayerCountry?: boolean;
+    readonly mustUpdatePlayerCountry?: boolean = false;
 
     @ApiProperty({description: "The startgg url of the tournament event page", example: "", required: true, type: "string"}, )
     @IsNotEmpty()
@@ -137,7 +137,7 @@ export class StartGGTournamentDataV2ParserDTO {
     @IsOptional()
     @Type(() => Boolean)
     @IsBoolean()
-    readonly isTournamentSeries?: boolean;
+    readonly isTournamentSeries?: boolean = true;
 
     @IsOptional()
     @Type(() => String)
