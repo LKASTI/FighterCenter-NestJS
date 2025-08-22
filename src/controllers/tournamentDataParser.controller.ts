@@ -5,12 +5,16 @@ import {
 } from "src/dtos/tournamentDataParser.dto";
 import { SeriesAuthGuard } from "../authentication/guards/seriesAuth.guard";
 import { Roles } from "../decorators/roles.decorator";
+import { ApiBody, ApiParam, ApiSecurity } from "@nestjs/swagger";
 
 @Controller("tournamentDataParser")
 export class TournamentDataParserController {
     constructor(private readonly service: TournamentDataParserService) {}
 
     @Post("parseStartGGTournamentData_V2/:tournamentSeriesId")
+    @ApiSecurity('x-auth-token')
+    @ApiBody({ type: StartGGTournamentDataV2ParserDTO, })
+    @ApiParam({ name: "tournamentSeriesId", type: String, description: "ID of the tournament series to parse data for" })
     @UseGuards(SeriesAuthGuard)
     @Roles("TOURNAMENT_ORGANIZER", "SUPER_ADMIN")
     async parseStartGGTournamentDataV2(
@@ -22,6 +26,7 @@ export class TournamentDataParserController {
     }
 
     @Get("healthcheck")
+    @ApiSecurity('x-auth-token')
     @UseGuards(SeriesAuthGuard)
     @Roles("TOURNAMENT_ORGANIZER", "SUPER_ADMIN")
     async healthcheck(

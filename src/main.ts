@@ -57,6 +57,7 @@ async function bootstrap() {
 
     const config = new DocumentBuilder()
         .setTitle('FighterCenter Swagger API')
+        .addApiKey({type: "apiKey", name: 'x-auth-token', in: 'header'}, 'x-auth-token')
         .build();
 
     const document = SwaggerModule.createDocument(app, config);

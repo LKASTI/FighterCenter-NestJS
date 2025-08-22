@@ -8,6 +8,7 @@ import {
     IsNumber,
 } from "class-validator";
 import { Type } from "class-transformer";
+import { ApiProperty } from "@nestjs/swagger";
 
 export class StartGGTournamentDataParserDTO {
     @IsOptional()
@@ -60,40 +61,49 @@ export class StartGGTournamentDataParserDTO {
 }
 
 export class StartGGTournamentDataV2ParserDTO {
+    // @ApiProperty({description: "The delay in milliseconds between each startgg api page request", example: 1000}, )
     @IsOptional()
     @IsNumber()
     readonly requestDelay: number;
 
+    // @ApiProperty({description: "The number of sets to fetch per page", example: 10}, )
     @IsOptional()
     @IsNumber()
     readonly perPageCount: number;
 
+    // @ApiProperty({description: "The maximum number of sets to fetch", example: 200}, )
     @IsOptional()
     @IsNumber()
     readonly setLimit: number;
 
+    // @ApiProperty({description: "If the player's profile image should be updated from startgg api", example: true}, )
     @IsOptional()
     @Type(() => Boolean)
     @IsBoolean()
     readonly mustUpdatePlayerProfileImage?: boolean;
 
+    // @ApiProperty({description: "If the player's country should be updated from startgg api", example: true, }, )
     @IsOptional()
     @Type(() => Boolean)
     @IsBoolean()
     readonly mustUpdatePlayerCountry?: boolean;
 
+    @ApiProperty({description: "The startgg url of the tournament event page", example: "", required: true, type: "string"}, )
     @IsNotEmpty()
     @IsString()
     readonly startggUrl: string;
 
+    // @ApiProperty({description: "The startgg slug of the tournament", example: ""}, )
     @IsOptional()
     @IsString()
     readonly startggSlug?: string;
 
+    // @ApiProperty({description: "The startgg slug of the event", example: ""}, )
     @IsOptional()
     @IsString()
     readonly startggEventSlug?: string;
 
+    @ApiProperty({description: "The name of the tournament series for the tournament", example: "Motivation Academy"}, )
     @IsNotEmpty()
     @IsString()
     readonly eventName: string;
@@ -112,12 +122,14 @@ export class StartGGTournamentDataV2ParserDTO {
     @Type(() => Date)
     readonly eventDates?: Date[];
 
+    @ApiProperty({description: "The dates the tournament occurs", example: ["2024-02-27", "2024-02-28"], type: "array"}, )
     @IsOptional()
     @IsArray()
     @IsDate({ each: true })
     @Type(() => Date)
     readonly tournamentDates?: Date[];
 
+    @ApiProperty({description: "The region of the tournament series occurs in", example: "NA", type: "string"}, )
     @IsOptional()
     @IsString()
     readonly eventRegion?: string;
@@ -132,18 +144,22 @@ export class StartGGTournamentDataV2ParserDTO {
     @IsString()
     readonly top8GraphicUrl?: string;
 
+    @ApiProperty({description: "The type of tournament (e.g., 'Weekly', 'Monthly', 'Regional')", example: "Weekly", type: "string"}, )
     @IsString()
     @IsOptional()
     readonly tournamentType?: string;
 
+    @ApiProperty({description: "The region of the tournament (e.g., 'NA', 'EU')", example: "NA", type: "string"}, )
     @IsString()
     @IsOptional()
     readonly tournamentRegion?: string;
 
+    @ApiProperty({description: "The name of the tournament", example: "Motivation Academy NA #41: Safe Jumps!", type: "string"}, )
     @IsString()
     @IsOptional()
     readonly tournamentName?: string;
 
+    @ApiProperty({description: "The url link of the tournaments VOD", example: "", type: "string"}, )
     @IsOptional()
     @IsString()
     readonly vodLink?: string;
