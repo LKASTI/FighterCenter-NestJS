@@ -70,6 +70,13 @@ export class CreateTournamentDTO {
 }
 
 export class FindTournamentsQueryDTO {
+    constructor() {}
+
+    @IsOptional()
+    @IsNumber()
+    @Type(() => Number)
+    tournamentID?: number;
+
     @IsOptional()
     @IsString()
     tournamentName?: string;

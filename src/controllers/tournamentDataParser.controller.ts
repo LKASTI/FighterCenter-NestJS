@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Req, UseGuards } from "@nestjs/common";
 import { TournamentDataParserService } from "src/features/tournamentImporter/tournamentDataParser.service";
 import {
     StartGGTournamentDataV2ParserDTO,
@@ -6,10 +6,14 @@ import {
 import { SeriesAuthGuard } from "../authentication/guards/seriesAuth.guard";
 import { Roles } from "../decorators/roles.decorator";
 import { ApiBody, ApiParam, ApiSecurity } from "@nestjs/swagger";
+import { TournamentManagerService } from "../features/tournamentImporter/tournamentManager.service";
 
 @Controller("tournamentDataParser")
 export class TournamentDataParserController {
-    constructor(private readonly service: TournamentDataParserService) {}
+    constructor(
+        private readonly service: TournamentDataParserService,
+        private readonly tournamentManagerService: TournamentManagerService
+    ) {}
 
     @Post("parseStartGGTournamentData_V2/:tournamentSeriesId")
     @ApiSecurity('x-auth-token')
@@ -23,6 +27,17 @@ export class TournamentDataParserController {
         @Req() req: Request
     ) {
         return this.service.parseStartGGTournamentDataV2(body, req, parseInt(tournamentSeriesId));
+    }
+
+    @Delete("deleteTournamentData/:tournamentSeriesId/:tournamentId")
+    @ApiSecurity('x-auth-token')
+    @UseGuards(SeriesAuthGuard)
+    @Roles("TOURNAMENT_ORGANIZER", "SUPER_ADMIN")
+    async deleteTournamentData(
+        @Param("tournamentSeriesId", ParseIntPipe) tournamentSeriesId: number,
+        @Param("tournamentId", ParseIntPipe) tournamentId: number
+    ) {
+        return await this.tournamentManagerService.deleteTournamentData(tournamentSeriesId, tournamentId);
     }
 
     @Get("healthcheck")

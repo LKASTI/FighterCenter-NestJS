@@ -14,6 +14,8 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
 import { StartggUserModule } from "../../domain/startggUser/startggUser.module";
 import { EncryptionModule } from "../../authentication/encryption/encryption.module";
 import { SFSixGamePatchModule } from "../../domain/sfsixGamePatch/sfsixGamePatch.module";
+import { TournamentManagerService } from "./tournamentManager.service";
+import { TournamentManagerRepository } from "./tournamentManager.repository";
 
 @Module({
     imports: [
@@ -44,8 +46,8 @@ import { SFSixGamePatchModule } from "../../domain/sfsixGamePatch/sfsixGamePatch
 
         HttpModule,
     ],
-    providers: [TournamentDataParserService],
+    providers: [TournamentDataParserService, TournamentManagerService, TournamentManagerRepository],
     controllers: [TournamentDataParserController],
-    exports: [TournamentDataParserService],
+    exports: [TournamentDataParserService, TournamentManagerService],
 })
 export class TournamentDataParserModule {}

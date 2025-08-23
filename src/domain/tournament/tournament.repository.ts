@@ -59,6 +59,15 @@ export class TournamentRepository extends Repository<Tournament> {
         const queryBuilder = this.createQueryBuilder("tournament");
 
         // Apply filters if provided
+        if (query.tournamentID) {
+            queryBuilder.andWhere(
+                "tournament.tournamentID = :tournamentID",
+                {
+                    tournamentID: query.tournamentID,
+                },
+            );
+        }
+
         if (query.tournamentName) {
             queryBuilder.andWhere(
                 "tournament.tournamentName = :tournamentName",
