@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Req, UseGuards } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, ParseIntPipe, Post, Req, UseGuards, ValidationPipe } from "@nestjs/common";
 import { TournamentDataParserService } from "src/features/tournamentImporter/tournamentDataParser.service";
 import {
     StartGGTournamentDataV2ParserDTO,
@@ -7,6 +7,8 @@ import { SeriesAuthGuard } from "../authentication/guards/seriesAuth.guard";
 import { Roles } from "../decorators/roles.decorator";
 import { ApiBody, ApiParam, ApiSecurity } from "@nestjs/swagger";
 import { TournamentManagerService } from "../features/tournamentImporter/tournamentManager.service";
+import { UpdateTournamentDTO } from "../dtos/tournament.dto";
+import { UpdateSeriesTournamentDTO } from "../features/tournamentImporter/tournamentManager.dto";
 
 @Controller("tournamentDataParser")
 export class TournamentDataParserController {
@@ -38,6 +40,23 @@ export class TournamentDataParserController {
         @Param("tournamentId", ParseIntPipe) tournamentId: number
     ) {
         return await this.tournamentManagerService.deleteTournamentData(tournamentSeriesId, tournamentId);
+    }
+
+    @Post("updateTournamentData/:tournamentSeriesId/:tournamentId")
+    @ApiSecurity("x-auth-token")
+    @UseGuards(SeriesAuthGuard)
+    @Roles("TOURNAMENT_ORGANIZER", "SUPER_ADMIN")
+    async updateTournament(
+        @Param("tournamentSeriesId", ParseIntPipe) tournamentSeriesId: number,
+        @Param("tournamentId", ParseIntPipe) tournamentId: number,
+        @Body(new ValidationPipe({ transform: true }))
+        updateSeriesTournamentDto: UpdateSeriesTournamentDTO
+    ) {
+        return await this.tournamentManagerService.updateTournamentData(
+            tournamentId,
+            tournamentSeriesId,
+            updateSeriesTournamentDto
+        )
     }
 
     @Get("healthcheck")
