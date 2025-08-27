@@ -22,7 +22,6 @@ export class RankedDataParserController {
         );
     }
 
-    @DisableEndpoint()
     @Post("parseRankedFileDirectory")
     public async parseRankedFileDirectory() {
         return this.service.parseRankedFileDirectory();
