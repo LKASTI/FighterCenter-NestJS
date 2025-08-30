@@ -237,7 +237,7 @@ export class TournamentDataParserService {
         let correctSeason = '';
         if(patches && patches.length > 1) {
             let prevEle = patches[0];
-            for(let i = 1; i <= patches.length; i += 1) {
+            for(let i = 1; i <= patches.length - 1; i += 1) {
                 const currentEle = patches[i];
                 if(startDate > currentEle.date) {
                     prevEle = patches[i];
