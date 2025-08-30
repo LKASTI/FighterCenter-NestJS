@@ -74,13 +74,35 @@ export class TournamentSetRepository extends Repository<TournamentSet> {
                 p1.player_entry_name as player_one_name,
                 p2.player_entry_name as player_two_name,
                 p1.player_id as player_one_id,
-                p2.player_id as player_two_id
+                p2.player_id as player_two_id,
+                winner_matches.match_count::integer as winner_score,
+                CASE
+                    WHEN total_matches.match_count IS NULL OR winner_matches.match_count IS NULL
+                        THEN NULL
+                    ELSE (total_matches.match_count - winner_matches.match_count)::integer
+            END as loser_score
             FROM tournament_set AS ts
             JOIN tournament AS t ON ts.tournament_id = t.tournament_id
             JOIN player_tournament_run p1 ON ts.player_one_id = p1.player_id
                 AND ts.tournament_id = p1.tournament_id
             JOIN player_tournament_run p2 ON ts.player_two_id = p2.player_id
                 AND ts.tournament_id = p2.tournament_id
+            LEFT JOIN (
+                SELECT 
+                    tm.tournament_set_id,
+                    COUNT(*) as match_count
+                FROM tournament_match tm
+                JOIN tournament_set ts_inner ON tm.tournament_set_id = ts_inner.tournament_set_id
+                WHERE tm.winner_name = ts_inner.winner_name
+                GROUP BY tm.tournament_set_id
+            ) winner_matches ON ts.tournament_set_id = winner_matches.tournament_set_id
+            LEFT JOIN (
+                SELECT 
+                    tournament_set_id,
+                    COUNT(*) as match_count
+                FROM tournament_match
+                GROUP BY tournament_set_id
+            ) total_matches ON ts.tournament_set_id = total_matches.tournament_set_id
             WHERE t.tournament_id = $1
             ORDER BY
                 ts.bracket_name DESC,
