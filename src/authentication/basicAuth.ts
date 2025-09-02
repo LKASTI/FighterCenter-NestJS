@@ -10,7 +10,7 @@ export class BasicAuth implements NestMiddleware {
         }
 
         if (this.shouldSkipAuth(req)) {
-            // console.log(`Skipping basic auth for OAuth route: ${req.path}`);
+            console.log(`Skipping basic auth for OAuth route: ${req.path}`);
             return next();
         }
 
