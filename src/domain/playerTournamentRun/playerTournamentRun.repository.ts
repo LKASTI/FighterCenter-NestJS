@@ -149,7 +149,7 @@ export class PlayerTournamentRunRepository extends Repository<PlayerTournamentRu
                     ppc.placement::text,
                     ppc.placement_count
                 ) AS "placementToCount",
-                COUNT(DISTINCT pt.tournament_id) AS "attendance",
+                COALESCE(COUNT(DISTINCT pt.tournament_id), 0)::integer AS "attendance",
                 ARRAY(
                     SELECT char
                     FROM (
