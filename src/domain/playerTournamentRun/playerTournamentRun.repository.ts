@@ -88,6 +88,7 @@ export class PlayerTournamentRunRepository extends Repository<PlayerTournamentRu
                 SELECT
                     p.player_id,
                     p.player_entry_name AS player_name,
+                    p.seed,
                     pl.startgg_profile_image_url AS profile_image,
                     pl.country,
                     t.tournament_id,
@@ -144,6 +145,7 @@ export class PlayerTournamentRunRepository extends Repository<PlayerTournamentRu
                          player_id
                  )
             SELECT
+                pn.player_id AS "playerId",
                 pn.consistent_player_name AS "playerName",
                 pn.consistent_profile_image as "startggProfileImageURL",
                 pn.consistent_country as "country",
@@ -171,13 +173,14 @@ export class PlayerTournamentRunRepository extends Repository<PlayerTournamentRu
                                    'tournamentName', pt_sub.tournament_name,
                                    'dates', pt_sub.dates,
                                    'placement', pt_sub.placement,
+                                   'seed', pt_sub.seed,
                                    'charactersUsed', pt_sub.characters_used,
                                    'gamePatch', pt_sub.game_patch,
                                    'gameSeason', pt_sub.game_season
                                ) ORDER BY pt_sub.dates DESC
                            )
                     FROM (
-                             SELECT DISTINCT tournament_id, tournament_name, dates, placement, characters_used, game_patch, game_season
+                             SELECT DISTINCT tournament_id, tournament_name, dates, placement, seed, characters_used, game_patch, game_season
                              FROM player_tournaments pt_inner
                              WHERE pt_inner.player_id = pt.player_id
                          ) pt_sub
@@ -192,6 +195,7 @@ export class PlayerTournamentRunRepository extends Repository<PlayerTournamentRu
                 player_best_placement_info pbpi ON pt.player_id = pbpi.player_id
             GROUP BY
                 pt.player_id,
+                pn.player_id,
                 pn.consistent_player_name,
                 pn.consistent_profile_image,
                 pn.consistent_country,
