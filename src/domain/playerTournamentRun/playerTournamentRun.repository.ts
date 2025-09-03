@@ -93,6 +93,8 @@ export class PlayerTournamentRunRepository extends Repository<PlayerTournamentRu
                     t.tournament_id,
                     t.tournament_name,
                     t.dates,
+                    t.game_patch,
+                    t.game_season,
                     p.placement,
                     p.characters_used
                 FROM
@@ -169,11 +171,13 @@ export class PlayerTournamentRunRepository extends Repository<PlayerTournamentRu
                                    'tournamentName', pt_sub.tournament_name,
                                    'dates', pt_sub.dates,
                                    'placement', pt_sub.placement,
-                                   'charactersUsed', pt_sub.characters_used
+                                   'charactersUsed', pt_sub.characters_used,
+                                   'gamePatch', pt_sub.game_patch,
+                                   'gameSeason', pt_sub.game_season
                                ) ORDER BY pt_sub.dates DESC
                            )
                     FROM (
-                             SELECT DISTINCT tournament_id, tournament_name, dates, placement, characters_used
+                             SELECT DISTINCT tournament_id, tournament_name, dates, placement, characters_used, game_patch, game_season
                              FROM player_tournaments pt_inner
                              WHERE pt_inner.player_id = pt.player_id
                          ) pt_sub
