@@ -16,6 +16,7 @@ import { EncryptionModule } from "../../authentication/encryption/encryption.mod
 import { SFSixGamePatchModule } from "../../domain/sfsixGamePatch/sfsixGamePatch.module";
 import { TournamentManagerService } from "./tournamentManager.service";
 import { TournamentManagerRepository } from "./tournamentManager.repository";
+import { StartggApiModule } from "../startggApi/startggApi.module";
 
 @Module({
     imports: [
@@ -27,6 +28,7 @@ import { TournamentManagerRepository } from "./tournamentManager.repository";
         PlayerTournamentRunModule,
         SFSixGamePatchModule,
         StartggUserModule,
+        StartggApiModule,
         EncryptionModule,
 
         PassportModule.register({ defaultStrategy: "jwt" }),

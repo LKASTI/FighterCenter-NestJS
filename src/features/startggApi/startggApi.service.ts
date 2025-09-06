@@ -1,7 +1,7 @@
 import { BadRequestException, Inject, Injectable, Scope } from "@nestjs/common";
 import { GraphQLClient } from "graphql-request";
-import { Event, QueryEventArgs } from "./startggApi.graphql";
-import { GetEventQuery, GetEventTop8PlayerDataQuery } from "./startggApi.queries";
+import { Event, QueryEventArgs, SetConnection, Tournament } from "./startggApi.graphql";
+import { GetEventQuery, GetEventTop8PlayerDataQuery, GetTournamentSetsQuery } from "./startggApi.queries";
 import { REQUEST } from "@nestjs/core";
 import { Request } from "express";
 import { StartggUser } from "../../domain/entities";
@@ -56,5 +56,30 @@ export class StartggApiService {
         const variables: QueryEventArgs = { id: eventId };
         const response: { event: Event } = await client.request(query, variables);
         return response.event;
+    }
+
+    public async getTournamentSets(
+        slug: string,
+        eventSlug: string,
+        eventId: string,
+        page: number = 1,
+        perPage: number = 20
+    ): Promise<SetConnection | null> {
+        const client = this.initializeGqlClient();
+
+        const variables = {
+            slug,
+            eventSlug,
+            eventId,
+            page,
+            perPage
+        };
+
+        const response: { tournament: Tournament } = await client.request(
+            GetTournamentSetsQuery,
+            variables
+        );
+
+        return response.tournament?.events?.[0]?.sets || null;
     }
 }

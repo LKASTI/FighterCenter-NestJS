@@ -51,6 +51,10 @@ import { SFSixGamePatchService } from "../../domain/sfsixGamePatch/sfsixGamePatc
 import { FindSFSixGamePatchDTO } from "../../dtos/sfsixGamePatch.dto";
 import { SFSixGamePatch } from "../../domain/entities/sfsixGamePatch.entity";
 import { toWords } from "number-to-words";
+import { InjectDataSource } from "@nestjs/typeorm";
+import { DataSource } from "typeorm";
+import { StartggApiService } from "../startggApi/startggApi.service";
+import { Set as StartGGSet } from "../startggApi/startggApi.graphql"
 
 @Injectable()
 export class TournamentDataParserService {
@@ -64,7 +68,11 @@ export class TournamentDataParserService {
         private readonly sfsixGamePatchService: SFSixGamePatchService,
 
         private readonly httpService: HttpService,
+        private readonly startggApiService: StartggApiService,
+
         private readonly configService: ConfigService,
+
+        @InjectDataSource() private dataSource: DataSource,
 
         private readonly encryptionService: EncryptionService
     ) {}
@@ -188,12 +196,16 @@ export class TournamentDataParserService {
                 );
 
             // Create players
-            await this.createPlayers(newTournament.tournamentID, setsData);
+            console.time("createPlayers");
+            // await this.createPlayers(newTournament.tournamentID, setsData);
+            const playerIdMap = await this.createPlayersBatched(newTournament.tournamentID, setsData);
+            console.timeEnd("createPlayers");
 
             // Create Sets and Matches
             const res = await this.createSets(
                 setsData,
                 newTournament.tournamentID,
+                playerIdMap
             );
 
             // return stats
@@ -206,6 +218,7 @@ export class TournamentDataParserService {
 
     private initializeVariables(params: StartGGTournamentDataV2ParserDTO, req: any): void {
         this.req = req;
+        this.startggApiToken = process.env.STARTGG_API_KEY
         if(this.req && this.req.user && this.req.user.startggEncryptedToken) {
             this.startggApiToken = this.encryptionService.decrypt((req.user as StartggUser).startggEncryptedToken);
             if(!this.startggApiToken) {
@@ -256,7 +269,7 @@ export class TournamentDataParserService {
     }
 
     private parseStartGGSetNodeRecord(
-        set: StartGGTournamentSetNodeRecord,
+        set: StartGGSet,
     ): StartGGTournamentSetRecord {
         let round_name = set["fullRoundText"];
 
@@ -325,7 +338,7 @@ export class TournamentDataParserService {
         }
 
         let winner_name =
-            set.winnerId === player_one_entrant_id
+            set.winnerId.toString() === player_one_entrant_id
                 ? player_one_gamerTag
                 : player_two_gamerTag;
 
@@ -338,7 +351,7 @@ export class TournamentDataParserService {
                 // parse winner name, and match number
                 let order_num = game.orderNum;
                 winner_name =
-                    game.winnerId === player_one_entrant_id
+                    game.winnerId?.toString() === player_one_entrant_id
                         ? player_one_gamerTag
                         : player_two_gamerTag;
 
@@ -380,7 +393,7 @@ export class TournamentDataParserService {
 
                 // add to list of matches
                 matches.push({
-                    match_id: game.id,
+                    match_id: parseInt(game.id),
                     match_number: order_num,
                     player_one_character: player_one_character,
                     player_two_character: player_two_character,
@@ -390,7 +403,7 @@ export class TournamentDataParserService {
         }
 
         const newSet: StartGGTournamentSetRecord = {
-            set_id: set.id,
+            set_id: parseInt(set.id),
 
             player_one_name: player_one_gamerTag,
             player_two_name: player_two_gamerTag,
@@ -404,8 +417,8 @@ export class TournamentDataParserService {
             player_one_seed: player_one_seed,
             player_two_seed: player_two_seed,
 
-            player_one_startgg_id: player_one_id,
-            player_two_startgg_id: player_two_id,
+            player_one_startgg_id: parseInt(player_one_id),
+            player_two_startgg_id: parseInt(player_two_id),
 
             player_one_characters: player_one_characters,
             player_two_characters: player_two_characters,
@@ -446,23 +459,20 @@ export class TournamentDataParserService {
         while (goToNextPage && setCount <= this.setLimit) {
             console.log("Page " + String(page));
             // Query StartGG for tournament sets
-            const setResponse = await this.queryStartGGSets(
+            const setResponse = await this.startggApiService.getTournamentSets(
                 slug,
-                page,
-                perPage,
-                startggEventID,
                 startggEventSlug,
-            );
-            if (!setResponse || !setResponse.data.data)
+                startggEventID.toString(),
+                page,
+                perPage
+            )
+            if (!setResponse?.nodes || setResponse.nodes.length === 0)
                 throw new NotFoundException(
                     `No data received from set query for eventId: ${startggEventID} and slug: ${slug}.\nTry increasing the delay or lowering the perPage count.`,
                 );
-            // Access set objects in nodes
-            const nodes: StartGGTournamentSetNodeRecord[] =
-                setResponse.data.data.tournament.events[0].sets.nodes;
             setCount += perPage;
             // Parse sets into StartGGTournamentSetRecords
-            for (const set of nodes) {
+            for (const set of setResponse.nodes) {
                 // If a play is null, bye skip
                 if (set.slots.length !== 2 || !set.winnerId) continue;
 
@@ -476,7 +486,7 @@ export class TournamentDataParserService {
             // Delay to not overwhelm startgg API
             await this.delay(this.startggRequestDelayMs);
 
-            if (nodes.length < perPage) goToNextPage = false;
+            if (setResponse.nodes.length < perPage) goToNextPage = false;
             else page += 1;
         }
         console.log(
@@ -484,65 +494,6 @@ export class TournamentDataParserService {
         );
 
         return setsData;
-    }
-
-    private async queryStartGGSets(
-        slug: string,
-        page: number,
-        perPage: number,
-        startggEventID: number,
-        startggEventSlug: string,
-    ) {
-        const startggSetsAPIcall = async () => {
-            return await firstValueFrom(
-                this.httpService.post(
-                    startGGApiUrl,
-                    JSON.stringify({
-                        query: startggTournamentSetsBody,
-                        variables: {
-                            slug: slug,
-                            page: page,
-                            perPage: perPage,
-                            eventId: startggEventID,
-                            eventSlug: startggEventSlug,
-                        },
-                    }),
-                    {
-                        headers: {
-                            "Content-Type": "application/json",
-                            Authorization: `Bearer ${this.startggApiToken}`,
-                        },
-                    },
-                ),
-            );
-        };
-
-        const MAX_ATTEMPTS = 10;
-        const RETRY_DELAY = 1000;
-
-        for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
-            try {
-                const response = await startggSetsAPIcall();
-                return response;
-            } catch (error) {
-                console.log(`StartGG sets API call attempt ${attempt} failed.`);
-
-                // If this was our last attempt, rethrow or return null
-                if (attempt >= MAX_ATTEMPTS) {
-                    console.error("Max retry attempts reached:", error);
-                    return null;
-                }
-
-                // Otherwise wait before next attempt
-                this.startggRequestDelayMs =
-                    attempt * 0.5 * 1000 + this.startggRequestDelayMs;
-                console.log(`Retrying in ${RETRY_DELAY}ms...`);
-
-                // Wait for the delay using a promise instead of setTimeout
-                await this.delay(RETRY_DELAY);
-            }
-        }
-        return null;
     }
 
     private async queryStartGGEventData(
@@ -651,98 +602,159 @@ export class TournamentDataParserService {
         return newTourney;
     }
 
-    private async createPlayers(
+    private async createPlayersBatched(
         tournamentID: number,
         setsData: StartGGTournamentSetRecord[],
     ) {
-        for (const set of setsData) {
-            // Initialize player data objects
-            const playerOne = {
-                playerName: set.player_one_name,
-                playerCountry: set.player_one_country
-                    ? set.player_one_country
-                    : null,
-                playerStartGGId: set.player_one_startgg_id,
-                playerPlacement: set.player_one_placement,
-                playerSeed: set.player_one_seed,
-                playerProfileImageURL: set.player_one_profile_image_url
-                    ? set.player_one_profile_image_url
-                    : null,
-            };
-            const playerTwo = {
-                playerName: set.player_two_name,
-                playerCountry: set.player_two_country
-                    ? set.player_two_country
-                    : null,
-                playerStartGGId: set.player_two_startgg_id,
-                playerPlacement: set.player_two_placement,
-                playerSeed: set.player_two_seed,
-                playerProfileImageURL: set.player_two_profile_image_url
-                    ? set.player_two_profile_image_url
-                    : null,
-            };
-            const players = [playerOne, playerTwo];
+        const playerRepo = this.dataSource.getRepository(Player);
+        const ptrRepo = this.dataSource.getRepository(PlayerTournamentRun);
 
-            for (const {
-                playerName,
-                playerCountry,
-                playerStartGGId,
-                playerPlacement,
-                playerSeed,
-                playerProfileImageURL,
-            } of players) {
-                let player: Player;
-                // Get player if already exist by startggid otherwise create
-                player =
-                    await this.playerService.findByStartGGId(playerStartGGId);
-                if (!player) {
-                    player = await this.playerService.create({
-                        playerName: playerName,
-                        startggPlayerID: playerStartGGId,
-                        country: playerCountry,
-                        startggProfileImageURL: playerProfileImageURL,
-                    });
-                    // Update stats
-                    this.responseStats["playerIDs"].push(player.playerID);
-                } else {
-                    // Update profile image and country if player already exists
+        // Step 1: Collect all unique players with their data
+        const playersMap = new Map<number, {
+            name: string;
+            country: string;
+            placement: number;
+            seed: number;
+            profileImageUrl: string;
+            startggId: number;
+        }>();
+
+        for (const set of setsData) {
+            // Collect player one data
+            if (!playersMap.has(set.player_one_startgg_id)) {
+                playersMap.set(set.player_one_startgg_id, {
+                    name: set.player_one_name,
+                    country: set.player_one_country || null,
+                    placement: set.player_one_placement,
+                    seed: set.player_one_seed,
+                    profileImageUrl: set.player_one_profile_image_url || null,
+                    startggId: set.player_one_startgg_id
+                });
+            }
+
+            // Collect player two data
+            if (!playersMap.has(set.player_two_startgg_id)) {
+                playersMap.set(set.player_two_startgg_id, {
+                    name: set.player_two_name,
+                    country: set.player_two_country || null,
+                    placement: set.player_two_placement,
+                    seed: set.player_two_seed,
+                    profileImageUrl: set.player_two_profile_image_url || null,
+                    startggId: set.player_two_startgg_id
+                });
+            }
+        }
+
+        const playerStartggIds = Array.from(playersMap.keys());
+
+        // Step 2: Find existing players in single query
+        const existingPlayers = await playerRepo
+            .createQueryBuilder('player')
+            .select(['player.playerID', 'player.startggPlayerID'])
+            .where('player.startggPlayerID IN (:...ids)', { ids: playerStartggIds })
+            .getRawMany();
+
+        const existingPlayerMap = new Map(
+            existingPlayers.map(p => [p.player_startgg_player_id, p.player_player_id])
+        );
+
+        // Step 3: Bulk create missing players
+        const missingPlayerData = [];
+        for (const [startggId, playerData] of playersMap) {
+            if (!existingPlayerMap.has(startggId)) {
+                missingPlayerData.push({
+                    playerName: playerData.name,
+                    startggPlayerId: startggId,
+                    country: playerData.country,
+                    startggProfileImageURL: playerData.profileImageUrl
+                });
+            }
+        }
+
+        if (missingPlayerData.length > 0) {
+            const insertResult = await playerRepo
+                .createQueryBuilder()
+                .insert()
+                .values(missingPlayerData)
+                .returning(['playerID', 'startggPlayerID'])
+                .execute();
+
+            // Update existing player map with new players
+            insertResult.raw.forEach(player => {
+                existingPlayerMap.set(player.startgg_player_id, player.player_id);
+                // Update stats like original method
+                this.responseStats["playerIDs"].push(player.player_id);
+            });
+        }
+
+        // Step 4: Handle player updates (profile image and country) if flags are set
+        if (this.mustUpdatePlayerCountry || this.mustUpdatePlayerProfileImage) {
+            const updatePromises = [];
+            for (const [startggId, playerData] of playersMap) {
+                const playerId = existingPlayerMap.get(startggId);
+                if (playerId && existingPlayers.some(p => p.player_startgg_player_id === startggId)) {
+                    const updateData: any = {};
                     if (this.mustUpdatePlayerCountry) {
-                        await this.playerService.update(player.playerID, {
-                            country: playerCountry,
-                        });
+                        updateData.country = playerData.country;
                     }
                     if (this.mustUpdatePlayerProfileImage) {
-                        await this.playerService.update(player.playerID, {
-                            startggProfileImageURL: playerProfileImageURL,
-                        });
+                        updateData.startggProfileImageURL = playerData.profileImageUrl;
+                    }
+
+                    if (Object.keys(updateData).length > 0) {
+                        updatePromises.push(
+                            this.playerService.update(playerId, updateData)
+                        );
                     }
                 }
+            }
+            await Promise.all(updatePromises);
+        }
 
-                let playerTournamentRun: PlayerTournamentRun;
-                // player tournament run shouldn't already exist but checking anways
-                playerTournamentRun =
-                    await this.playerTournamentRunService.findByPlayerAndTournamentID(
-                        player.playerID,
-                        tournamentID,
-                    );
-                if (!playerTournamentRun) {
-                    playerTournamentRun =
-                        await this.playerTournamentRunService.create({
-                            playerID: player.playerID,
-                            tournamentID: tournamentID,
-                            playerEntryName: playerName,
-                            placement: playerPlacement,
-                            seed: playerSeed,
-                        });
-                    // Update stats
-                    this.responseStats["playerTournamentRunIDs"].push([
-                        player.playerID,
-                        tournamentID,
-                    ]);
-                } else {
+        // Step 5: Check existing player tournament runs
+        const existingPTRs = await this.dataSource
+            .createQueryBuilder()
+            .select(['ptr.playerID', 'ptr.tournamentID'])
+            .from(PlayerTournamentRun, 'ptr')  // Using PlayerTournamentRun entity instead of 'player_tournament_run'
+            .where('ptr.playerID IN (:...playerIds)', { playerIds: Array.from(existingPlayerMap.values()) })
+            .andWhere('ptr.tournamentID = :tournamentId', { tournamentId: tournamentID })
+            .getRawMany();
+
+        const existingPTRSet = new Set(
+            existingPTRs.map(ptr => `${ptr.ptr_player_id}-${ptr.ptr_tournament_id}`)
+        );
+
+        // Step 6: Bulk create missing player tournament runs
+        const newPTRData = [];
+        for (const [startggId, playerData] of playersMap) {
+            const playerId = existingPlayerMap.get(startggId);
+            if (playerId) {
+                const ptrKey = `${playerId}-${tournamentID}`;
+                if (!existingPTRSet.has(ptrKey)) {
+                    newPTRData.push({
+                        playerID: playerId,
+                        tournamentID: tournamentID,
+                        playerEntryName: playerData.name,
+                        placement: playerData.placement,
+                        seed: playerData.seed,
+                        charactersUsed: []
+                    });
+
+                    // Update stats like original method
+                    this.responseStats["playerTournamentRunIDs"].push([playerId, tournamentID]);
                 }
             }
         }
+
+        if (newPTRData.length > 0) {
+            await ptrRepo
+                .createQueryBuilder()
+                .insert()
+                .values(newPTRData)
+                .execute();
+        }
+
+        return existingPlayerMap; // Return startggId -> playerId mapping for use in createSets
     }
 
     private async createMatches(
@@ -769,6 +781,7 @@ export class TournamentDataParserService {
     private async createSets(
         setsData: StartGGTournamentSetRecord[],
         tournamentID: number,
+        playerIdMap: Map<number, number>,
     ) {
         for (const set of setsData) {
             // Check to make sure set doesn't already exist
@@ -779,41 +792,30 @@ export class TournamentDataParserService {
                     `Set with startgg_set_id ${set.set_id} already exists.\nHas this tournament already been parsed?\nIs there a conflicting startgg_set_id?`,
                 );
 
-            // Retrieve players
-            const playerOne = await this.playerService.findByStartGGId(
-                set.player_one_startgg_id,
-            );
-            const playerTwo = await this.playerService.findByStartGGId(
-                set.player_two_startgg_id,
-            );
-            if (!playerOne || !playerTwo)
+            const playerOneId = playerIdMap.get(set.player_one_startgg_id);
+            const playerTwoId = playerIdMap.get(set.player_two_startgg_id);
+            if (!playerOneId || !playerTwoId)
                 throw new NotFoundException(
                     `Either player ${set.player_one_name} with startgg_player_id ${set.player_one_startgg_id} or ${set.player_two_name} with startgg_player_id ${set.player_two_startgg_id} does not exist`,
                 );
 
             // Initialize payload
             const setQuery = {
-                playerOneID: playerOne.playerID,
-                playerTwoID: playerTwo.playerID,
+                playerOneID: playerOneId,
+                playerTwoID: playerTwoId,
                 tournamentID: tournamentID,
                 startggSetID: set.set_id,
                 winnerName: set.winner_name,
                 winnerID:
                     set.player_one_score > set.player_two_score
-                        ? playerOne.playerID
-                        : playerTwo.playerID,
+                        ? playerOneId
+                        : playerTwoId,
             };
 
-            // Parse player scores and add matchesToWin
-            // const playerOneScore = (set.player_one_score === null)? 0 : parseInt(set.player_one_score)
-            // const playerTwoScore = (set.player_two_score === null)? 0 : parseInt(set.player_two_score)
-            // const matchesToWin = Math.max(playerOneScore, playerTwoScore)
-            // if(matchesToWin !== 0)
+            // Add matchesToWin
             setQuery["matchesToWin"] = set.matches_to_win;
-
             // Add bracket name
             setQuery["bracketName"] = set.phase_name;
-
             // Add bracket round name
             setQuery["bracketRound"] = set.round_name;
 
@@ -829,7 +831,7 @@ export class TournamentDataParserService {
             ) {
                 p1Res =
                     await this.playerTournamentRunService.updateCharactersUsed(
-                        playerOne.playerID,
+                        playerOneId,
                         tournamentID,
                         playerOneCharacters,
                     );
@@ -842,7 +844,7 @@ export class TournamentDataParserService {
             ) {
                 p2Res =
                     await this.playerTournamentRunService.updateCharactersUsed(
-                        playerTwo.playerID,
+                        playerTwoId,
                         tournamentID,
                         playerTwoCharacters,
                     );
@@ -855,110 +857,5 @@ export class TournamentDataParserService {
             await this.createMatches(set.matches, newSet.tournamentSetID);
         }
     }
-    //#endregion
-
-    //#region DEPRECATED
-    private async parseAndCreatePlayersDEPRECATED(
-        tournamentId: number,
-        playersData: StartGGTournamentPlayerRecord[],
-    ) {
-        for (const playerRecord of playersData) {
-            let player: Player;
-            // Get player if already exist by startggid otherwise create
-            player = await this.playerService.findByStartGGId(playerRecord.ID);
-            if (!player) {
-                player = await this.playerService.create({
-                    playerName: playerRecord.name,
-                    startggPlayerID: playerRecord.ID,
-                });
-                // Update stats
-                this.responseStats["playerIDs"].push(player.playerID);
-            }
-
-            let playerTournamentRun: PlayerTournamentRun;
-            // player tournament run shouldn't already exist but checking anways
-            playerTournamentRun =
-                await this.playerTournamentRunService.findByPlayerAndTournamentID(
-                    player.playerID,
-                    tournamentId,
-                );
-            if (!playerTournamentRun) {
-                playerTournamentRun =
-                    await this.playerTournamentRunService.create({
-                        playerID: player.playerID,
-                        tournamentID: tournamentId,
-                        playerEntryName: playerRecord.name,
-                        placement: parseInt(playerRecord.placement),
-                        seed: parseInt(playerRecord.seed),
-                    });
-                // Update stats
-                this.responseStats["playerTournamentRunIDs"].push([
-                    player.playerID,
-                    tournamentId,
-                ]);
-            }
-        }
-    }
-
-    // (DEPRECATED) Use only with sets JSON files
-    // public async parseStartGGTournamentData(
-    //     params: StartGGTournamentDataParserDTO,
-    // ) {
-    //     try {
-    //         // Retrieve sets and players files
-    //         const setsFilePath = path.join(
-    //             process.cwd(),
-    //             this.setsPath,
-    //             `${params.tournamentSetsFileName}.json`,
-    //         );
-    //         // const playersFilePath = path.join(process.cwd(), this.playersPath, `${params.tournamentPlayersFileName}.json`) // DEPRECATED
-    //
-    //         const setsFileContent = await fs.readFile(setsFilePath, "utf-8");
-    //         // const playersFileContent = await fs.readFile(playersFilePath, 'utf-8') // DEPRECATED
-    //
-    //         const setsJSONdata: StartGGTournamentSetRecord[] =
-    //             JSON.parse(setsFileContent);
-    //         // const playersJSONdata: StartGGTournamentPlayerRecord[] = JSON.parse(playersFileContent) // DEPRECATED
-    //
-    //         // Create the event
-    //         const newEvent = await this.createEvent(
-    //             params.eventName,
-    //             params.eventRegion,
-    //             params.eventDates,
-    //         );
-    //
-    //         // Create the tournament
-    //         const newTournament = await this.createTournament({
-    //             tournamentName: params.tournamentName,
-    //             dates: params.tournamentDates,
-    //             gameName: params.gameName,
-    //             gameSeason: null,
-    //             gamePatch: null,
-    //             vodLink: params.vodLink,
-    //             tournamentType: params.tournamentType,
-    //             isOnline: Boolean(params.isOnline),
-    //             eventID: newEvent.eventID,
-    //         });
-    //         if (!newTournament)
-    //             throw new BadRequestException(
-    //                 "Tournament for given data already exists",
-    //             );
-    //
-    //         // Parse players
-    //         await this.createPlayers(newTournament.tournamentID, setsJSONdata);
-    //
-    //         // Create Sets and Matches
-    //         const res = await this.createSets(
-    //             setsJSONdata,
-    //             newTournament.tournamentID,
-    //         );
-    //
-    //         // return stats
-    //         return this.responseStats;
-    //     } catch (error) {
-    //         console.error(error);
-    //         throw error;
-    //     }
-    // }
     //#endregion
 }

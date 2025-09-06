@@ -1,5 +1,63 @@
 import gql from "graphql-tag";
 
+export const GetTournamentSetsQuery = gql`
+  query GetTournamentSets($slug: String!, $eventSlug: String!, $eventId: ID!, $page: Int!, $perPage: Int!) {
+    tournament(slug: $slug) {
+      events(filter: {videogameId: 43868, slug: $eventSlug, id: $eventId}) {
+        sets(page: $page, perPage: $perPage, sortType: RECENT) {
+          nodes {
+            id
+            displayScore
+            winnerId
+            round
+            fullRoundText
+            totalGames
+            setGamesType
+            phaseGroup {
+              phase {
+                name
+              }
+            }
+            slots {
+              entrant {
+                id
+                name
+                initialSeedNum
+                standing {
+                  placement
+                }
+                participants {
+                  gamerTag
+                  player {
+                    id
+                    user {
+                      location {
+                        country
+                      }
+                      images(type: "profile") {
+                        url
+                      }
+                    }
+                  }
+                }
+              }
+            }
+            games {
+              id
+              winnerId
+              orderNum
+              selections {
+                entrant { id }
+                character { name }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
 export const GetEventQuery = gql`
             query GetEvent($slug: String!) {
                 event(slug: $slug) {
