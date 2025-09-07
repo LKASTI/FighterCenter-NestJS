@@ -75,11 +75,18 @@ export class StartggApiService {
             perPage
         };
 
-        const response: { tournament: Tournament } = await client.request(
-            GetTournamentSetsQuery,
-            variables
-        );
+        try {
+            const response: { tournament: Tournament } = await client.request(
+                GetTournamentSetsQuery,
+                variables
+            );
 
-        return response.tournament?.events?.[0]?.sets || null;
+            return response.tournament?.events?.[0]?.sets || null;
+        } catch (error) {
+            if ((error.response?.message as string).includes("Your query complexity is too high")) {
+                throw new Error('RATE_LIMIT_EXCEEDED');
+            }
+            throw error;
+        }
     }
 }

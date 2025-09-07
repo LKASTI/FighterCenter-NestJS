@@ -5,6 +5,9 @@ export const GetTournamentSetsQuery = gql`
     tournament(slug: $slug) {
       events(filter: {videogameId: 43868, slug: $eventSlug, id: $eventId}) {
         sets(page: $page, perPage: $perPage, sortType: RECENT) {
+          pageInfo {
+              totalPages
+          }  
           nodes {
             id
             displayScore

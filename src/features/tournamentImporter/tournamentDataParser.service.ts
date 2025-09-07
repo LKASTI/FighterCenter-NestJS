@@ -8,24 +8,16 @@ import {
 import { EventService } from "../../domain/event/event.service";
 import { TournamentService } from "../../domain/tournament/tournament.service";
 import { PlayerService } from "../../domain/player/player.service";
-import { PlayerTournamentRunService } from "../../domain/playerTournamentRun/playerTournamentRun.service";
-import { TournamentSetService } from "../../domain/tournamentSet/tournamentSet.service";
-import { TournamentMatchService } from "../../domain/tournamentMatch/tournamentMatch.service";
 import {
-    StartGGTournamentDataParserDTO,
     StartGGTournamentDataV2ParserDTO,
 } from "src/dtos/tournamentDataParser.dto";
 import {
-    StartGGTournamentPlayerRecord,
     StartGGTournamentSetRecord,
     StartGGTournamentMatchRecord,
     StartGGEventRecord,
     StartGGTournamentDataRecord,
-    StartGGTournamentSetNodeRecord,
 } from "src/features/tournamentImporter/tournamentDataParsingTypes";
 
-import * as path from "path";
-import * as fs from "fs/promises";
 import { Event } from "src/domain/entities/event.entity";
 import { Tournament } from "src/domain/entities/tournament.entity";
 import { CreateTournamentDTO } from "src/dtos/tournament.dto";
@@ -33,16 +25,12 @@ import { Player } from "src/domain/entities/player.entity";
 import { PlayerTournamentRun } from "src/domain/entities/playerTournamentRun.entity";
 import { TournamentSet } from "src/domain/entities/tournamentSet.entity";
 import { TournamentMatch } from "src/domain/entities/tournamentMatch.entity";
-import { CreateTournamentSetDTO } from "src/dtos/tournamentSet.dto";
-import { CreateTournamentMatchDTO } from "src/dtos/tournamentMatch.dto";
 import { HttpService } from "@nestjs/axios";
 import {
     startGGApiUrl,
     startggTournamentEventNamesBody,
     startggTournamentEventsBody,
-    startggTournamentSetsBody,
 } from "src/features/tournamentImporter/tournamentDataParsing.static";
-import { ConfigService } from "@nestjs/config";
 
 import { firstValueFrom } from "rxjs";
 import { EncryptionService } from "../../authentication/encryption/encryption.service";
@@ -54,7 +42,12 @@ import { toWords } from "number-to-words";
 import { InjectDataSource } from "@nestjs/typeorm";
 import { DataSource } from "typeorm";
 import { StartggApiService } from "../startggApi/startggApi.service";
-import { Set as StartGGSet } from "../startggApi/startggApi.graphql"
+import { Set as StartGGSet, SetConnection } from "../startggApi/startggApi.graphql"
+
+interface BatchJob {
+    page: number;
+    promise: Promise<SetConnection | null>;
+}
 
 @Injectable()
 export class TournamentDataParserService {
@@ -62,26 +55,29 @@ export class TournamentDataParserService {
         private readonly eventService: EventService,
         private readonly tournamentService: TournamentService,
         private readonly playerService: PlayerService,
-        private readonly playerTournamentRunService: PlayerTournamentRunService,
-        private readonly tournamentSetService: TournamentSetService,
-        private readonly tournamentMatchService: TournamentMatchService,
         private readonly sfsixGamePatchService: SFSixGamePatchService,
 
         private readonly httpService: HttpService,
         private readonly startggApiService: StartggApiService,
-
-        private readonly configService: ConfigService,
 
         @InjectDataSource() private dataSource: DataSource,
 
         private readonly encryptionService: EncryptionService
     ) {}
 
-    private readonly setsPath: string =
-        "src/TEMPDATA/TournamentData/StartGG/Sets";
-    // private playersPath: string = 'src/TEMPDATA/TournamentData/StartGG/Players' // DEPRECATED
+    private readonly BATCH_REQUEST_CONFIG = {
+        perPage: 23,           // Optimal for 1000 object limit
+        concurrency: 2,        // Safe for rate limits
+        startupDelay: 2000,    // ms - Safe startup spacing
+        steadyStateDelay: 1000, // ms - Steady state spacing
+        maxRetries: 3
+    };
 
-    // Initialize response stats
+    // page number -> attempts
+    private retryAttempts = new Map<number, number>();
+    private failedBatches = new Set<number>();
+    private consecutiveFailures = 0;
+
     private readonly responseStats = {
         eventID: null,
         tournamentID: null,
@@ -92,13 +88,8 @@ export class TournamentDataParserService {
         setsPerformance: [],
     };
 
-    private startggPerPage = 20;
-    private startggRequestDelayMs = 1000;
-
     private mustUpdatePlayerProfileImage: boolean = false;
     private mustUpdatePlayerCountry: boolean = false;
-
-    private setLimit: number = 999999999;
 
     private req: any;
     private startggApiToken: string;
@@ -112,18 +103,7 @@ export class TournamentDataParserService {
             this.initializeVariables(params, req);
 
             // Parse startgg url
-            const startggUrlSplit = params.startggUrl.split("/");
-            let startggSlug = params.startggSlug
-                ? params.startggSlug
-                : startggUrlSplit[startggUrlSplit.indexOf("tournament") + 1];
-            let startggEventSlug = params.startggEventSlug
-                ? params.startggEventSlug
-                : startggUrlSplit[startggUrlSplit.indexOf("event") + 1];
-
-            if (!startggSlug || !startggEventSlug)
-                throw new BadRequestException(
-                    `StartGG Slugs could not be parsed`,
-                );
+            const { startggSlug, startggEventSlug } = this.extractSlugsFromUrl(params);
 
             // Check if there are multiple tournaments for this event
             const hasMultipleTournaments =
@@ -187,30 +167,22 @@ export class TournamentDataParserService {
                 `New Tournament created:\n\tid: ${newTournament.tournamentID}\n\tname:${newTournament.tournamentName}`,
             );
 
-            // Get and parse players and set data from startgg
-            const setsData: StartGGTournamentSetRecord[] =
-                await this.getStartGGSetsData(
-                    startggSlug,
-                    startggEventID,
-                    startggEventSlug,
-                );
+            if(tData.numEntrants > 500) {
+                this.BATCH_REQUEST_CONFIG.perPage = 20;
+            }
 
-            // Create players
-            console.time("createPlayers");
-            // await this.createPlayers(newTournament.tournamentID, setsData);
-            const playerIdMap = await this.createPlayersBatched(newTournament.tournamentID, setsData);
-            console.timeEnd("createPlayers");
-
-            // Create Sets and Matches
-            const res = await this.createSets(
-                setsData,
-                newTournament.tournamentID,
-                playerIdMap
-            );
+            // Execute batch processing (players, PTRs, sets, matches)
+            await this.processDataBatch(
+                startggSlug,
+                startggEventSlug,
+                startggEventID.toString(),
+                newTournament.tournamentID
+            )
 
             // return stats
             return this.responseStats;
         } catch (error) {
+            console.error(`❌ Tournament parsing failed:`, error.message)
             console.error(error);
             throw error;
         }
@@ -227,18 +199,28 @@ export class TournamentDataParserService {
                 );
             }
         }
-        // Initialize API request limiting fields (perPage, delay)
-        if (params.requestDelay)
-            this.startggRequestDelayMs = params.requestDelay;
-        if (params.perPageCount) this.startggPerPage = params.perPageCount;
         // Initialize updater fields
         if (params.mustUpdatePlayerProfileImage)
             this.mustUpdatePlayerProfileImage =
                 params.mustUpdatePlayerProfileImage;
         if (params.mustUpdatePlayerCountry)
             this.mustUpdatePlayerCountry = params.mustUpdatePlayerCountry;
-        // Initialize set limit for startgg api
-        if (params.setLimit) this.setLimit = params.setLimit;
+    }
+
+    private extractSlugsFromUrl(params: StartGGTournamentDataV2ParserDTO) {
+        const startggUrlSplit = params.startggUrl.split("/");
+        let startggSlug = params.startggSlug
+            ? params.startggSlug
+            : startggUrlSplit[startggUrlSplit.indexOf("tournament") + 1];
+        let startggEventSlug = params.startggEventSlug
+            ? params.startggEventSlug
+            : startggUrlSplit[startggUrlSplit.indexOf("event") + 1];
+
+        if (!startggSlug || !startggEventSlug)
+            throw new BadRequestException(
+                `StartGG Slugs could not be parsed`,
+            );
+        return { startggSlug, startggEventSlug };
     }
 
     private async getPatchAndSeason(startDate: Date, params: StartGGTournamentDataV2ParserDTO): Promise<[ patch: string, season: string ]> {
@@ -338,7 +320,8 @@ export class TournamentDataParserService {
         }
 
         let winner_name =
-            set.winnerId.toString() === player_one_entrant_id
+            // @ts-ignore
+            set.winnerId === player_one_entrant_id
                 ? player_one_gamerTag
                 : player_two_gamerTag;
 
@@ -351,7 +334,8 @@ export class TournamentDataParserService {
                 // parse winner name, and match number
                 let order_num = game.orderNum;
                 winner_name =
-                    game.winnerId?.toString() === player_one_entrant_id
+                    // @ts-ignore
+                    game.winnerId === player_one_entrant_id
                         ? player_one_gamerTag
                         : player_two_gamerTag;
 
@@ -440,60 +424,243 @@ export class TournamentDataParserService {
         return newSet;
     }
 
+    private processingPromises = new Set<Promise<void>>();
+
+    //#region Batch Processing
+    private async processDataBatch(
+        slug: string,
+        eventSlug: string,
+        eventId: string,
+        tournamentId: number
+    ) {
+        const activeBatches = new Map<number, BatchJob>();
+        let currentPage = 1;
+        let totalPages: number | null = null;
+        let processedBatches = 0;
+
+        console.log('🔄 Starting optimized batch processing...');
+
+        // Phase 1: Carefully spaced startup
+        currentPage = await this.startInitialBatches(
+            slug,
+            eventSlug,
+            eventId,
+            this.BATCH_REQUEST_CONFIG.concurrency,
+            activeBatches
+        );
+
+        // Phase 2: Process batches as they complete
+        while (activeBatches.size > 0) {
+            try {
+                const completedPage = await this.waitForNextBatch(activeBatches);
+                const setsResponse = await activeBatches.get(completedPage)!.promise;
+                activeBatches.delete(completedPage);
+                console.log(`� Batch ${completedPage} data retrieved`);
+
+                // Update total pages on first response
+                if (totalPages === null && setsResponse?.pageInfo?.totalPages) {
+                    totalPages = setsResponse.pageInfo.totalPages;
+                    console.log(`📊 Total pages to process: ${totalPages}`);
+                }
+
+                // Process this batch immediately (don't await - parallel processing)
+                if (setsResponse?.nodes?.length) {
+                    const processingPromise = this.processBatch(setsResponse.nodes, tournamentId, ++processedBatches, totalPages);
+                    this.processingPromises.add(processingPromise);
+                    // Clean up completed promises
+                    processingPromise.finally(() => {
+                        this.processingPromises.delete(processingPromise);
+                    });
+
+                    // Limit concurrent processing
+                    if (this.processingPromises.size >= 3) {
+                        // Wait for at least one to complete before starting next API call
+                        await Promise.race(this.processingPromises);
+                    }
+                }
+
+                // Start next batch if available
+                if (totalPages && currentPage <= totalPages) {
+                    await this.delay(this.BATCH_REQUEST_CONFIG.steadyStateDelay);
+                    this.startBatch(slug, eventSlug, eventId, currentPage, activeBatches);
+                    currentPage++;
+                }
+
+            } catch (error) {
+                await this.handleBatchError(error, slug, eventSlug, eventId, activeBatches);
+            }
+        }
+
+        console.log('✅ Tournament processing completed!');
+    }
+
+    private async handleBatchError(
+        error: any,
+        slug: string,
+        eventSlug: string,
+        eventId: string,
+        activeBatches: Map<number, BatchJob>,
+        failedPage?: number
+    ) {
+        if (error.message === 'RATE_LIMIT_EXCEEDED') {
+            console.log('⚠️  Rate limit hit, implementing backoff...');
+            this.consecutiveFailures++;
+            const retryCount = this.retryAttempts.get(failedPage || 0) || 0;
+
+            if (retryCount < 2) { // Allow 2 immediate retries
+                // Immediate retry with exponential backoff + jitter
+                const baseDelay = 3000 * Math.pow(1.2, retryCount);
+                const jitter = Math.random() * 1000;
+                const backoffTime = Math.min(30000, baseDelay + jitter);
+                // Decrease per page count
+                this.BATCH_REQUEST_CONFIG.perPage = Math.max(10, this.BATCH_REQUEST_CONFIG.perPage - 3);
+
+                await this.delay(backoffTime);
+                this.retryAttempts.set(failedPage || 0, retryCount + 1);
+
+                if (failedPage) {
+                    this.startBatch(slug, eventSlug, eventId, failedPage, activeBatches);
+                }
+            } else {
+                // Queue for end-of-process retry
+                if (failedPage) {
+                    this.failedBatches.add(failedPage);
+                    console.log(`📝 Page ${failedPage} queued for final retry phase`);
+                }
+            }
+
+            // Global rate limiting adjustment
+            if (this.consecutiveFailures >= 3) {
+                console.log('🐌 Slowing down all requests due to repeated failures');
+                this.BATCH_REQUEST_CONFIG.steadyStateDelay *= 1.2; // Slow down by 50%
+            }
+        } else {
+            console.error(`❌ Batch processing error:`, error.message);
+            throw error;
+        }
+    }
+
+    private async startInitialBatches(
+        slug: string,
+        eventSlug: string,
+        eventId: string,
+        concurrency: number,
+        activeBatches: Map<number, BatchJob>
+    ): Promise<number> {
+        let currentPage = 1;
+
+        console.log(`🟡 Starting ${concurrency} initial batches...`);
+
+        for (let i = 0; i < concurrency; i++) {
+            this.startBatch(slug, eventSlug, eventId, currentPage, activeBatches);
+            currentPage++;
+
+            // Rate limiting delay (except for last batch)
+            if (i < concurrency - 1) {
+                await this.delay(this.BATCH_REQUEST_CONFIG.startupDelay);
+            }
+        }
+
+        return currentPage;
+    }
+
+    private startBatch(
+        slug: string,
+        eventSlug: string,
+        eventId: string,
+        page: number,
+        activeBatches: Map<number, BatchJob>
+    ) {
+        // No await call - start request immediately
+        const promise = this.startggApiService.getTournamentSets(
+            slug,
+            eventSlug,
+            eventId,
+            page,
+            this.BATCH_REQUEST_CONFIG.perPage
+        );
+
+        activeBatches.set(page, { page, promise });
+        console.log(`📡 Started batch ${page}`);
+    }
+
+    private async waitForNextBatch(activeBatches: Map<number, BatchJob>): Promise<number> {
+        const batchPromises = Array.from(activeBatches.entries()).map(
+            async ([page, job]) => {
+                await job.promise;
+                return page;
+            }
+        );
+
+        // Returns the first promise to settle (rejected/resolved)
+        return Promise.race(batchPromises);
+    }
+
+    private async processBatch(
+        sets: StartGGSet[],
+        tournamentId: number,
+        batchNumber: number,
+        totalBatches: number | null
+    ) {
+        const validSets = sets.filter(set =>
+            set?.slots?.length === 2 && set.winnerId
+        );
+
+        if (validSets.length === 0) {
+            console.log(`⚠️  Batch ${batchNumber}: No valid sets found`);
+            return;
+        }
+
+        console.log(`🔄 Processing batch ${batchNumber}${totalBatches ? `/${totalBatches}` : ''}: ${validSets.length} sets`);
+
+        // Convert to internal format
+        const parsedSets = validSets.map(set => this.parseStartGGSetNodeRecord(set));
+        // Get player to characters used
+        const playerCharacterMap = this.aggregateCharactersByPlayer(parsedSets);
+        // Batch operations
+        const playerIdMap = await this.createPlayersAndPTRsBatched(tournamentId, parsedSets, playerCharacterMap);
+        // Create sets
+        const tournamentSetIdMap = await this.createTournamentSetsBatched(parsedSets, tournamentId, playerIdMap);
+        // Create matches
+        await this.createTournamentMatchesBatched(
+            parsedSets,
+            tournamentSetIdMap
+        )
+        console.log(`✅ Completed batch ${batchNumber}: ${parsedSets.length} sets processed`);
+    }
+    //#endregion
+
+    private aggregateCharactersByPlayer(setsData: StartGGTournamentSetRecord[]): Map<number, Set<string>> {
+        const playerCharacters = new Map<number, Set<string>>();
+
+        setsData.forEach(set => {
+            // Process entrant 1
+            if (set.player_one_startgg_id) {
+                if (!playerCharacters.has(set.player_one_startgg_id)) {
+                    playerCharacters.set(set.player_one_startgg_id, new Set<string>());
+                }
+                set.player_one_characters.forEach(char => {
+                    playerCharacters.get(set.player_one_startgg_id)!.add(char);
+                });
+            }
+
+            // Process entrant 2
+            if (set.player_two_startgg_id) {
+                if (!playerCharacters.has(set.player_two_startgg_id)) {
+                    playerCharacters.set(set.player_two_startgg_id, new Set<string>());
+                }
+                set.player_two_characters.forEach(char => {
+                    playerCharacters.get(set.player_two_startgg_id)!.add(char);
+                });
+            }
+        });
+
+        return playerCharacters;
+    }
+
     //#region StartGG API request calls
     private async delay(ms: number): Promise<void> {
         return new Promise((resolve) => setTimeout(resolve, ms));
-    }
-
-    private async getStartGGSetsData(
-        slug: string,
-        startggEventID: number,
-        startggEventSlug: string,
-    ): Promise<StartGGTournamentSetRecord[]> {
-        // Build list of JSON objects
-        const setsData: StartGGTournamentSetRecord[] = [];
-        let page = 1;
-        let perPage = this.startggPerPage;
-        let goToNextPage = true;
-        let setCount = 0;
-        while (goToNextPage && setCount <= this.setLimit) {
-            console.log("Page " + String(page));
-            // Query StartGG for tournament sets
-            const setResponse = await this.startggApiService.getTournamentSets(
-                slug,
-                startggEventSlug,
-                startggEventID.toString(),
-                page,
-                perPage
-            )
-            if (!setResponse?.nodes || setResponse.nodes.length === 0)
-                throw new NotFoundException(
-                    `No data received from set query for eventId: ${startggEventID} and slug: ${slug}.\nTry increasing the delay or lowering the perPage count.`,
-                );
-            setCount += perPage;
-            // Parse sets into StartGGTournamentSetRecords
-            for (const set of setResponse.nodes) {
-                // If a play is null, bye skip
-                if (set.slots.length !== 2 || !set.winnerId) continue;
-
-                // Get new set record and add to list
-                const parsedSetNode: StartGGTournamentSetRecord =
-                    this.parseStartGGSetNodeRecord(set);
-
-                setsData.push(parsedSetNode);
-            }
-
-            // Delay to not overwhelm startgg API
-            await this.delay(this.startggRequestDelayMs);
-
-            if (setResponse.nodes.length < perPage) goToNextPage = false;
-            else page += 1;
-        }
-        console.log(
-            `All sets for slug: ${slug} and eventID: ${startggEventID} and eventSlug: ${startggEventSlug} retrieved and parsed`,
-        );
-
-        return setsData;
     }
 
     private async queryStartGGEventData(
@@ -602,9 +769,10 @@ export class TournamentDataParserService {
         return newTourney;
     }
 
-    private async createPlayersBatched(
+    private async createPlayersAndPTRsBatched(
         tournamentID: number,
         setsData: StartGGTournamentSetRecord[],
+        playerCharacterMap: Map<number, Set<string>>
     ) {
         const playerRepo = this.dataSource.getRepository(Player);
         const ptrRepo = this.dataSource.getRepository(PlayerTournamentRun);
@@ -648,42 +816,35 @@ export class TournamentDataParserService {
         const playerStartggIds = Array.from(playersMap.keys());
 
         // Step 2: Find existing players in single query
-        const existingPlayers = await playerRepo
+        const existingPlayers = await this.dataSource
+            .getRepository(Player)
             .createQueryBuilder('player')
-            .select(['player.playerID', 'player.startggPlayerID'])
             .where('player.startggPlayerID IN (:...ids)', { ids: playerStartggIds })
-            .getRawMany();
+            .getMany();
 
         const existingPlayerMap = new Map(
-            existingPlayers.map(p => [p.player_startgg_player_id, p.player_player_id])
+            existingPlayers.map(p => [p.startggPlayerID, p.playerID])
         );
 
         // Step 3: Bulk create missing players
         const missingPlayerData = [];
         for (const [startggId, playerData] of playersMap) {
             if (!existingPlayerMap.has(startggId)) {
-                missingPlayerData.push({
-                    playerName: playerData.name,
-                    startggPlayerId: startggId,
-                    country: playerData.country,
-                    startggProfileImageURL: playerData.profileImageUrl
-                });
+                const player = new Player();
+                player.startggPlayerID = startggId;
+                player.playerName = playerData.name;
+                player.country = playerData.country;
+                player.startggProfileImageURL = playerData.profileImageUrl;
+                missingPlayerData.push(player);
             }
         }
-
         if (missingPlayerData.length > 0) {
-            const insertResult = await playerRepo
-                .createQueryBuilder()
-                .insert()
-                .values(missingPlayerData)
-                .returning(['playerID', 'startggPlayerID'])
-                .execute();
+            const savedPlayers = await playerRepo.save(missingPlayerData);
 
-            // Update existing player map with new players
-            insertResult.raw.forEach(player => {
-                existingPlayerMap.set(player.startgg_player_id, player.player_id);
-                // Update stats like original method
-                this.responseStats["playerIDs"].push(player.player_id);
+            // ✅ Direct access to entity properties
+            savedPlayers.forEach(player => {
+                existingPlayerMap.set(player.startggPlayerID, player.playerID);
+                this.responseStats["playerIDs"].push(player.playerID);
             });
         }
 
@@ -692,7 +853,7 @@ export class TournamentDataParserService {
             const updatePromises = [];
             for (const [startggId, playerData] of playersMap) {
                 const playerId = existingPlayerMap.get(startggId);
-                if (playerId && existingPlayers.some(p => p.player_startgg_player_id === startggId)) {
+                if (playerId && existingPlayers.some(p => p.startggPlayerID === startggId)) {
                     const updateData: any = {};
                     if (this.mustUpdatePlayerCountry) {
                         updateData.country = playerData.country;
@@ -713,148 +874,173 @@ export class TournamentDataParserService {
 
         // Step 5: Check existing player tournament runs
         const existingPTRs = await this.dataSource
-            .createQueryBuilder()
-            .select(['ptr.playerID', 'ptr.tournamentID'])
-            .from(PlayerTournamentRun, 'ptr')  // Using PlayerTournamentRun entity instead of 'player_tournament_run'
-            .where('ptr.playerID IN (:...playerIds)', { playerIds: Array.from(existingPlayerMap.values()) })
-            .andWhere('ptr.tournamentID = :tournamentId', { tournamentId: tournamentID })
-            .getRawMany();
+            .getRepository(PlayerTournamentRun)
+            .createQueryBuilder('ptr')
+            .where('ptr.player_id IN (:...playerIds)', { playerIds: Array.from(existingPlayerMap.values()) })
+            .andWhere('ptr.tournament_id = :tournamentId', { tournamentId: tournamentID })
+            .getMany();
 
-        const existingPTRSet = new Set(
-            existingPTRs.map(ptr => `${ptr.ptr_player_id}-${ptr.ptr_tournament_id}`)
-        );
+        const existingPTRMap = new Map<string, PlayerTournamentRun>();
+        existingPTRs.forEach(ptr => {
+            const key = `${ptr.playerID}-${ptr.tournamentID}`;
+            existingPTRMap.set(key, ptr);
+        });
 
         // Step 6: Bulk create missing player tournament runs
         const newPTRData = [];
+        const updatePTRData = [];
+
         for (const [startggId, playerData] of playersMap) {
             const playerId = existingPlayerMap.get(startggId);
-            if (playerId) {
-                const ptrKey = `${playerId}-${tournamentID}`;
-                if (!existingPTRSet.has(ptrKey)) {
-                    newPTRData.push({
-                        playerID: playerId,
-                        tournamentID: tournamentID,
-                        playerEntryName: playerData.name,
-                        placement: playerData.placement,
-                        seed: playerData.seed,
-                        charactersUsed: []
-                    });
+            if (!playerId) return;
 
-                    // Update stats like original method
-                    this.responseStats["playerTournamentRunIDs"].push([playerId, tournamentID]);
-                }
+            const ptrKey = `${playerId}-${tournamentID}`;
+
+            const batchCharacters = Array.from(playerCharacterMap.get(startggId) || []);
+            const existingPTR = existingPTRMap.get(ptrKey);
+
+            if (existingPTR) {
+                // 🟢 UPDATE: Merge characters with existing PTR
+                const existingCharacters = new Set(existingPTR.charactersUsed || []);
+                batchCharacters.forEach(char => existingCharacters.add(char));
+
+                updatePTRData.push({
+                    playerID: playerId,
+                    tournamentID: tournamentID,
+                    charactersUsed: Array.from(existingCharacters)
+                });
+            } else {
+                // 🟢 CREATE: New PTR with characters
+                newPTRData.push({
+                    playerID: playerId,
+                    tournamentID: tournamentID,
+                    playerEntryName: playerData.name,
+                    placement: playerData.placement,
+                    seed: playerData.seed,
+                    charactersUsed: batchCharacters
+                });
+
+                // Update stats
+                this.responseStats["playerTournamentRunIDs"].push([playerId, tournamentID]);
             }
         }
 
+        //TODO parallelism on both new and update operations
         if (newPTRData.length > 0) {
             await ptrRepo
                 .createQueryBuilder()
                 .insert()
                 .values(newPTRData)
+                .orIgnore()
                 .execute();
+        }
+
+        if (updatePTRData.length > 0) {
+            const updatePromises = updatePTRData.map(update =>
+                this.dataSource
+                    .createQueryBuilder()
+                    .update(PlayerTournamentRun)
+                    .set({ charactersUsed: update.charactersUsed })
+                    .where('player_id = :playerId AND tournament_id = :tournamentId', {
+                        playerId: update.playerID,
+                        tournamentId: update.tournamentID
+                    })
+                    .execute()
+            );
+
+            await Promise.all(updatePromises);
+        }
+
+        if(existingPlayerMap.size === 0) {
+            console.log(`🟢 No existing players found,`);
         }
 
         return existingPlayerMap; // Return startggId -> playerId mapping for use in createSets
     }
 
-    private async createMatches(
-        matches: StartGGTournamentMatchRecord[],
-        setID: number,
-    ) {
-        if (matches.length > 0) {
-            for (const match of matches) {
-                const matchQuery: CreateTournamentMatchDTO = {
-                    tournamentSetID: setID,
-                    playerOneCharacter: match.player_one_character,
-                    playerTwoCharacter: match.player_two_character,
-                    winnerName: match.winner_name,
-                    matchNumber: match.match_number,
-                };
-                const newMatch =
-                    await this.tournamentMatchService.create(matchQuery);
-                // Update stats
-                this.responseStats["matchIDs"].push(newMatch.tournamentMatchID);
-            }
-        }
-    }
-
-    private async createSets(
+    private async createTournamentSetsBatched(
         setsData: StartGGTournamentSetRecord[],
-        tournamentID: number,
-        playerIdMap: Map<number, number>,
-    ) {
-        for (const set of setsData) {
-            // Check to make sure set doesn't already exist
-            const setExistence =
-                await this.tournamentSetService.findByStartGGSetId(set.set_id);
-            if (setExistence)
-                throw new BadRequestException(
-                    `Set with startgg_set_id ${set.set_id} already exists.\nHas this tournament already been parsed?\nIs there a conflicting startgg_set_id?`,
-                );
+        tournamentId: number,
+        playerIdMap: Map<number, number>
+    ): Promise<Map<number, number>> { // Map: startggSetId -> tournamentSetId
+        const tournamentSets = [];
+        const startggSetIds = [];
 
+        const setRepo = this.dataSource.getRepository(TournamentSet);
+
+        for (const set of setsData) {
             const playerOneId = playerIdMap.get(set.player_one_startgg_id);
             const playerTwoId = playerIdMap.get(set.player_two_startgg_id);
-            if (!playerOneId || !playerTwoId)
-                throw new NotFoundException(
-                    `Either player ${set.player_one_name} with startgg_player_id ${set.player_one_startgg_id} or ${set.player_two_name} with startgg_player_id ${set.player_two_startgg_id} does not exist`,
-                );
 
-            // Initialize payload
-            const setQuery = {
-                playerOneID: playerOneId,
-                playerTwoID: playerTwoId,
-                tournamentID: tournamentID,
-                startggSetID: set.set_id,
-                winnerName: set.winner_name,
-                winnerID:
-                    set.player_one_score > set.player_two_score
-                        ? playerOneId
-                        : playerTwoId,
-            };
+            if (playerOneId && playerTwoId) {
+                const tournamentSet = new TournamentSet();
+                tournamentSet.tournamentID = tournamentId;
+                tournamentSet.playerOneID = playerOneId;
+                tournamentSet.playerTwoID = playerTwoId;
+                tournamentSet.startggSetID = set.set_id;
+                tournamentSet.bracketName = set.phase_name;
+                tournamentSet.bracketRound = set.round_name;
+                tournamentSet.matchesToWin = set.matches_to_win;
+                tournamentSet.winnerID = set.player_one_score > set.player_two_score
+                    ? playerOneId
+                    : playerTwoId;
+                tournamentSet.winnerName = set.winner_name;
 
-            // Add matchesToWin
-            setQuery["matchesToWin"] = set.matches_to_win;
-            // Add bracket name
-            setQuery["bracketName"] = set.phase_name;
-            // Add bracket round name
-            setQuery["bracketRound"] = set.round_name;
-
-            // Create sets
-            const newSet = await this.tournamentSetService.create(setQuery);
-
-            // Update player tournament run characters
-            const playerOneCharacters = set.player_one_characters;
-            let p1Res = null;
-            if (
-                playerOneCharacters !== null &&
-                playerOneCharacters.length > 0
-            ) {
-                p1Res =
-                    await this.playerTournamentRunService.updateCharactersUsed(
-                        playerOneId,
-                        tournamentID,
-                        playerOneCharacters,
-                    );
+                tournamentSets.push(tournamentSet);
+                startggSetIds.push(set.set_id);
             }
-            let p2Res = null;
-            const playerTwoCharacters = set.player_two_characters;
-            if (
-                playerTwoCharacters !== null &&
-                playerTwoCharacters.length > 0
-            ) {
-                p2Res =
-                    await this.playerTournamentRunService.updateCharactersUsed(
-                        playerTwoId,
-                        tournamentID,
-                        playerTwoCharacters,
-                    );
+        }
+
+        // startgg set id -> tournament set id
+        const setIdMap = new Map<number, number>();
+
+        if (tournamentSets.length > 0) {
+            // 🟢 INSERT AND RETURN IDs
+            const savedSets = await setRepo.save(tournamentSets);
+
+            // ✅ Direct access to entity properties
+            savedSets.forEach(set => {
+                setIdMap.set(set.startggSetID, set.tournamentSetID);
+                this.responseStats.setIDs.push(set.tournamentSetID);
+            });
+        }
+
+        return setIdMap;
+    }
+
+    private async createTournamentMatchesBatched(
+        setsData: StartGGTournamentSetRecord[],
+        tournamentSetIds: Map<number, number>
+    ) {
+        const tournamentMatches = [];
+
+        const matchRepo = this.dataSource.getRepository(TournamentMatch);
+
+        for (const set of setsData) {
+            const tournamentSetId = tournamentSetIds.get(set.set_id);
+
+            if (!tournamentSetId || set.matches.length === 0) {
+                continue;
             }
 
-            // Update stats
-            this.responseStats["setIDs"].push(newSet.tournamentSetID);
+            // Create a match record for each match in the set
+            set.matches.forEach(match => {
+                const tournamentMatch = new TournamentMatch();
+                tournamentMatch.tournamentSetID = tournamentSetId;
+                tournamentMatch.winnerName = match.winner_name;
+                tournamentMatch.matchNumber = match.match_number;
+                tournamentMatch.playerOneCharacter = match.player_one_character || '';
+                tournamentMatch.playerTwoCharacter = match.player_two_character || '';
+                tournamentMatches.push(tournamentMatch);
+            });
+        }
 
-            // Create matches
-            await this.createMatches(set.matches, newSet.tournamentSetID);
+        if (tournamentMatches.length > 0) {
+            const savedMatches = await matchRepo.save(tournamentMatches);
+
+            savedMatches.forEach(match => {
+                this.responseStats.matchIDs.push(match.tournamentMatchID);
+            });
         }
     }
     //#endregion
