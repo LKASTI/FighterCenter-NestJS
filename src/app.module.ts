@@ -26,6 +26,9 @@ import { TwitterShareModule } from "./domain/twitterShare/twitterShare.module";
 import { StartggApiModule } from "./features/startggApi/startggApi.module";
 import { Top8MakerModule } from "./features/top8maker/top8maker.module";
 import { SFSixGamePatchModule } from "./domain/sfsixGamePatch/sfsixGamePatch.module";
+import {
+    PlayerSeriesPerformanceAggModule
+} from "./domain/playerSeriesPerformanceAgg/playerSeriesPerformanceAgg.module";
 
 @Module({
     imports: [
@@ -79,6 +82,7 @@ import { SFSixGamePatchModule } from "./domain/sfsixGamePatch/sfsixGamePatch.mod
         StartggUserModule,
         TournamentSeriesModule,
         SFSixGamePatchModule,
+        PlayerSeriesPerformanceAggModule,
         // data parsing modules
         TournamentDataParserModule,
         RankedDataParserModule,

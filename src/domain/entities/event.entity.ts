@@ -25,6 +25,14 @@ export class Event {
     @Column("varchar", { name: "tournament_series_banner_image", length: 500 })
     tournamentSeriesBannerImage: string;
 
+    // Last Updated Tournament Date (added/deleted a tournament)
+    @Column("timestamp", { name: "last_updated_tournament_date"})
+    lastUpdatedTournamentDate: Date;
+
+    // startgg_user_id that added/deleted a tournament
+    @Column("uuid", { name: "updated_by"})
+    updatedBy: string;
+
     /* Relationships */
     // One event could host many tournaments
     @OneToMany(() => Tournament, (tournament) => tournament.event)

@@ -19,6 +19,9 @@ export class PlayerSeriesPerformanceAgg {
     @PrimaryColumn({ name: "event_id" })
     eventID: number;
 
+    @Column("varchar", { name: "player_name"})
+    playerName: string;
+
     @Column("integer", { name: "attendance" })
     totalAttendance: number;
 
@@ -31,4 +34,10 @@ export class PlayerSeriesPerformanceAgg {
     @Column("jsonb", { name: "tournaments" })
     tournaments?: TournamentPerformance[];
 
+    @Column("varchar", { name: "country"})
+    country: string;
+
+    // Last Updated date
+    @Column("timestamp", { name: "updated_at" })
+    updatedAt: Date;
 }

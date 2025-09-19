@@ -8,3 +8,6 @@ export * from "./startggUser.entity";
 export * from "./tournament.entity";
 export * from "./tournamentMatch.entity";
 export * from "./tournamentSet.entity";
+export * from "./PlayerSeriesPerformanceAgg.entity"
+export * from "./twitterShare.entity"
+export * from "./sfsixGamePatch.entity"
