@@ -28,7 +28,7 @@ export class TournamentDataParserController {
         @Body() body: StartGGTournamentDataV2ParserDTO,
         @Req() req: Request
     ) {
-        return this.service.parseStartGGTournamentDataV2(body, req, parseInt(tournamentSeriesId));
+        return this.service.tournamentImporterEntry(body, req, parseInt(tournamentSeriesId));
     }
 
     @Delete("deleteTournamentData/:tournamentSeriesId/:tournamentId")

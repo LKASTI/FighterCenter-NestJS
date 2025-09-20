@@ -17,6 +17,9 @@ import { SFSixGamePatchModule } from "../../domain/sfsixGamePatch/sfsixGamePatch
 import { TournamentManagerService } from "./tournamentManager.service";
 import { TournamentManagerRepository } from "./tournamentManager.repository";
 import { StartggApiModule } from "../startggApi/startggApi.module";
+import {
+    PlayerSeriesPerformanceAggModule
+} from "../../domain/playerSeriesPerformanceAgg/playerSeriesPerformanceAgg.module";
 
 @Module({
     imports: [
@@ -26,6 +29,7 @@ import { StartggApiModule } from "../startggApi/startggApi.module";
         TournamentMatchModule,
         PlayerModule,
         PlayerTournamentRunModule,
+        PlayerSeriesPerformanceAggModule,
         SFSixGamePatchModule,
         StartggUserModule,
         StartggApiModule,

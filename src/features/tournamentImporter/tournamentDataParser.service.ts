@@ -43,6 +43,9 @@ import { InjectDataSource } from "@nestjs/typeorm";
 import { DataSource } from "typeorm";
 import { StartggApiService } from "../startggApi/startggApi.service";
 import { Set as StartGGSet, SetConnection } from "../startggApi/startggApi.graphql"
+import {
+    PlayerSeriesPerformanceAggService
+} from "../../domain/playerSeriesPerformanceAgg/playerSeriesPerformanceAgg.service";
 
 interface BatchJob {
     page: number;
@@ -55,6 +58,7 @@ export class TournamentDataParserService {
         private readonly eventService: EventService,
         private readonly tournamentService: TournamentService,
         private readonly playerService: PlayerService,
+        private readonly playerSeriesPerformanceAggService: PlayerSeriesPerformanceAggService,
         private readonly sfsixGamePatchService: SFSixGamePatchService,
 
         private readonly httpService: HttpService,
@@ -94,7 +98,32 @@ export class TournamentDataParserService {
     private req: any;
     private startggApiToken: string;
 
-    public async parseStartGGTournamentDataV2(
+    private playerIdsForProcessing: number [] = [];
+
+    private static readonly seriesImportLocks = new Map<number, Promise<any>>();
+
+    public async tournamentImporterEntry(
+        params: StartGGTournamentDataV2ParserDTO,
+        req: any,
+        tournamentSeriesId: number
+    ) {
+        const lockKey = tournamentSeriesId;
+        if(TournamentDataParserService.seriesImportLocks.get(lockKey)) {
+            console.log(`⏳ Waiting for concurrent import to finish for event ${tournamentSeriesId}...`);
+            await TournamentDataParserService.seriesImportLocks.get(lockKey);
+        }
+
+        const importPromise = this.importTournament(params, req, tournamentSeriesId);
+        TournamentDataParserService.seriesImportLocks.set(lockKey, importPromise);
+
+        try {
+            return await importPromise;
+        } finally {
+            TournamentDataParserService.seriesImportLocks.delete(lockKey);
+        }
+    }
+
+    private async importTournament(
         params: StartGGTournamentDataV2ParserDTO,
         req: any,
         tournamentSeriesId: number
@@ -178,6 +207,9 @@ export class TournamentDataParserService {
                 startggEventID.toString(),
                 newTournament.tournamentID
             )
+
+            // Update player performance agg
+            this.runPlayerPerformanceAggUpdates(newEvent.eventID, Array.from(new Set(this.playerIdsForProcessing)));
 
             // return stats
             return this.responseStats;
@@ -618,7 +650,9 @@ export class TournamentDataParserService {
         // Get player to characters used
         const playerCharacterMap = this.aggregateCharactersByPlayer(parsedSets);
         // Batch operations
+        // startggId -> playerId
         const playerIdMap = await this.createPlayersAndPTRsBatched(tournamentId, parsedSets, playerCharacterMap);
+        this.playerIdsForProcessing.push(...Array.from(playerIdMap.values()));
         // Create sets
         const tournamentSetIdMap = await this.createTournamentSetsBatched(parsedSets, tournamentId, playerIdMap);
         // Create matches
@@ -626,6 +660,7 @@ export class TournamentDataParserService {
             parsedSets,
             tournamentSetIdMap
         )
+
         console.log(`✅ Completed batch ${batchNumber}: ${parsedSets.length} sets processed`);
     }
     //#endregion
@@ -1042,6 +1077,22 @@ export class TournamentDataParserService {
                 this.responseStats.matchIDs.push(match.tournamentMatchID);
             });
         }
+    }
+    //#endregion
+
+    //#region Update Player Performance Aggs
+    private runPlayerPerformanceAggUpdates(
+        eventSeriesID: number,
+        playerIDs: number[] | undefined
+    ) {
+        setImmediate(async () => {
+           try {
+               await this.delay(1000);
+               await this.playerSeriesPerformanceAggService.updateAllForSeries(eventSeriesID, playerIDs);
+           } catch {
+                console.error('Error updating player performance aggs in background');
+           }
+        });
     }
     //#endregion
 }
