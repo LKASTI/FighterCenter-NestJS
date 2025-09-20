@@ -13,11 +13,15 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
 import { JwtModule } from "@nestjs/jwt";
 import { StartggUserModule } from "../startggUser/startggUser.module";
 import { StartggApiModule } from "../../features/startggApi/startggApi.module";
+import { TournamentMatchModule } from "../tournamentMatch/tournamentMatch.module";
+import { TournamentSetModule } from "../tournamentSet/tournamentSet.module";
 
 @Module({
     imports: [
         TypeOrmModule.forFeature([PlayerSeriesPerformanceAgg]),
         EventModule,
+        TournamentMatchModule,
+        TournamentSetModule,
 
         EncryptionModule,
         StartggUserModule,

@@ -9,6 +9,6 @@ import { TournamentSetService } from "src/domain/tournamentSet/tournamentSet.ser
     imports: [TypeOrmModule.forFeature([TournamentSet])],
     providers: [TournamentSetService, TournamentSetRepository],
     controllers: [TournamentSetController],
-    exports: [TournamentSetService],
+    exports: [TournamentSetService, TournamentSetRepository],
 })
 export class TournamentSetModule {}

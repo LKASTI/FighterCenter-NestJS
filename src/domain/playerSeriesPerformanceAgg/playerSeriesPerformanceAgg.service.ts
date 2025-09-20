@@ -2,13 +2,82 @@ import { Injectable } from "@nestjs/common";
 import { PlayerSeriesPerformanceAgg } from "../entities/PlayerSeriesPerformanceAgg.entity";
 import { PlayerSeriesPerformanceAggRepository } from "./playerSeriesPerformanceAgg.repository";
 import { EventService } from "../event/event.service";
+import { TournamentSetRepository } from "../tournamentSet/tournamentSet.repository";
+import { InjectRepository } from "@nestjs/typeorm";
+import { TournamentMatchRepository } from "../tournamentMatch/tournamentMatch.repository";
 
 @Injectable()
 export class PlayerSeriesPerformanceAggService {
     constructor(
         private readonly repository: PlayerSeriesPerformanceAggRepository,
-        private readonly eventService: EventService
+        private readonly eventService: EventService,
+        @InjectRepository(TournamentSetRepository)
+        private readonly tournamentSetRepository: TournamentSetRepository,
+        @InjectRepository(TournamentMatchRepository)
+        private readonly tournamentMatchRepository: TournamentMatchRepository
     ) {}
+
+    async getPlayerSetsForSeries(playerId: number, eventId: number): Promise<any[]> {
+        const rawResults = await this.tournamentSetRepository
+            .createQueryBuilder('tournamentSet')
+            .leftJoin('tournamentSet.tournament', 'tournament')
+            .leftJoin('tournamentSet.playerOne', 'playerOneRun')
+            .leftJoin('playerOneRun.player', 'playerOnePlayer')
+            .leftJoin('tournamentSet.playerTwo', 'playerTwoRun')
+            .leftJoin('playerTwoRun.player', 'playerTwoPlayer')
+            .select([
+                'tournamentSet.tournamentSetID as "tournamentSetID"',
+                'tournamentSet.bracketName as "bracketName"',
+                'tournamentSet.bracketRound as "bracketRound"',
+                'tournamentSet.winnerName as "winnerName"',
+                'tournamentSet.winnerID as "winnerID"',
+                'tournamentSet.playerOneID as "playerOneID"',
+                'tournamentSet.playerTwoID as "playerTwoID"',
+                'tournamentSet.matchesToWin as "matchesToWin"',
+                'playerOnePlayer.playerName as "playerOneName"',
+                'playerTwoPlayer.playerName as "playerTwoName"',
+                'tournament.vodLink as "vodLink"'
+            ])
+            // **Fixed: Use matchesToWin or calculate from separate query**
+            .where('tournament.eventID = :eventId', { eventId })
+            .andWhere(
+                '(tournamentSet.playerOneID = :playerId OR tournamentSet.playerTwoID = :playerId)',
+                { playerId }
+            )
+            .orderBy('tournament.dates', 'DESC')
+            .getRawMany();
+
+        // **Get match counts separately to avoid subquery issues**
+        const setIds = rawResults.map(r => r.tournamentSetID);
+        const matchCounts = await this.tournamentMatchRepository
+            .createQueryBuilder('match')
+            .select([
+                'match.tournamentSetID as "setId"',
+                'match.winnerName as "winner"',
+                'COUNT(*) as "wins"'
+            ])
+            .where('match.tournamentSetID IN (:...setIds)', { setIds })
+            .groupBy('match.tournamentSetID, match.winnerName')
+            .getRawMany();
+
+        // **Combine results with match data**
+        return rawResults.map(result => {
+            const setMatches = matchCounts.filter(m => m.setId === result.tournamentSetID);
+            const playerOneWins = parseInt(setMatches.find(m => m.winner === result.playerOneName)?.wins) || 0;
+            const playerTwoWins = parseInt(setMatches.find(m => m.winner === result.playerTwoName)?.wins) || 0;
+
+            const isPlayerOneWinner = result.winnerID === result.playerOneID;
+
+            return {
+                ...result,
+                winnerScore: isPlayerOneWinner ? playerOneWins : playerTwoWins,
+                loserScore: isPlayerOneWinner ? playerTwoWins : playerOneWins,
+                loserName: isPlayerOneWinner ? result.playerTwoName : result.playerOneName,
+                loserID: isPlayerOneWinner ? result.playerTwoID : result.playerOneID,
+                score: `${Math.max(playerOneWins, playerTwoWins)}-${Math.min(playerOneWins, playerTwoWins)}`,
+            };
+        });
+    }
 
     public async getAllForSeries(eventSeriesID: number): Promise<PlayerSeriesPerformanceAgg[]> {
         return await this.repository.find({

@@ -9,6 +9,6 @@ import { TournamentMatchService } from "src/domain/tournamentMatch/tournamentMat
     imports: [TypeOrmModule.forFeature([TournamentMatch])],
     providers: [TournamentMatchService, TournamentMatchRepository],
     controllers: [TournamentMatchController],
-    exports: [TournamentMatchService],
+    exports: [TournamentMatchService, TournamentMatchRepository],
 })
 export class TournamentMatchModule {}
