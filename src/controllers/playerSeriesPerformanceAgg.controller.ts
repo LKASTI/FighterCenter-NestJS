@@ -22,6 +22,7 @@ export class PlayerSeriesPerformanceAggController {
         return await this.playerSeriesPerformanceAggService.getAllForSeries(eventID);
     }
 
+    @DisableEndpoint()
     @Get('getAllForSeriesTable/:eventID')
     async getAllForSeriesTable(
         @Param("eventID", ParseIntPipe) eventID: number

@@ -23,10 +23,16 @@ export class PlayerSeriesPerformanceAgg {
     playerName: string;
 
     @Column("integer", { name: "attendance" })
-    totalAttendance: number;
+    attendance: number;
 
     @Column("jsonb", { name: "placement_to_count" })
     placementToCount: Record<string, number>; // {"1": 2, "3": 1, "5": 3}
+
+    @Column("integer", { name: "best_placement"})
+    bestPlacement: number;
+
+    @Column("integer", { name: "best_placement_count"})
+    bestPlacementCount: number;
 
     @Column("varchar", { name: "characters_used", array: true })
     charactersUsed: string[];

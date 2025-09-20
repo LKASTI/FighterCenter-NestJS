@@ -51,6 +51,7 @@ export class PlayerTournamentRunController {
         return await this.service.findAll(query);
     }
 
+    @DisableEndpoint()
     @Get("findAllForSeriesTable/:eventID")
     async findAllForSeriesTable(
         @Param("eventID", ParseIntPipe) eventID: number,

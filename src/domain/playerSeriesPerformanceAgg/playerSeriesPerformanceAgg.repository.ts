@@ -88,6 +88,8 @@ export class PlayerSeriesPerformanceAggRepository extends Repository<PlayerSerie
             acc[p.toString()] = (acc[p.toString()] || 0) + 1;
             return acc;
         }, {});
+        const bestPlacement = Math.min(...placements);
+        const bestPlacementCount = placementCounts[bestPlacement.toString()];
 
         // Calculate characters
         const allCharacters = new Set();
@@ -103,14 +105,18 @@ export class PlayerSeriesPerformanceAggRepository extends Repository<PlayerSerie
             INSERT INTO player_series_performance_agg (
                 player_id, event_id, player_name,
                 attendance, placement_to_count, characters_used, 
-                tournaments, country, updated_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
+                tournaments, country,
+                best_placement, best_placement_count,
+                updated_at
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())
             ON CONFLICT (player_id, event_id) 
             DO UPDATE SET 
                 attendance = EXCLUDED.attendance,
                 placement_to_count = EXCLUDED.placement_to_count,
                 characters_used = EXCLUDED.characters_used,
                 tournaments = EXCLUDED.tournaments,
+                best_placement = EXCLUDED.best_placement,       
+                best_placement_count = EXCLUDED.best_placement_count,
                 updated_at = EXCLUDED.updated_at
             `,
             [
@@ -130,7 +136,9 @@ export class PlayerSeriesPerformanceAggRepository extends Repository<PlayerSerie
                     gamePatch: t.game_patch,
                     gameSeason: t.game_season
                 }))),
-                res.length > 0 ? res[0].country : null
+                res.length > 0 ? res[0].country : null,
+                bestPlacement,
+                bestPlacementCount
             ]
         );
     }

@@ -11,15 +11,20 @@ export class PlayerSeriesPerformanceAggService {
     ) {}
 
     public async getAllForSeries(eventSeriesID: number): Promise<PlayerSeriesPerformanceAgg[]> {
-        return await this.repository.findBy({
-            eventID: eventSeriesID
+        return await this.repository.find({
+            where: { eventID: eventSeriesID },
+            order: {
+                bestPlacement: 'ASC',
+                bestPlacementCount: 'DESC',
+                attendance: 'DESC'
+            }
         });
     }
 
     public async getAllForSeriesTable(eventSeriesID: number): Promise<Partial<PlayerSeriesPerformanceAgg>[]> {
         return await this.repository.find({
             where: { eventID: eventSeriesID },
-            select: ['playerID', 'playerName', 'country', 'totalAttendance', 'placementToCount', 'charactersUsed']
+            select: ['playerID', 'playerName', 'country', 'attendance', 'placementToCount', 'charactersUsed']
         });
     }
 
