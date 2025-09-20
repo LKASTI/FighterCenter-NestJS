@@ -4,6 +4,8 @@ import {
 } from "../domain/playerSeriesPerformanceAgg/playerSeriesPerformanceAgg.service";
 import { FeatureFlagGuard } from "../authentication/guards/feature-flag.guard";
 import { DisableEndpoint } from "../decorators/endpoint-status-toggles";
+import { Roles } from "../decorators/roles.decorator";
+import { SeriesAuthGuard } from "../authentication/guards/seriesAuth.guard";
 
 
 @Controller('playerSeriesPerformanceAgg')
@@ -35,7 +37,8 @@ export class PlayerSeriesPerformanceAggController {
         return await this.playerSeriesPerformanceAggService.getPlayerPerformanceData(playerID, eventID);
     }
 
-    @DisableEndpoint()
+    @UseGuards(SeriesAuthGuard)
+    @Roles("SUPER_ADMIN")
     @Patch('updateAll/:eventID')
     async updateAllForSeries(
         @Param("eventID", ParseIntPipe) eventID: number

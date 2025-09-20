@@ -7,11 +7,35 @@ import { PlayerSeriesPerformanceAggService } from "./playerSeriesPerformanceAgg.
 import { PlayerSeriesPerformanceAggRepository } from "./playerSeriesPerformanceAgg.repository";
 import { PlayerSeriesPerformanceAggController } from "../../controllers/playerSeriesPerformanceAgg.controller";
 import { EventModule } from "../event/event.module";
+import { EncryptionModule } from "../../authentication/encryption/encryption.module";
+import { PassportModule } from "@nestjs/passport";
+import { ConfigModule, ConfigService } from "@nestjs/config";
+import { JwtModule } from "@nestjs/jwt";
+import { StartggUserModule } from "../startggUser/startggUser.module";
+import { StartggApiModule } from "../../features/startggApi/startggApi.module";
 
 @Module({
     imports: [
         TypeOrmModule.forFeature([PlayerSeriesPerformanceAgg]),
-        EventModule
+        EventModule,
+
+        EncryptionModule,
+        StartggUserModule,
+        StartggApiModule,
+        PassportModule.register({ defaultStrategy: "jwt" }),
+        ConfigModule.forRoot(), // Make sure this is included to load environment variables
+        JwtModule.registerAsync({
+            imports: [ConfigModule],
+            inject: [ConfigService],
+            useFactory: (configService: ConfigService) => ({
+                secret: configService.get<string>("JWT_SECRET"),
+                signOptions: {
+                    expiresIn: parseInt(
+                        configService.get<string>("COOKIE_EXPIRATION_DURATION"),
+                    ), // Match your cookie expiration
+                },
+            }),
+        }),
     ],
     providers: [PlayerSeriesPerformanceAggService, PlayerSeriesPerformanceAggRepository],
     controllers: [PlayerSeriesPerformanceAggController],
