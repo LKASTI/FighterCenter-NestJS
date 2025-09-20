@@ -1088,7 +1088,12 @@ export class TournamentDataParserService {
         setImmediate(async () => {
            try {
                await this.delay(1000);
-               await this.playerSeriesPerformanceAggService.updateAllForSeries(eventSeriesID, playerIDs);
+               const items = await this.playerSeriesPerformanceAggService.getAllForSeriesTable(eventSeriesID);
+               if (items.length > 0) {
+                   await this.playerSeriesPerformanceAggService.updateAllForSeries(eventSeriesID, playerIDs);
+               } else {
+                   await this.playerSeriesPerformanceAggService.updateAllForSeries(eventSeriesID);
+               }
            } catch {
                 console.error('Error updating player performance aggs in background');
            }
