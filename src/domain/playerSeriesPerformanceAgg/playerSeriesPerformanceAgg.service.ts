@@ -16,6 +16,13 @@ export class PlayerSeriesPerformanceAggService {
         });
     }
 
+    public async getAllForSeriesTable(eventSeriesID: number): Promise<Partial<PlayerSeriesPerformanceAgg>[]> {
+        return await this.repository.find({
+            where: { eventID: eventSeriesID },
+            select: ['playerID', 'playerName', 'country', 'totalAttendance', 'placementToCount', 'charactersUsed']
+        });
+    }
+
     public async getPlayerPerformanceData(playerID: number, eventSeriesID: number): Promise<PlayerSeriesPerformanceAgg> {
         let currentAggData = await this.repository.findOneBy({
             playerID,

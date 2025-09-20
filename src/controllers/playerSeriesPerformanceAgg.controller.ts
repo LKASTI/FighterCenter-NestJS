@@ -20,6 +20,13 @@ export class PlayerSeriesPerformanceAggController {
         return await this.playerSeriesPerformanceAggService.getAllForSeries(eventID);
     }
 
+    @Get('getAllForSeriesTable/:eventID')
+    async getAllForSeriesTable(
+        @Param("eventID", ParseIntPipe) eventID: number
+    ) {
+        return await this.playerSeriesPerformanceAggService.getAllForSeriesTable(eventID);
+    }
+
     @Get('performanceData/:eventID/:playerID')
     async getPlayerPerformanceData(
         @Param("eventID", ParseIntPipe) eventID: number,
