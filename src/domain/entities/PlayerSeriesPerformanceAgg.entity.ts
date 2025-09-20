@@ -22,6 +22,9 @@ export class PlayerSeriesPerformanceAgg {
     @Column("varchar", { name: "player_name"})
     playerName: string;
 
+    @Column("varchar", { name: "startgg_profile_image_url" })
+    startggProfileImageURL: string;
+
     @Column("integer", { name: "attendance" })
     attendance: number;
 

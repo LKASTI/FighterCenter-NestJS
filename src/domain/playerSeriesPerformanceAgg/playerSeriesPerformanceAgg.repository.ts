@@ -72,7 +72,8 @@ export class PlayerSeriesPerformanceAggRepository extends Repository<PlayerSerie
             `
             SELECT
                 pl.country,
-                pl.player_name AS "playerName"
+                pl.player_name AS "playerName",
+                pl.startgg_profile_image_url AS "startggProfileImageURL"
             FROM
                 player pl
             WHERE
@@ -107,8 +108,9 @@ export class PlayerSeriesPerformanceAggRepository extends Repository<PlayerSerie
                 attendance, placement_to_count, characters_used, 
                 tournaments, country,
                 best_placement, best_placement_count,
+                startgg_profile_image_url,
                 updated_at
-            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, NOW())
+            ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, NOW())
             ON CONFLICT (player_id, event_id) 
             DO UPDATE SET 
                 attendance = EXCLUDED.attendance,
@@ -138,7 +140,8 @@ export class PlayerSeriesPerformanceAggRepository extends Repository<PlayerSerie
                 }))),
                 res.length > 0 ? res[0].country : null,
                 bestPlacement,
-                bestPlacementCount
+                bestPlacementCount,
+                res.length > 0 ? res[0].startggProfileImageURL : null,
             ]
         );
     }
