@@ -1,13 +1,14 @@
 import { InjectRepository } from "@nestjs/typeorm";
 import {
     CreatePlayerTournamentRunDTO,
-    FindPlayerTournamentRunsQueryDTO,
+    FindPlayerTournamentRunsQueryDTO
 } from "src/dtos/playerTournamentRun.dto";
 import { PlayerTournamentRun } from "src/domain/entities/playerTournamentRun.entity";
 import { Repository } from "typeorm";
 import { Player } from "src/domain/entities/player.entity";
 import { Tournament } from "src/domain/entities/tournament.entity";
 import { NotFoundException } from "@nestjs/common/exceptions/not-found.exception";
+import { SeriesDataTableDataQuery } from "./playerTournamentRun.queries";
 
 export class PlayerTournamentRunRepository extends Repository<PlayerTournamentRun> {
     constructor(
@@ -83,129 +84,7 @@ export class PlayerTournamentRunRepository extends Repository<PlayerTournamentRu
          *  tournaments
          */
         const data = await this.query(
-            `
-            WITH player_tournaments AS (
-                SELECT
-                    p.player_id,
-                    p.player_entry_name AS player_name,
-                    p.seed,
-                    pl.startgg_profile_image_url AS profile_image,
-                    pl.country,
-                    t.tournament_id,
-                    t.tournament_name,
-                    t.dates,
-                    t.game_patch,
-                    t.game_season,
-                    p.placement,
-                    p.characters_used
-                FROM
-                    tournament t
-                        JOIN
-                    player_tournament_run p ON t.tournament_id = p.tournament_id
-                        JOIN
-                    player pl ON p.player_id = pl.player_id
-                WHERE
-                    t.event_id = $1
-            ),
-                 player_placement_counts AS (
-                     SELECT
-                         player_id,
-                         placement,
-                         COUNT(*) as placement_count
-                     FROM
-                         player_tournaments
-                     GROUP BY
-                         player_id, placement
-                 ),
-                 player_best_placement_info AS (
-                     SELECT
-                         player_id,
-                         MIN(placement) as best_placement,
-                         MAX(CASE WHEN placement = (
-                             SELECT MIN(placement)
-                             FROM player_tournaments pt2
-                             WHERE pt2.player_id = pt.player_id
-                         ) THEN placement_count ELSE 0 END) as best_placement_count
-                     FROM
-                         player_tournaments pt
-                             JOIN
-                         player_placement_counts ppc USING (player_id, placement)
-                     GROUP BY
-                         player_id
-                 ),
-                 player_names AS (
-                     SELECT
-                         player_id,
-                         MIN(player_name) AS consistent_player_name,
-                         MIN(profile_image) AS consistent_profile_image,
-                         MIN(country) AS consistent_country
-                     FROM
-                         player_tournaments
-                     GROUP BY
-                         player_id
-                 )
-            SELECT
-                pn.player_id AS "playerId",
-                pn.consistent_player_name AS "playerName",
-                pn.consistent_profile_image as "startggProfileImageURL",
-                pn.consistent_country as "country",
-                jsonb_object_agg(
-                    ppc.placement::text,
-                    ppc.placement_count
-                ) AS "placementToCount",
-                COALESCE(COUNT(DISTINCT pt.tournament_id), 0)::integer AS "attendance",
-                ARRAY(
-                    SELECT char
-                    FROM (
-                             SELECT char, COUNT(*) as usage_count
-                             FROM player_tournaments pt2
-                                      CROSS JOIN UNNEST(pt2.characters_used) AS char
-                             WHERE pt2.player_id = pt.player_id
-                               AND pt2.characters_used IS NOT NULL
-                             GROUP BY char
-                             ORDER BY usage_count DESC, char
-                         ) char_counts
-                ) AS "charactersUsed",
-                (
-                    SELECT jsonb_agg(
-                               jsonb_build_object(
-                                   'tournamentId', pt_sub.tournament_id,
-                                   'tournamentName', pt_sub.tournament_name,
-                                   'dates', pt_sub.dates,
-                                   'placement', pt_sub.placement,
-                                   'seed', pt_sub.seed,
-                                   'charactersUsed', pt_sub.characters_used,
-                                   'gamePatch', pt_sub.game_patch,
-                                   'gameSeason', pt_sub.game_season
-                               ) ORDER BY pt_sub.dates DESC
-                           )
-                    FROM (
-                             SELECT DISTINCT tournament_id, tournament_name, dates, placement, seed, characters_used, game_patch, game_season
-                             FROM player_tournaments pt_inner
-                             WHERE pt_inner.player_id = pt.player_id
-                         ) pt_sub
-                ) AS "tournaments"
-            FROM
-                player_tournaments pt
-                    JOIN
-                player_placement_counts ppc ON pt.player_id = ppc.player_id
-                    JOIN
-                player_names pn ON pt.player_id = pn.player_id
-                    JOIN
-                player_best_placement_info pbpi ON pt.player_id = pbpi.player_id
-            GROUP BY
-                pt.player_id,
-                pn.player_id,
-                pn.consistent_player_name,
-                pn.consistent_profile_image,
-                pn.consistent_country,
-                pbpi.best_placement,
-                pbpi.best_placement_count
-            ORDER BY
-                pbpi.best_placement ASC,  -- Order by best placement
-                pbpi.best_placement_count DESC,  -- Then by how many times they got best placement
-                COUNT(DISTINCT pt.tournament_id) DESC;  -- Then by attendance
-        `,
+            SeriesDataTableDataQuery,
             [eventID],
         );
 
