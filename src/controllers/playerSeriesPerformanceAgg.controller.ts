@@ -15,6 +15,14 @@ export class PlayerSeriesPerformanceAggController {
         private readonly playerSeriesPerformanceAggService: PlayerSeriesPerformanceAggService
     ) {}
 
+    @Get('playerSetsForSeries/:eventID/:playerID')
+    async getPlayerSetsForSeries(
+        @Param("eventID", ParseIntPipe) eventID: number,
+        @Param("playerID", ParseIntPipe) playerID: number
+    ) {
+        return await this.playerSeriesPerformanceAggService.getPlayerSetsForSeries(playerID, eventID);
+    }
+
     @Get('getAllForSeries/:eventID')
     async getAllForSeries(
         @Param("eventID", ParseIntPipe) eventID: number
