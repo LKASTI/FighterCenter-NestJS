@@ -26,13 +26,14 @@ export class PlayerSeriesPerformanceAggService {
             .leftJoin('tournamentSet.playerTwo', 'playerTwoRun')
             .leftJoin('playerTwoRun.player', 'playerTwoPlayer')
             .select([
-                'tournamentSet.tournamentSetID as "tournamentSetID"',
+                'tournament.tournament_id as "tournamentId"',
+                'tournamentSet.tournamentSetID as "tournamentSetId"',
                 'tournamentSet.bracketName as "bracketName"',
                 'tournamentSet.bracketRound as "bracketRound"',
                 'tournamentSet.winnerName as "winnerName"',
-                'tournamentSet.winnerID as "winnerID"',
-                'tournamentSet.playerOneID as "playerOneID"',
-                'tournamentSet.playerTwoID as "playerTwoID"',
+                'tournamentSet.winnerID as "winnerId"',
+                'tournamentSet.playerOneID as "playerOneId"',
+                'tournamentSet.playerTwoID as "playerTwoId"',
                 'tournamentSet.matchesToWin as "matchesToWin"',
                 'playerOnePlayer.playerName as "playerOneName"',
                 'playerTwoPlayer.playerName as "playerTwoName"',
