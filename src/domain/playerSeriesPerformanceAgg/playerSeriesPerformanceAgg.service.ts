@@ -6,6 +6,28 @@ import { TournamentSetRepository } from "../tournamentSet/tournamentSet.reposito
 import { InjectRepository } from "@nestjs/typeorm";
 import { TournamentMatchRepository } from "../tournamentMatch/tournamentMatch.repository";
 
+interface RawMatch {
+    setId: number;
+    winner: string;
+    wins: string;
+}
+
+interface RawSet {
+    tournamentId: number;
+    tournament: string;
+    tournamentSetId: number;
+    bracketName: string;
+    bracketRound: string;
+    winnerName: string;
+    winnerId: number;
+    playerOneId: number;
+    playerTwoId: number;
+    matchesToWin: number;
+    playerOneName: string;
+    playerTwoName: string;
+    vodLink: string;
+}
+
 @Injectable()
 export class PlayerSeriesPerformanceAggService {
     constructor(
@@ -18,7 +40,7 @@ export class PlayerSeriesPerformanceAggService {
     ) {}
 
     async getPlayerSetsForSeries(playerId: number, eventId: number): Promise<any[]> {
-        const rawResults = await this.tournamentSetRepository
+        const rawResults: RawSet[] = await this.tournamentSetRepository
             .createQueryBuilder('tournamentSet')
             .leftJoin('tournamentSet.tournament', 'tournament')
             .leftJoin('tournamentSet.playerOne', 'playerOneRun')
@@ -49,8 +71,9 @@ export class PlayerSeriesPerformanceAggService {
             .getRawMany();
 
         // **Get match counts separately to avoid subquery issues**
-        const setIds = rawResults.map(r => r.tournamentSetID);
-        const matchCounts = await this.tournamentMatchRepository
+        const setIds = rawResults.map(r => r.tournamentSetId as number);
+
+        const matches: RawMatch[] = await this.tournamentMatchRepository
             .createQueryBuilder('match')
             .select([
                 'match.tournamentSetID as "setId"',
@@ -61,21 +84,34 @@ export class PlayerSeriesPerformanceAggService {
             .groupBy('match.tournamentSetID, match.winnerName')
             .getRawMany();
 
+        const setIdToMatchesMap = new Map<number, RawMatch[]>();
+        matches.forEach(match => {
+            if(!setIdToMatchesMap.has(match.setId)) {
+                setIdToMatchesMap.set(match.setId, []);
+            }
+            setIdToMatchesMap.get(match.setId).push(match);
+        });
+
         // **Combine results with match data**
         return rawResults.map(result => {
-            const setMatches = matchCounts.filter(m => m.setId === result.tournamentSetID);
+            const setMatches = setIdToMatchesMap.get(result.tournamentSetId) || [];
             const playerOneWins = parseInt(setMatches.find(m => m.winner === result.playerOneName)?.wins) || 0;
             const playerTwoWins = parseInt(setMatches.find(m => m.winner === result.playerTwoName)?.wins) || 0;
 
-            const isPlayerOneWinner = result.winnerID === result.playerOneID;
+            const isPlayerOneWinner = result.winnerId === result.playerOneId;
+
+            let score = "N/A";
+            if(playerOneWins + playerTwoWins > 0) {
+                score = `${Math.max(playerOneWins, playerTwoWins)}-${Math.min(playerOneWins, playerTwoWins)}`;
+            }
 
             return {
                 ...result,
                 winnerScore: isPlayerOneWinner ? playerOneWins : playerTwoWins,
                 loserScore: isPlayerOneWinner ? playerTwoWins : playerOneWins,
                 loserName: isPlayerOneWinner ? result.playerTwoName : result.playerOneName,
-                loserID: isPlayerOneWinner ? result.playerTwoID : result.playerOneID,
-                score: `${Math.max(playerOneWins, playerTwoWins)}-${Math.min(playerOneWins, playerTwoWins)}`,
+                loserID: isPlayerOneWinner ? result.playerTwoId : result.playerOneId,
+                score: score,
             };
         });
     }
