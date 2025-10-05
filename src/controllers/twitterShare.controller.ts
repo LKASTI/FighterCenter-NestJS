@@ -1,16 +1,37 @@
-import { Body, Controller, Get, Param, Post, Res } from "@nestjs/common";
-import { TwitterShareService } from "../domain/twitterShare/twitterShare.service";
+import { Body, Controller, Get, Param, Post, Res, UploadedFile, UseInterceptors } from "@nestjs/common";
+import { TwitterShareService } from "../features/twitterShare/twitterShare.service";
 import { CreateTwitterShareDto } from "../dtos/twitterShare.dto";
 import { Response } from "express";
+import { FileInterceptor } from "@nestjs/platform-express";
+import { R2UploadService } from "../features/twitterShare/r2/r2-upload.service";
 
 //TODO rate limiting
 @Controller('twitterShare')
 export class TwitterShareController {
-    constructor(private readonly twitterShareService: TwitterShareService) {}
+    constructor(
+        private readonly twitterShareService: TwitterShareService,
+        private readonly r2UploadService: R2UploadService
+    ) {}
 
     @Get('health')
     async healthCheck() {
         return { status: 'ok', message: 'TwitterShare service is running' };
+    }
+
+    @Post('upload-image')
+    @UseInterceptors(FileInterceptor('image'))
+    async uploadImage(@UploadedFile() file: Express.Multer.File) {
+        if (!file) {
+            throw new Error('No image file provided');
+        }
+
+        // **Upload to R2 and get public URL**
+        const imageUrl = await this.r2UploadService.uploadImage(
+            file.buffer,
+            file.mimetype
+        );
+
+        return { imageUrl };
     }
 
     @Post('create')
@@ -18,11 +39,11 @@ export class TwitterShareController {
         if(!request || !request.pageUrl || !request.imageUrl) {
             throw new Error('Invalid request: pageUrl and imageUrl are required');
         }
+
         request.createDate = new Date();
-
         const twitterShareData = await this.twitterShareService.createAndSave(request);
-
-        const shareUrl = process.env.BACKEND_URL + '/twitterShare/share/' + twitterShareData.twitterShareID;
+        const publicUrl = process.env.NODE_ENV !== 'production'? process.env.BACKEND_URL : process.env.FRONTEND_URL + '/api';
+        const shareUrl = publicUrl + '/twitterShare/share/' + twitterShareData.twitterShareID;
 
         return shareUrl;
     }

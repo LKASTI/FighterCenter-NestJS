@@ -1,4 +1,4 @@
-import { TwitterShare } from "../entities/twitterShare.entity";
+import { TwitterShare } from "../../domain/entities/twitterShare.entity";
 import { Repository } from "typeorm";
 import { InjectRepository } from "@nestjs/typeorm";
 import { CreateTwitterShareDto } from "../../dtos/twitterShare.dto";
