@@ -29,6 +29,7 @@ import { SFSixGamePatchModule } from "./domain/sfsixGamePatch/sfsixGamePatch.mod
 import {
     PlayerSeriesPerformanceAggModule
 } from "./domain/playerSeriesPerformanceAgg/playerSeriesPerformanceAgg.module";
+import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 
 @Module({
     imports: [
@@ -45,10 +46,17 @@ import {
                     .default("development"),
             }),
         }),
+        // Throttling
+        ThrottlerModule.forRoot([{
+            ttl: 60000, // 1 minute
+            limit: 75, // 75 requests per minute
+        }]),
+        // For serving static images
         ServeStaticModule.forRoot({
             rootPath: join(__dirname, "..", "..", "client"),
             serveRoot: "/client",
         }),
+        // For configuring database connection
         TypeOrmModule.forRootAsync({
             imports: [ConfigModule],
             useFactory: (configService: ConfigService) => ({
@@ -98,6 +106,12 @@ import {
         Top8MakerModule
     ],
     controllers: [AppController],
-    providers: [AppService],
+    providers: [
+        AppService,
+        {
+            provide: "APP_GUARD",
+            useClass: ThrottlerGuard
+        }
+    ],
 })
 export class AppModule {}

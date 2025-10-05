@@ -1,9 +1,10 @@
-import { Body, Controller, Get, Param, Post, Res, UploadedFile, UseInterceptors } from "@nestjs/common";
+import { BadRequestException, Body, Controller, Get, Param, Post, Res, UploadedFile, UseInterceptors } from "@nestjs/common";
 import { TwitterShareService } from "../features/twitterShare/twitterShare.service";
 import { CreateTwitterShareDto } from "../dtos/twitterShare.dto";
 import { Response } from "express";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { R2UploadService } from "../features/twitterShare/r2/r2-upload.service";
+import { Throttle } from "@nestjs/throttler";
 
 //TODO rate limiting
 @Controller('twitterShare')
@@ -19,7 +20,30 @@ export class TwitterShareController {
     }
 
     @Post('upload-image')
-    @UseInterceptors(FileInterceptor('image'))
+    @Throttle({ default: { limit: 10, ttl: 60000 } })
+    @UseInterceptors(
+        FileInterceptor('image',
+            {
+                limits: {
+                    fileSize: 1 * 1024 * 1024, // 1 MB file size limit
+                    files: 1
+                },
+                fileFilter: (req, file, callback) => {
+                    // Only allow specific image types
+                    const allowedMimeTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif'];
+
+                    if (!allowedMimeTypes.includes(file.mimetype)) {
+                        return callback(
+                            new BadRequestException('Only PNG, JPEG, and GIF images are allowed'),
+                            false
+                        );
+                    }
+
+                    callback(null, true);
+                }
+            }
+        )
+    )
     async uploadImage(@UploadedFile() file: Express.Multer.File) {
         if (!file) {
             throw new Error('No image file provided');
@@ -35,6 +59,7 @@ export class TwitterShareController {
     }
 
     @Post('create')
+    @Throttle({ default: { limit: 10, ttl: 60000 } })
     async createTwitterShare(@Body() request: CreateTwitterShareDto) {
         if(!request || !request.pageUrl || !request.imageUrl) {
             throw new Error('Invalid request: pageUrl and imageUrl are required');
