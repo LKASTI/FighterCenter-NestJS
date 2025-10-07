@@ -107,6 +107,8 @@ export class TournamentDataParserService {
         req: any,
         tournamentSeriesId: number
     ) {
+        console.log("Received request to parse StartGG tournament data V2 for series ID:", tournamentSeriesId);
+
         const lockKey = tournamentSeriesId;
         if(TournamentDataParserService.seriesImportLocks.get(lockKey)) {
             console.log(`⏳ Waiting for concurrent import to finish for event ${tournamentSeriesId}...`);
@@ -117,6 +119,7 @@ export class TournamentDataParserService {
         TournamentDataParserService.seriesImportLocks.set(lockKey, importPromise);
 
         try {
+            console.log("🚀 Starting tournament import...");
             return await importPromise;
         } finally {
             TournamentDataParserService.seriesImportLocks.delete(lockKey);
