@@ -109,7 +109,7 @@ export const GetEventTop8PlayerDataQuery = gql`
                           }
                         }
                       }
-                      paginatedSets(page: 1, perPage: 7) {
+                      paginatedSets(page: 1, perPage: 3) {
                         nodes {
                           id
                           games {

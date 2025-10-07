@@ -49,7 +49,7 @@ import {
 
 interface BatchJob {
     page: number;
-    promise: Promise<SetConnection | null>;
+    promise: Promise<{ success: true; data: SetConnection | null } | { success: false; error: any }>;
 }
 
 @Injectable()
@@ -107,6 +107,8 @@ export class TournamentDataParserService {
         req: any,
         tournamentSeriesId: number
     ) {
+        console.log("Received request to parse StartGG tournament data V2 for series ID:", tournamentSeriesId);
+
         const lockKey = tournamentSeriesId;
         if(TournamentDataParserService.seriesImportLocks.get(lockKey)) {
             console.log(`⏳ Waiting for concurrent import to finish for event ${tournamentSeriesId}...`);
@@ -117,6 +119,7 @@ export class TournamentDataParserService {
         TournamentDataParserService.seriesImportLocks.set(lockKey, importPromise);
 
         try {
+            console.log("🚀 Starting tournament import...");
             return await importPromise;
         } finally {
             TournamentDataParserService.seriesImportLocks.delete(lockKey);
@@ -483,9 +486,12 @@ export class TournamentDataParserService {
 
         // Phase 2: Process batches as they complete
         while (activeBatches.size > 0) {
+            console.log(`⏳ Waiting for next batch to complete... Active batches: ${activeBatches.size}`);
             try {
                 const completedPage = await this.waitForNextBatch(activeBatches);
-                const setsResponse = await activeBatches.get(completedPage)!.promise;
+                const result = await activeBatches.get(completedPage)!.promise;
+                // Result is already unwrapped by waitForNextBatch, so it's guaranteed to be success
+                const setsResponse = result.success ? result.data : null;
                 activeBatches.delete(completedPage);
                 console.log(`� Batch ${completedPage} data retrieved`);
 
@@ -519,7 +525,12 @@ export class TournamentDataParserService {
                 }
 
             } catch (error) {
-                await this.handleBatchError(error, slug, eventSlug, eventId, activeBatches);
+                const failedPage = (error as any).failedPage;
+                // Remove the failed batch from active batches
+                if (failedPage !== undefined) {
+                    activeBatches.delete(failedPage);
+                }
+                await this.handleBatchError(error, slug, eventSlug, eventId, activeBatches, failedPage);
             }
         }
 
@@ -536,7 +547,20 @@ export class TournamentDataParserService {
     ) {
         if (error.message === 'RATE_LIMIT_EXCEEDED') {
             console.log('⚠️  Rate limit hit, implementing backoff...');
+
+            // Check if we can reduce perPage further
+            if (this.BATCH_REQUEST_CONFIG.perPage <= 0) {
+                console.error('❌ Cannot reduce perPage further (already at 0). Rate limit cannot be resolved.');
+                throw new Error('RATE_LIMIT_UNRESOLVABLE: perPage reached 0');
+            }
+
             this.consecutiveFailures++;
+
+            // Reduce perPage immediately
+            const newPerPage = Math.max(0, this.BATCH_REQUEST_CONFIG.perPage - 3);
+            console.log(`📉 Reducing perPage from ${this.BATCH_REQUEST_CONFIG.perPage} to ${newPerPage}`);
+            this.BATCH_REQUEST_CONFIG.perPage = newPerPage;
+
             const retryCount = this.retryAttempts.get(failedPage || 0) || 0;
 
             if (retryCount < 2) { // Allow 2 immediate retries
@@ -544,8 +568,6 @@ export class TournamentDataParserService {
                 const baseDelay = 3000 * Math.pow(1.2, retryCount);
                 const jitter = Math.random() * 1000;
                 const backoffTime = Math.min(30000, baseDelay + jitter);
-                // Decrease per page count
-                this.BATCH_REQUEST_CONFIG.perPage = Math.max(10, this.BATCH_REQUEST_CONFIG.perPage - 3);
 
                 await this.delay(backoffTime);
                 this.retryAttempts.set(failedPage || 0, retryCount + 1);
@@ -604,12 +626,16 @@ export class TournamentDataParserService {
         activeBatches: Map<number, BatchJob>
     ) {
         // No await call - start request immediately
+        // Convert rejections to resolved promises with error info to prevent unhandled rejections
         const promise = this.startggApiService.getTournamentSets(
             slug,
             eventSlug,
             eventId,
             page,
             this.BATCH_REQUEST_CONFIG.perPage
+        ).then(
+            (data) => ({ success: true as const, data }),
+            (error) => ({ success: false as const, error })
         );
 
         activeBatches.set(page, { page, promise });
@@ -619,13 +645,22 @@ export class TournamentDataParserService {
     private async waitForNextBatch(activeBatches: Map<number, BatchJob>): Promise<number> {
         const batchPromises = Array.from(activeBatches.entries()).map(
             async ([page, job]) => {
-                await job.promise;
-                return page;
+                const result = await job.promise;
+                return { page, result };
             }
         );
 
-        // Returns the first promise to settle (rejected/resolved)
-        return Promise.race(batchPromises);
+        // Returns the first promise to settle
+        const { page, result } = await Promise.race(batchPromises);
+
+        // If there was an error, throw it with the page info attached
+        if (result.success === false) {
+            const error = result.error;
+            (error as any).failedPage = page;
+            throw error;
+        }
+
+        return page;
     }
 
     private async processBatch(
