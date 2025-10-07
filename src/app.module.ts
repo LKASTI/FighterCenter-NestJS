@@ -49,7 +49,7 @@ import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
         // Throttling
         ThrottlerModule.forRoot([{
             ttl: 60000, // 1 minute
-            limit: 75, // 75 requests per minute
+            limit: 100, // 75 requests per minute
         }]),
         // For serving static images
         ServeStaticModule.forRoot({
