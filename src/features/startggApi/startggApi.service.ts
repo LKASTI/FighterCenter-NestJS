@@ -83,8 +83,11 @@ export class StartggApiService {
 
             return response.tournament?.events?.[0]?.sets || null;
         } catch (error) {
-            if ((error.response?.message as string).includes("Your query complexity is too high")) {
-                throw new Error('RATE_LIMIT_EXCEEDED');
+            if (error.response && error.response.errors) {
+                const errors = error.response.errors;
+                if(Array.isArray(errors) && errors.some((e) => e.message.includes('Your query complexity is too high'))) {
+                    throw new Error('RATE_LIMIT_EXCEEDED');
+                }
             }
             throw error;
         }
