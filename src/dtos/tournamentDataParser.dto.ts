@@ -164,3 +164,33 @@ export class StartGGTournamentDataV2ParserDTO {
     @IsString()
     readonly vodLink?: string;
 }
+
+export class UploadTop8GraphicDto {
+    @ApiProperty({
+        description: 'Tournament series name',
+        example: 'Smash Summit',
+        required: true
+    })
+    @IsString()
+    @IsNotEmpty()
+    seriesName: string;
+
+    @ApiProperty({
+        description: 'Start.gg URL containing tournament and event slugs',
+        example: 'https://start.gg/tournament/best-tournament-51/event/street-fighter-6',
+        required: true
+    })
+    @IsString()
+    @IsNotEmpty()
+    startggUrl: string;
+
+    @ApiProperty({
+        description: 'Whether this is a generated graphic',
+        example: true,
+        required: false,
+        default: true
+    })
+    @IsBoolean()
+    @IsOptional()
+    isGenerated?: boolean;
+}

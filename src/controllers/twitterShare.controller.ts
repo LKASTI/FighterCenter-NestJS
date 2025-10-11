@@ -5,6 +5,7 @@ import { Response } from "express";
 import { FileInterceptor } from "@nestjs/platform-express";
 import { R2UploadService } from "../features/twitterShare/r2/r2-upload.service";
 import { Throttle } from "@nestjs/throttler";
+import { imageUploadConfig } from "../common/interceptors/image-upload.config";
 
 //TODO rate limiting
 @Controller('twitterShare')
@@ -21,36 +22,14 @@ export class TwitterShareController {
 
     @Post('upload-image')
     @Throttle({ default: { limit: 10, ttl: 60000 } })
-    @UseInterceptors(
-        FileInterceptor('image',
-            {
-                limits: {
-                    fileSize: 1 * 1024 * 1024, // 1 MB file size limit
-                    files: 1
-                },
-                fileFilter: (req, file, callback) => {
-                    // Only allow specific image types
-                    const allowedMimeTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/gif'];
-
-                    if (!allowedMimeTypes.includes(file.mimetype)) {
-                        return callback(
-                            new BadRequestException('Only PNG, JPEG, and GIF images are allowed'),
-                            false
-                        );
-                    }
-
-                    callback(null, true);
-                }
-            }
-        )
-    )
+    @UseInterceptors(FileInterceptor('image', imageUploadConfig))
     async uploadImage(@UploadedFile() file: Express.Multer.File) {
         if (!file) {
             throw new Error('No image file provided');
         }
 
         // **Upload to R2 and get public URL**
-        const imageUrl = await this.r2UploadService.uploadImage(
+        const imageUrl = await this.r2UploadService.uploadTierlistImage(
             file.buffer,
             file.mimetype
         );

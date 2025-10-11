@@ -20,9 +20,13 @@ import { StartggApiModule } from "../startggApi/startggApi.module";
 import {
     PlayerSeriesPerformanceAggModule
 } from "../../domain/playerSeriesPerformanceAgg/playerSeriesPerformanceAgg.module";
+import { CommonModule } from "../../common/common.module";
+import { TournamentGraphicUploadService } from "./tournamentGraphicUpload.service";
+import { R2UploadService } from "../twitterShare/r2/r2-upload.service";
 
 @Module({
     imports: [
+        CommonModule,
         EventModule,
         TournamentModule,
         TournamentSetModule,
@@ -52,7 +56,13 @@ import {
 
         HttpModule,
     ],
-    providers: [TournamentDataParserService, TournamentManagerService, TournamentManagerRepository],
+    providers: [
+        TournamentDataParserService,
+        TournamentManagerService,
+        TournamentManagerRepository,
+        TournamentGraphicUploadService,
+        R2UploadService,
+    ],
     controllers: [TournamentDataParserController],
     exports: [TournamentDataParserService, TournamentManagerService],
 })

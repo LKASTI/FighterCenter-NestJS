@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { r2Config } from '../../../config/r2.config';
 import { v4 as uuid } from 'uuid';
 
@@ -19,25 +19,51 @@ export class R2UploadService {
         });
     }
 
-    async uploadImage(
+    async uploadImageWithOptions(
         buffer: Buffer,
-        contentType: string = 'image/png'
+        filePath: string,
+        options?: {
+            contentType?: string;
+            folderPrefix?: string;
+        }
     ): Promise<string> {
-        // **Generate unique filename**
-        const fileName = `tierlist-${uuid()}.png`;
+        const folderPrefix = options?.folderPrefix || '';
+        const contentType = options?.contentType || 'image/png';
+        const key = `${folderPrefix}${filePath}`;
 
         const command = new PutObjectCommand({
             Bucket: r2Config.bucketName,
-            Key: fileName,
+            Key: key,
             Body: buffer,
             ContentType: contentType,
-            // **Make publicly readable (if bucket is public)**
-            // Or omit this if you configure bucket-level public access
         });
 
         await this.s3Client.send(command);
+        return `${r2Config.publicUrl}/${key}`;
+    }
 
-        // **Return the public URL**
-        return `${r2Config.publicUrl}/${fileName}`;
+    async deleteFile(folderPrefix: string, filePath: string): Promise<void> {
+        const key = `${folderPrefix}${filePath}`;
+
+        try {
+            const deleteCommand = new DeleteObjectCommand({
+                Bucket: r2Config.bucketName,
+                Key: key,
+            });
+            await this.s3Client.send(deleteCommand);
+        } catch (error) {
+            console.log(`File ${key} not found or already deleted`);
+        }
+    }
+
+    async uploadTierlistImage(
+        buffer: Buffer,
+        contentType: string = 'image/png'
+    ): Promise<string> {
+        const fileName = `tierlist-${uuid()}.png`;
+        return this.uploadImageWithOptions(buffer, fileName, {
+            contentType,
+            folderPrefix: 'tierlists/',
+        });
     }
 }

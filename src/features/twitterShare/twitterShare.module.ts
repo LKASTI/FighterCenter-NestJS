@@ -5,9 +5,10 @@ import { TypeOrmModule } from "@nestjs/typeorm";
 import { TwitterShare } from "../../domain/entities/twitterShare.entity";
 import { TwitterShareRepository } from "./twitterShare.repository";
 import { R2UploadService } from "./r2/r2-upload.service";
+import { CommonModule } from "../../common/common.module";
 
 @Module({
-    imports: [TypeOrmModule.forFeature([TwitterShare])],
+    imports: [TypeOrmModule.forFeature([TwitterShare]), CommonModule],
     providers: [TwitterShareService, TwitterShareRepository, R2UploadService],
     controllers: [TwitterShareController],
     exports: [TwitterShareService],

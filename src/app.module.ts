@@ -30,6 +30,7 @@ import {
     PlayerSeriesPerformanceAggModule
 } from "./domain/playerSeriesPerformanceAgg/playerSeriesPerformanceAgg.module";
 import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
+import { CommonModule } from "./common/common.module";
 
 @Module({
     imports: [
@@ -77,6 +78,8 @@ import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
         }),
         // external libraries
         HttpModule,
+        // common module
+        CommonModule,
         // domain modules
         PlayerModule,
         SFSixRankedProfileModule,
