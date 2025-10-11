@@ -3,7 +3,7 @@ import { MulterOptions } from '@nestjs/platform-express/multer/interfaces/multer
 
 export const imageUploadConfig: MulterOptions = {
   limits: {
-    fileSize: 1 * 1024 * 1024, // 1 MB
+    fileSize: 2 * 1024 * 1024,
     files: 1,
   },
   fileFilter: (req, file, callback) => {

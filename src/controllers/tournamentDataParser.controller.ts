@@ -31,7 +31,7 @@ export class TournamentDataParserController {
     async uploadTop8Graphic(
         @Param("tournamentSeriesId", ParseIntPipe) tournamentSeriesId: number,
         @UploadedFile() file: Express.Multer.File,
-        @Body() body: UploadTop8GraphicDto
+        @Body(new ValidationPipe({ transform: true })) body: UploadTop8GraphicDto
     ) {
         if (!file) {
             throw new BadRequestException('No image file provided');

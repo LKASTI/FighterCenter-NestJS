@@ -1,20 +1,32 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
-import { r2Config } from '../../../config/r2.config';
 import { v4 as uuid } from 'uuid';
 
 @Injectable()
 export class R2UploadService {
     private s3Client: S3Client;
+    private bucketName: string;
+    private publicUrl: string;
 
-    constructor() {
+    constructor(private configService: ConfigService) {
         // **Key part: R2 uses S3-compatible API**
+        const accountId = this.configService.get<string>('CLOUDFLARE_ACCOUNT_ID');
+        const accessKeyId = this.configService.get<string>('R2_ACCESS_KEY_ID');
+        const secretAccessKey = this.configService.get<string>('R2_SECRET_ACCESS_KEY');
+        this.bucketName = this.configService.get<string>('R2_BUCKET_NAME');
+        this.publicUrl = this.configService.get<string>('R2_PUBLIC_URL');
+
+        if (!this.bucketName) {
+            throw new Error('R2_BUCKET_NAME environment variable is not set');
+        }
+
         this.s3Client = new S3Client({
             region: 'auto',
-            endpoint: `https://${r2Config.accountId}.r2.cloudflarestorage.com`,
+            endpoint: `https://${accountId}.r2.cloudflarestorage.com`,
             credentials: {
-                accessKeyId: r2Config.accessKeyId,
-                secretAccessKey: r2Config.secretAccessKey,
+                accessKeyId,
+                secretAccessKey,
             },
         });
     }
@@ -32,14 +44,14 @@ export class R2UploadService {
         const key = `${folderPrefix}${filePath}`;
 
         const command = new PutObjectCommand({
-            Bucket: r2Config.bucketName,
+            Bucket: this.bucketName,
             Key: key,
             Body: buffer,
             ContentType: contentType,
         });
 
         await this.s3Client.send(command);
-        return `${r2Config.publicUrl}/${key}`;
+        return `${this.publicUrl}/${key}`;
     }
 
     async deleteFile(folderPrefix: string, filePath: string): Promise<void> {
@@ -47,7 +59,7 @@ export class R2UploadService {
 
         try {
             const deleteCommand = new DeleteObjectCommand({
-                Bucket: r2Config.bucketName,
+                Bucket: this.bucketName,
                 Key: key,
             });
             await this.s3Client.send(deleteCommand);

@@ -190,6 +190,7 @@ export class UploadTop8GraphicDto {
         required: false,
         default: true
     })
+    @Type(() => Boolean)
     @IsBoolean()
     @IsOptional()
     isGenerated?: boolean;

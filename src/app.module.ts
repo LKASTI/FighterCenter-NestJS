@@ -36,6 +36,7 @@ import { CommonModule } from "./common/common.module";
     imports: [
         ConfigModule.forRoot({
             isGlobal: true, // makes config available throughout the app
+            envFilePath: '.env',
             validationSchema: Joi.object({
                 STARTGG_CLIENT_ID: Joi.string().required(),
                 STARTGG_CLIENT_SECRET: Joi.string().required(),
@@ -45,6 +46,12 @@ import { CommonModule } from "./common/common.module";
                 NODE_ENV: Joi.string()
                     .valid("development", "production", "test")
                     .default("development"),
+                // R2 configuration
+                CLOUDFLARE_ACCOUNT_ID: Joi.string().required(),
+                R2_ACCESS_KEY_ID: Joi.string().required(),
+                R2_SECRET_ACCESS_KEY: Joi.string().required(),
+                R2_BUCKET_NAME: Joi.string().required(),
+                R2_PUBLIC_URL: Joi.string().uri().required(),
             }),
         }),
         // Throttling
