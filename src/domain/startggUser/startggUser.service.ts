@@ -32,7 +32,7 @@ export class StartggUserService {
         let user = await this.startggUserRepository.findOne({
             where: { startggId: createStartggUserDTO.startggId },
         });
-        console.log("findOrCreate user:", user);
+        // console.log("findOrCreate user:", user);
         if (!user) {
             user =
                 await this.startggUserRepository.createAndSave(
