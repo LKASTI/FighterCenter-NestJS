@@ -50,6 +50,7 @@ export class StartggUserService {
                 user.startggTokenExpiresIn = res.expiresIn;
             } catch (error) {
                 console.error('Failed to refresh token for existing user:', error);
+                console.log('Since refreshed failed, updating token to latest startgg response tokens');
                 await this.update(user.startggUserID, {
                     startggEncryptedRefreshToken: createStartggUserDTO.startggEncryptedRefreshToken,
                     startggEncryptedToken: createStartggUserDTO.startggEncryptedToken,
@@ -89,10 +90,10 @@ export class StartggUserService {
                 }
             );
 
-            const { accessToken, refreshToken, expiresIn } = response.data;
-            console.log('startgg refresh response:', response.data);
+            const { access_token: accessToken, refresh_token: refreshToken, expires_in: expiresIn } = response.data;
+            // console.log('startgg refresh response:', response.data);
             if (!accessToken || !refreshToken) {
-                console.error('StartGG refresh response missing tokens:', response.data);
+                console.error('StartGG refresh response missing tokens:', response.data.keys());
                 throw new Error('Invalid StartGG refresh response' + JSON.stringify(response.data));
             }
             const expire = Date.now() + (expiresIn || 604800) * 1000;
@@ -113,7 +114,7 @@ export class StartggUserService {
             };
         } catch (error) {
             console.error('Failed to refresh StartGG token:', error);
-            return null;
+            throw error
         }
     }
 

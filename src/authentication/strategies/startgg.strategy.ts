@@ -16,9 +16,9 @@ export class StartGGStrategy extends PassportStrategy(Strategy, "startgg") {
         super({
             authorizationURL: "https://start.gg/oauth/authorize",
             tokenURL: "https://api.start.gg/oauth/access_token",
-            clientID: process.env.STARTGG_CLIENT_ID, //TODO: update env
-            clientSecret: process.env.STARTGG_CLIENT_SECRET, //TODO: update env
-            callbackURL: process.env.STARTGG_CALLBACK_URL, //TODO: update env
+            clientID: process.env.STARTGG_CLIENT_ID,
+            clientSecret: process.env.STARTGG_CLIENT_SECRET,
+            callbackURL: process.env.STARTGG_CALLBACK_URL,
             scope: ["user.identity", "user.email"],
         });
     }
@@ -55,7 +55,6 @@ export class StartGGStrategy extends PassportStrategy(Strategy, "startgg") {
         return user;
     }
 
-    //TODO: check over docs
     private async fetchStartGGUser(accessToken: string) {
         const query = `
 		  query {

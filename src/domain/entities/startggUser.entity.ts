@@ -1,4 +1,4 @@
-import { BeforeInsert, Column, Entity, PrimaryColumn } from "typeorm";
+import { BeforeInsert, Column, CreateDateColumn, Entity, PrimaryColumn, UpdateDateColumn } from "typeorm";
 import { v4 as uuid } from "uuid";
 
 @Entity("startgg_user")
@@ -46,9 +46,9 @@ export class StartggUser {
     })
     tournamentSeriesAssigned: string[];
 
-    @Column("timestamp", { name: "created_at" })
+    @CreateDateColumn({ name: "created_at" })
     createdAt: Date;
 
-    @Column("timestamp", { name: "updated_at" })
+    @UpdateDateColumn({ name: "updated_at" })
     updatedAt: Date;
 }
