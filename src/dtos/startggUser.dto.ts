@@ -67,6 +67,17 @@ export class CreateStartggUserDTO {
     readonly tournamentSeriesAssigned: string[];
 
     @IsOptional()
+    @Transform(({ value: sf6ProfileCharactersValues }) => {
+        if (Array.isArray(sf6ProfileCharactersValues)) {
+            return sf6ProfileCharactersValues.map((d) => String(d));
+        }
+        return [new String(sf6ProfileCharactersValues)];
+    })
+    @IsArray()
+    @IsString({ each: true })
+    readonly sf6ProfileCharacters?: string[];
+
+    @IsOptional()
     @IsDate()
     @Type(() => Date)
     readonly createdAt?: Date;
@@ -139,6 +150,17 @@ export class FindStartggUsersQueryDTO {
     tournamentSeriesAssigned?: string[];
 
     @IsOptional()
+    @Transform(({ value: sf6ProfileCharactersValues }) => {
+        if (Array.isArray(sf6ProfileCharactersValues)) {
+            return sf6ProfileCharactersValues.map((d) => String(d));
+        }
+        return [new String(sf6ProfileCharactersValues)];
+    })
+    @IsArray()
+    @IsString({ each: true })
+    sf6ProfileCharacters?: string[];
+
+    @IsOptional()
     @Type(() => Date)
     @IsDate()
     createdAt?: Date;
@@ -174,24 +196,24 @@ export class UpdateStartggUserDTO {
 
     @IsOptional()
     @IsString()
-    readonly startggToken: string;
+    readonly startggToken?: string;
 
     @IsOptional()
     @IsString()
-    readonly startggRefreshToken: string;
+    readonly startggRefreshToken?: string;
 
     @IsOptional()
     @IsString()
-    readonly startggEncryptedToken: string;
+    readonly startggEncryptedToken?: string;
 
     @IsOptional()
     @IsString()
-    readonly startggEncryptedRefreshToken: string;
+    readonly startggEncryptedRefreshToken?: string;
 
     @IsDate()
     @Type(() => Date)
     @IsOptional()
-    readonly startggTokenExpiresIn: number;
+    readonly startggTokenExpiresIn?: number;
 
     @IsOptional()
     @IsString()
@@ -199,7 +221,7 @@ export class UpdateStartggUserDTO {
 
     @IsOptional()
     @IsString()
-    readonly startggGamerTag: string;
+    readonly startggGamerTag?: string;
 
     @IsOptional()
     @Transform(({ value: roleValues }) => {
@@ -222,6 +244,17 @@ export class UpdateStartggUserDTO {
     @IsArray()
     @IsString({ each: true })
     readonly tournamentSeriesAssigned?: string[];
+
+    @IsOptional()
+    @Transform(({ value: sf6ProfileCharactersValues }) => {
+        if (Array.isArray(sf6ProfileCharactersValues)) {
+            return sf6ProfileCharactersValues.map((d) => String(d));
+        }
+        return [new String(sf6ProfileCharactersValues)];
+    })
+    @IsArray()
+    @IsString({ each: true })
+    readonly sf6ProfileCharacters?: string[];
 
     @IsOptional()
     @IsDate()

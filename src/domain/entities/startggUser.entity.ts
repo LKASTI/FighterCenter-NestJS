@@ -46,6 +46,9 @@ export class StartggUser {
     })
     tournamentSeriesAssigned: string[];
 
+    @Column("varchar", { name: "sf6_profile_characters", array: true })
+    sf6ProfileCharacters: string[];
+
     @CreateDateColumn({ name: "created_at" })
     createdAt: Date;
 

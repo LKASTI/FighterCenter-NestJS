@@ -46,6 +46,7 @@ import { Set as StartGGSet, SetConnection } from "../startggApi/startggApi.graph
 import {
     PlayerSeriesPerformanceAggService
 } from "../../domain/playerSeriesPerformanceAgg/playerSeriesPerformanceAgg.service";
+import { StartggUserService } from "../../domain/startggUser/startggUser.service";
 
 interface BatchJob {
     page: number;
@@ -66,7 +67,8 @@ export class TournamentDataParserService {
 
         @InjectDataSource() private dataSource: DataSource,
 
-        private readonly encryptionService: EncryptionService
+        private readonly encryptionService: EncryptionService,
+        private readonly startggUserService: StartggUserService
     ) {}
 
     private readonly BATCH_REQUEST_CONFIG = {
@@ -99,6 +101,10 @@ export class TournamentDataParserService {
     private startggApiToken: string;
 
     private playerIdsForProcessing: number [] = [];
+
+    // Map of PTRs without characters: key is "${playerId}-${tournamentId}", value is startggId (as number from StartGG API)
+    // Used to track which PTRs need profile character fallback after all batches are processed
+    private ptrsWithoutCharacters = new Map<string, number>();
 
     private static readonly seriesImportLocks = new Map<number, Promise<any>>();
 
@@ -133,6 +139,10 @@ export class TournamentDataParserService {
     ) {
         try {
             this.initializeVariables(params, req);
+
+            // Clear the map of PTRs without characters for this new tournament import
+            // This ensures clean state even if a previous import failed
+            this.ptrsWithoutCharacters.clear();
 
             // Parse startgg url
             const { startggSlug, startggEventSlug } = this.extractSlugsFromUrl(params);
@@ -534,6 +544,9 @@ export class TournamentDataParserService {
             }
         }
 
+        // Apply character fallback for PTRs that have no characters after all batches
+        await this.applyProfileCharacterFallback(tournamentId);
+
         console.log('✅ Tournament processing completed!');
     }
 
@@ -726,6 +739,75 @@ export class TournamentDataParserService {
         });
 
         return playerCharacters;
+    }
+
+    /**
+     * Fetch SF6 profile characters for a player from their startgg_user record.
+     * This is used as a fallback when no character data is available from tournament sets.
+     *
+     * @param startggId The player's StartGG ID
+     * @returns Array of character names from their profile, or empty array if not found
+     */
+    private async getProfileCharactersForPlayer(startggId: number): Promise<string[]> {
+        try {
+            const startggUser = await this.startggUserService.findByStartggId(String(startggId));
+            if (startggUser && startggUser.sf6ProfileCharacters && startggUser.sf6ProfileCharacters.length > 0) {
+                return startggUser.sf6ProfileCharacters;
+            }
+        } catch (error) {
+            console.warn(`Failed to fetch profile characters for startggId ${startggId}:`, error.message);
+        }
+        return [];
+    }
+
+    /**
+     * Apply profile character fallback for PTRs that have no characters after all batches are processed.
+     * This method iterates through the ptrsWithoutCharacters map and updates each PTR with characters
+     * from the player's startgg_user profile (sf6ProfileCharacters field).
+     *
+     * @param tournamentId The tournament ID to update PTRs for
+     */
+    private async applyProfileCharacterFallback(tournamentId: number): Promise<void> {
+        if (this.ptrsWithoutCharacters.size === 0) {
+            console.log('No PTRs need character fallback');
+            return;
+        }
+
+        console.log(`Applying profile character fallback for ${this.ptrsWithoutCharacters.size} PTRs...`);
+
+        const updatePromises = [];
+
+        for (const [ptrKey, startggId] of this.ptrsWithoutCharacters.entries()) {
+            // Fetch profile characters for this player
+            const profileCharacters = await this.getProfileCharactersForPlayer(startggId);
+
+            if (profileCharacters.length > 0) {
+                // Parse the ptrKey to get playerId and tournamentId
+                const [playerId, tournamentIdFromKey] = ptrKey.split('-').map(Number);
+
+                console.log(`Updating PTR for player ${playerId} with profile characters: ${profileCharacters.join(', ')}`);
+
+                // Update the PTR with profile characters
+                const updatePromise = this.dataSource
+                    .createQueryBuilder()
+                    .update(PlayerTournamentRun)
+                    .set({ charactersUsed: profileCharacters })
+                    .where('player_id = :playerId AND tournament_id = :tournamentId', {
+                        playerId: playerId,
+                        tournamentId: tournamentId
+                    })
+                    .execute();
+
+                updatePromises.push(updatePromise);
+            }
+        }
+
+        await Promise.all(updatePromises);
+
+        console.log(`✅ Applied profile character fallback to ${updatePromises.length} PTRs`);
+
+        // Clear the map after applying fallback
+        this.ptrsWithoutCharacters.clear();
     }
 
     //#region StartGG API request calls
@@ -974,11 +1056,22 @@ export class TournamentDataParserService {
                 const existingCharacters = new Set(existingPTR.charactersUsed || []);
                 batchCharacters.forEach(char => existingCharacters.add(char));
 
+                const mergedCharacters = Array.from(existingCharacters);
+
                 updatePTRData.push({
                     playerID: playerId,
                     tournamentID: tournamentID,
-                    charactersUsed: Array.from(existingCharacters)
+                    charactersUsed: mergedCharacters
                 });
+
+                // Track or remove from map based on whether characters exist after merge
+                if (mergedCharacters.length === 0) {
+                    // Still no characters after merge, add/keep in map for fallback
+                    this.ptrsWithoutCharacters.set(ptrKey, startggId);
+                } else {
+                    // Has characters now, remove from map (no fallback needed)
+                    this.ptrsWithoutCharacters.delete(ptrKey);
+                }
             } else {
                 // 🟢 CREATE: New PTR with characters
                 newPTRData.push({
@@ -989,6 +1082,11 @@ export class TournamentDataParserService {
                     seed: playerData.seed,
                     charactersUsed: batchCharacters
                 });
+
+                // Track PTRs without characters for fallback later
+                if (batchCharacters.length === 0) {
+                    this.ptrsWithoutCharacters.set(ptrKey, startggId);
+                }
 
                 // Update stats
                 this.responseStats["playerTournamentRunIDs"].push([playerId, tournamentID]);
