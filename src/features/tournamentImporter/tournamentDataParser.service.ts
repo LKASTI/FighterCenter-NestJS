@@ -544,6 +544,12 @@ export class TournamentDataParserService {
             }
         }
 
+        // Wait for all batch processing to complete
+        if (this.processingPromises.size > 0) {
+            console.log(`⏳ Waiting for ${this.processingPromises.size} remaining batch processing tasks to complete...`);
+            await Promise.all(this.processingPromises);
+        }
+
         // Apply character fallback for PTRs that have no characters after all batches
         await this.applyProfileCharacterFallback(tournamentId);
 

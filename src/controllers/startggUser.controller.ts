@@ -6,7 +6,7 @@ import {
     UseGuards,
     ValidationPipe,
     UnauthorizedException,
-    BadRequestException,
+    BadRequestException, Get,
 } from "@nestjs/common";
 import { StartggUserService } from "../domain/startggUser/startggUser.service";
 import { BasicStartggAuthGuard } from "../authentication/guards/basicStartggAuth.guard";
@@ -47,5 +47,26 @@ export class StartggUserController {
         );
 
         return { sf6ProfileCharacters: updateSf6CharactersDTO.sf6ProfileCharacters };
+    }
+
+    @Get("sf6Characters")
+    @UseGuards(BasicStartggAuthGuard)
+    async getSf6Characters(
+        @Req() req: any,
+    ): Promise<{ sf6ProfileCharacters: string[] }> {
+        const user = req.user as StartggUser;
+
+        if (!user) {
+            throw new UnauthorizedException("User not authenticated");
+        }
+
+        // Fetch the latest user data from the database
+        const startggUser = await this.startggUserService.findById(user.startggUserID);
+
+        if (!startggUser) {
+            throw new UnauthorizedException("User not found");
+        }
+
+        return { sf6ProfileCharacters: startggUser.sf6ProfileCharacters || [] };
     }
 }

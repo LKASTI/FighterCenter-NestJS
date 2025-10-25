@@ -24,6 +24,7 @@ export class AuthController {
             gamerTag: user.startggGamerTag,
             roles: user.roles,
             tournamentSeriesAssigned: user.tournamentSeriesAssigned,
+            sf6ProfileCharacters: user.sf6ProfileCharacters
         };
 
         const token = this.jwtService.sign(payload);
