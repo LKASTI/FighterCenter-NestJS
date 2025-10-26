@@ -14,6 +14,8 @@ import { EventRepository } from "../../domain/event/event.repository";
 
 @Injectable()
 export class TournamentManagerService {
+    private static readonly seriesMutationLocks = new Map<number, Promise<any>>();
+
     constructor(
         private readonly tournamentManagerRepository: TournamentManagerRepository,
         private readonly tournamentService: TournamentService,
@@ -26,6 +28,26 @@ export class TournamentManagerService {
     ) {}
 
     public async deleteTournamentData(tournamentSeriesId: number, tournamentId: number, updatedBy?: string) {
+        const lockKey = tournamentSeriesId;
+
+        // Wait for any ongoing mutations to this series
+        if (TournamentManagerService.seriesMutationLocks.has(lockKey)) {
+            console.log(`⏳ Waiting for concurrent series mutation to finish for series ${tournamentSeriesId}...`);
+            await TournamentManagerService.seriesMutationLocks.get(lockKey);
+        }
+
+        // Create promise for this deletion operation
+        const deletionPromise = this.performDeletion(tournamentSeriesId, tournamentId, updatedBy);
+        TournamentManagerService.seriesMutationLocks.set(lockKey, deletionPromise);
+
+        try {
+            return await deletionPromise;
+        } finally {
+            TournamentManagerService.seriesMutationLocks.delete(lockKey);
+        }
+    }
+
+    private async performDeletion(tournamentSeriesId: number, tournamentId: number, updatedBy?: string) {
         // check if tournament exists for series
         const exists = await this.tournamentExistsForSeries(tournamentId, tournamentSeriesId);
         if(!exists) {
