@@ -7,23 +7,77 @@ import { SFSixGamePatchService } from "../../domain/sfsixGamePatch/sfsixGamePatc
 import { FindSFSixGamePatchDTO } from "../../dtos/sfsixGamePatch.dto";
 import { toWords } from "number-to-words";
 import { Tournament } from "../../domain/entities";
+import { PlayerSeriesPerformanceAggService } from "../../domain/playerSeriesPerformanceAgg/playerSeriesPerformanceAgg.service";
+import { InjectRepository } from "@nestjs/typeorm";
+import { PlayerTournamentRunRepository } from "../../domain/playerTournamentRun/playerTournamentRun.repository";
+import { EventRepository } from "../../domain/event/event.repository";
 
 @Injectable()
 export class TournamentManagerService {
     constructor(
         private readonly tournamentManagerRepository: TournamentManagerRepository,
         private readonly tournamentService: TournamentService,
-        private readonly gamePatchService: SFSixGamePatchService
+        private readonly gamePatchService: SFSixGamePatchService,
+        private readonly playerSeriesPerformanceAggService: PlayerSeriesPerformanceAggService,
+        @InjectRepository(PlayerTournamentRunRepository)
+        private readonly playerTournamentRunRepository: PlayerTournamentRunRepository,
+        @InjectRepository(EventRepository)
+        private readonly eventRepository: EventRepository,
     ) {}
 
-    public async deleteTournamentData(tournamentSeriesId: number, tournamentId: number) {
+    public async deleteTournamentData(tournamentSeriesId: number, tournamentId: number, updatedBy?: string) {
         // check if tournament exists for series
         const exists = await this.tournamentExistsForSeries(tournamentId, tournamentSeriesId);
         if(!exists) {
             throw new NotFoundException("Tournament not found for the given series");
         }
 
-        return await this.tournamentManagerRepository.deleteTournamentData(tournamentId);
+        console.log(`🗑️  Deleting tournament ${tournamentId} from series ${tournamentSeriesId}`);
+
+        // 1. Get affected player IDs BEFORE deletion
+        const affectedPlayerIds = await this.playerTournamentRunRepository
+            .find({
+                where: { tournamentID: tournamentId },
+                select: ['playerID']
+            })
+            .then(ptrs => ptrs.map(ptr => ptr.playerID));
+
+        console.log(`📊 Found ${affectedPlayerIds.length} affected players: [${affectedPlayerIds.join(', ')}]`);
+
+        // 2. Delete tournament data (matches, sets, PTRs, tournament)
+        const result = await this.tournamentManagerRepository.deleteTournamentData(tournamentId);
+
+        // 3. Update event's lastUpdatedTournamentDate to invalidate caches
+        await this.eventRepository.update(
+            { eventID: tournamentSeriesId },
+            {
+                lastUpdatedTournamentDate: new Date(),
+                updatedBy: updatedBy || null
+            }
+        );
+
+        console.log(`✅ Tournament deleted, event ${tournamentSeriesId} lastUpdatedTournamentDate updated`);
+
+        // 4. Trigger aggregate recalculation for affected players
+        // Run in background to avoid blocking the response
+        if (affectedPlayerIds.length > 0) {
+            setImmediate(async () => {
+                try {
+                    console.log(`🔄 Starting background update of performance aggregates for ${affectedPlayerIds.length} players`);
+                    await this.playerSeriesPerformanceAggService.updateAllForSeries(
+                        tournamentSeriesId,
+                        affectedPlayerIds
+                    );
+                    console.log(`✅ Successfully updated performance aggregates for ${affectedPlayerIds.length} players after tournament deletion`);
+                } catch (error) {
+                    console.error('❌ Error updating player performance aggs after deletion:', error);
+                }
+            });
+        } else {
+            console.log(`⚠️  No players affected by tournament deletion, skipping aggregate updates`);
+        }
+
+        return result;
     }
 
     public async updateTournamentData(tournamentId: number, tournamentSeriesId: number, request: UpdateSeriesTournamentDTO): Promise<Tournament> {

@@ -84,9 +84,11 @@ export class TournamentDataParserController {
     @Roles("TOURNAMENT_ORGANIZER", "SUPER_ADMIN")
     async deleteTournamentData(
         @Param("tournamentSeriesId", ParseIntPipe) tournamentSeriesId: number,
-        @Param("tournamentId", ParseIntPipe) tournamentId: number
+        @Param("tournamentId", ParseIntPipe) tournamentId: number,
+        @Req() req: any
     ) {
-        return await this.tournamentManagerService.deleteTournamentData(tournamentSeriesId, tournamentId);
+        const updatedBy = req.user?.startggUserID;
+        return await this.tournamentManagerService.deleteTournamentData(tournamentSeriesId, tournamentId, updatedBy);
     }
 
     @Post("updateTournamentData/:tournamentSeriesId/:tournamentId")
