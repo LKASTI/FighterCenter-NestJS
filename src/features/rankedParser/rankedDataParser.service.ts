@@ -2,6 +2,8 @@ import { Injectable, Logger, NotFoundException } from "@nestjs/common";
 import { SFSixRankedProfileService } from "../../domain/sfsixRankedProfile/sfsixRankedProfile.service";
 import { SFSixRankedCharacterRankingService } from "../../domain/sfsixRankedCharacterRanking/sfsixRankedCharacterRanking.service";
 import { SFSixRankedCharacterService } from "../../domain/sfsixRankedCharacter/sfsixRankedCharacter.service";
+import { TaggedCacheService } from "../../common/cache/tagged-cache.service";
+import { CacheTags } from "../../common/cache/cache-keys.util";
 import * as path from "path";
 import * as fs from "fs/promises";
 
@@ -22,6 +24,7 @@ export class RankedDataParserService {
         private readonly rankedProfileService: SFSixRankedProfileService,
         private readonly rankedCharacterService: SFSixRankedCharacterService,
         private readonly rankedCharacterRankingService: SFSixRankedCharacterRankingService,
+        private readonly taggedCacheService: TaggedCacheService,
     ) {}
 
     async parseRankedFileDirectory() {
@@ -58,6 +61,9 @@ export class RankedDataParserService {
             }
             console.log(`File ${file} parsed`);
         }
+
+        // Invalidate all ranked data caches after batch import
+        await this.invalidateRankedCaches();
     }
 
     async parseJSONrankedFile(
@@ -82,6 +88,9 @@ export class RankedDataParserService {
         for (const record of jsonData) {
             await this.parseRankedPlayerRecord(record, date, phase, season);
         }
+
+        // Invalidate all ranked data caches after import
+        await this.invalidateRankedCaches();
     }
 
     async parseRankedPlayerRecord(
@@ -141,5 +150,16 @@ export class RankedDataParserService {
                 season: season,
             });
         }
+    }
+
+    /**
+     * Invalidate all ranked data caches after import
+     * @private
+     */
+    private async invalidateRankedCaches(): Promise<void> {
+        // Nuclear option: clear all ranked data caches
+        await this.taggedCacheService.invalidateByTag(
+            CacheTags.ranked.allRankedData()
+        );
     }
 }
