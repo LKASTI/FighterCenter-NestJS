@@ -8,12 +8,16 @@ import { FindSFSixGamePatchDTO } from "../../dtos/sfsixGamePatch.dto";
 import { toWords } from "number-to-words";
 import { Tournament } from "../../domain/entities";
 
+import { TaggedCacheService } from "../../common/cache/tagged-cache.service";
+import { CacheTags } from "../../common/cache/cache-keys.util";
+
 @Injectable()
 export class TournamentManagerService {
     constructor(
         private readonly tournamentManagerRepository: TournamentManagerRepository,
         private readonly tournamentService: TournamentService,
-        private readonly gamePatchService: SFSixGamePatchService
+        private readonly gamePatchService: SFSixGamePatchService,
+        private readonly taggedCacheService: TaggedCacheService,
     ) {}
 
     public async deleteTournamentData(tournamentSeriesId: number, tournamentId: number) {
@@ -23,7 +27,12 @@ export class TournamentManagerService {
             throw new NotFoundException("Tournament not found for the given series");
         }
 
-        return await this.tournamentManagerRepository.deleteTournamentData(tournamentId);
+        const result = await this.tournamentManagerRepository.deleteTournamentData(tournamentId);
+
+        // Invalidate all caches related to this tournament and event
+        await this.invalidateTournamentCaches(tournamentId, tournamentSeriesId);
+
+        return result;
     }
 
     public async updateTournamentData(tournamentId: number, tournamentSeriesId: number, request: UpdateSeriesTournamentDTO): Promise<Tournament> {
@@ -54,7 +63,12 @@ export class TournamentManagerService {
             throw new NotFoundException(`Game season ${request.gameSeason} is invalid`);
         }
 
-        return await this.tournamentService.update(tournamentId, mappedRequest);
+        const result = await this.tournamentService.update(tournamentId, mappedRequest);
+
+        // Invalidate all caches related to this tournament and event
+        await this.invalidateTournamentCaches(tournamentId, tournamentSeriesId);
+
+        return result;
 
     }
 
@@ -68,5 +82,22 @@ export class TournamentManagerService {
             return false;
         }
         return true;
+    }
+
+    /**
+     * Invalidate all caches related to a tournament and its event series
+     * Called after tournament import, update, or deletion
+     */
+    private async invalidateTournamentCaches(tournamentId: number, eventSeriesId: number): Promise<void> {
+        await this.taggedCacheService.invalidateByTags([
+            // Specific tournament caches
+            CacheTags.tournament.byId(tournamentId),
+            // Event-level caches (affects all tournaments in the event, player performance, etc.)
+            CacheTags.tournament.event(eventSeriesId),
+            // Tournament list caches
+            CacheTags.tournament.allLists(),
+            // Player performance caches for this event
+            CacheTags.playerSeriesPerformance.event(eventSeriesId),
+        ]);
     }
 }

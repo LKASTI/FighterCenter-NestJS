@@ -47,6 +47,8 @@ import {
     PlayerSeriesPerformanceAggService
 } from "../../domain/playerSeriesPerformanceAgg/playerSeriesPerformanceAgg.service";
 import { StartggUserService } from "../../domain/startggUser/startggUser.service";
+import { TaggedCacheService } from "../../common/cache/tagged-cache.service";
+import { CacheTags } from "../../common/cache/cache-keys.util";
 
 interface BatchJob {
     page: number;
@@ -68,7 +70,8 @@ export class TournamentDataParserService {
         @InjectDataSource() private dataSource: DataSource,
 
         private readonly encryptionService: EncryptionService,
-        private readonly startggUserService: StartggUserService
+        private readonly startggUserService: StartggUserService,
+        private readonly taggedCacheService: TaggedCacheService,
     ) {}
 
     private readonly BATCH_REQUEST_CONFIG = {
@@ -116,7 +119,7 @@ export class TournamentDataParserService {
         console.log("Received request to parse StartGG tournament data V2 for series ID:", tournamentSeriesId);
 
         const lockKey = tournamentSeriesId;
-        if(TournamentDataParserService.seriesImportLocks.get(lockKey)) {
+        if(await TournamentDataParserService.seriesImportLocks.get(lockKey)) {
             console.log(`⏳ Waiting for concurrent import to finish for event ${tournamentSeriesId}...`);
             await TournamentDataParserService.seriesImportLocks.get(lockKey);
         }
@@ -223,6 +226,12 @@ export class TournamentDataParserService {
 
             // Update player performance agg
             this.runPlayerPerformanceAggUpdates(newEvent.eventID, Array.from(new Set(this.playerIdsForProcessing)));
+
+            // Invalidate all caches related to this tournament import
+            await this.invalidateTournamentCaches(
+                this.responseStats.tournamentID as number,
+                this.responseStats.eventID as number
+            );
 
             // return stats
             return this.responseStats;
@@ -1219,7 +1228,7 @@ export class TournamentDataParserService {
     }
     //#endregion
 
-    //#region Update Player Performance Aggs
+    // Update Player Performance Aggs
     private runPlayerPerformanceAggUpdates(
         eventSeriesID: number,
         playerIDs: number[] | undefined
@@ -1238,5 +1247,21 @@ export class TournamentDataParserService {
            }
         });
     }
-    //#endregion
+
+    /**
+     * Invalidate all caches related to a tournament and its event series
+     * Called after tournament import completes
+     */
+    private async invalidateTournamentCaches(tournamentId: number, eventSeriesId: number): Promise<void> {
+        await this.taggedCacheService.invalidateByTags([
+            // Specific tournament caches
+            CacheTags.tournament.byId(tournamentId),
+            // Event-level caches (affects all tournaments in the event, player performance, etc.)
+            CacheTags.tournament.event(eventSeriesId),
+            // Tournament list caches
+            CacheTags.tournament.allLists(),
+            // Player performance caches for this event
+            CacheTags.playerSeriesPerformance.event(eventSeriesId),
+        ]);
+    }
 }
