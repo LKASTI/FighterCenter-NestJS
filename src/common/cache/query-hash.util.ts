@@ -1,10 +1,11 @@
+import * as crypto from 'crypto';
+
 /**
  * Converts a query object to a consistent hash string for cache keys.
- *
- * Ensures that query parameters in different orders produce the same hash:
+ * Uses MD5 hashing to create a fixed-length 32-character hash without collisions.
  *
  * @param query Query object to hash
- * @returns Short hash string for use in cache keys
+ * @returns 32-character hex hash string for use in cache keys
  */
 export function hashQuery(query: Record<string, any>): string {
     if (!query || Object.keys(query).length === 0) {
@@ -36,10 +37,10 @@ export function hashQuery(query: Record<string, any>): string {
         }
     }
 
-    // Create hash from sorted JSON string
+    // Create MD5 hash from sorted JSON string
     const jsonString = JSON.stringify(sortedObj);
-    const hash = Buffer.from(jsonString).toString('base64');
+    const hash = crypto.createHash('md5').update(jsonString).digest('hex');
 
-    // Return first 16 characters for reasonable key length
-    return hash.slice(0, 16);
+    // Returns 32-character hex string with no collisions
+    return hash;
 }
