@@ -15,6 +15,7 @@ import { StartggUserModule } from "../startggUser/startggUser.module";
 import { StartggApiModule } from "../../features/startggApi/startggApi.module";
 import { TournamentMatchModule } from "../tournamentMatch/tournamentMatch.module";
 import { TournamentSetModule } from "../tournamentSet/tournamentSet.module";
+import { CommonModule } from "../../common/common.module";
 
 @Module({
     imports: [
@@ -24,6 +25,7 @@ import { TournamentSetModule } from "../tournamentSet/tournamentSet.module";
         TournamentSetModule,
 
         EncryptionModule,
+        CommonModule,
         StartggUserModule,
         StartggApiModule,
         PassportModule.register({ defaultStrategy: "jwt" }),

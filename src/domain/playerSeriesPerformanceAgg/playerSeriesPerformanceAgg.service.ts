@@ -5,6 +5,8 @@ import { EventService } from "../event/event.service";
 import { TournamentSetRepository } from "../tournamentSet/tournamentSet.repository";
 import { InjectRepository } from "@nestjs/typeorm";
 import { TournamentMatchRepository } from "../tournamentMatch/tournamentMatch.repository";
+import { TaggedCacheService } from "../../common/cache/tagged-cache.service";
+import { CacheKeys, CacheTags } from "../../common/cache/cache-keys.util";
 
 interface RawMatch {
     setId: number;
@@ -36,10 +38,18 @@ export class PlayerSeriesPerformanceAggService {
         @InjectRepository(TournamentSetRepository)
         private readonly tournamentSetRepository: TournamentSetRepository,
         @InjectRepository(TournamentMatchRepository)
-        private readonly tournamentMatchRepository: TournamentMatchRepository
+        private readonly tournamentMatchRepository: TournamentMatchRepository,
+        private readonly taggedCacheService: TaggedCacheService,
     ) {}
 
     async getPlayerSetsForSeries(playerId: number, eventId: number): Promise<any[]> {
+        const cacheKey = CacheKeys.playerSeriesPerformance.playerSets(eventId, playerId);
+        const cached = await this.taggedCacheService.get<any[]>(cacheKey);
+
+        if (cached) {
+            return cached;
+        }
+
         const rawResults: RawSet[] = await this.tournamentSetRepository
             .createQueryBuilder('tournamentSet')
             .leftJoin('tournamentSet.tournament', 'tournament')
@@ -92,8 +102,8 @@ export class PlayerSeriesPerformanceAggService {
             setIdToMatchesMap.get(match.setId).push(match);
         });
 
-        // **Combine results with match data**
-        return rawResults.map(result => {
+        // Combine results with match data
+        const result = rawResults.map(result => {
             const setMatches = setIdToMatchesMap.get(result.tournamentSetId) || [];
             const playerOneWins = parseInt(setMatches.find(m => m.winner === result.playerOneName)?.wins) || 0;
             const playerTwoWins = parseInt(setMatches.find(m => m.winner === result.playerTwoName)?.wins) || 0;
@@ -114,10 +124,31 @@ export class PlayerSeriesPerformanceAggService {
                 score: score,
             };
         });
+
+        // Cache for 30 minutes (30 * 60 * 1000 = 1800000ms)
+        await this.taggedCacheService.setWithTags(
+            cacheKey,
+            result,
+            [
+                CacheTags.tournament.event(eventId),
+                CacheTags.player.byId(playerId),
+                CacheTags.playerSeriesPerformance.player(eventId, playerId),
+            ],
+            1800000,
+        );
+
+        return result;
     }
 
     public async getAllForSeries(eventSeriesID: number): Promise<PlayerSeriesPerformanceAgg[]> {
-        return await this.repository.find({
+        const cacheKey = CacheKeys.playerSeriesPerformance.allForSeries(eventSeriesID);
+        const cached = await this.taggedCacheService.get<PlayerSeriesPerformanceAgg[]>(cacheKey);
+
+        if (cached) {
+            return cached;
+        }
+
+        const result = await this.repository.find({
             where: { eventID: eventSeriesID },
             order: {
                 bestPlacement: 'ASC',
@@ -125,6 +156,19 @@ export class PlayerSeriesPerformanceAggService {
                 attendance: 'DESC'
             }
         });
+
+        // Cache for 1 hour (60 * 60 * 1000 = 3600000ms)
+        await this.taggedCacheService.setWithTags(
+            cacheKey,
+            result,
+            [
+                CacheTags.tournament.event(eventSeriesID),
+                CacheTags.playerSeriesPerformance.event(eventSeriesID),
+            ],
+            3600000,
+        );
+
+        return result;
     }
 
     public async getAllForSeriesTable(eventSeriesID: number): Promise<Partial<PlayerSeriesPerformanceAgg>[]> {
@@ -135,6 +179,13 @@ export class PlayerSeriesPerformanceAggService {
     }
 
     public async getPlayerPerformanceData(playerID: number, eventSeriesID: number): Promise<PlayerSeriesPerformanceAgg> {
+        const cacheKey = CacheKeys.playerSeriesPerformance.performanceData(eventSeriesID, playerID);
+        const cached = await this.taggedCacheService.get<PlayerSeriesPerformanceAgg>(cacheKey);
+
+        if (cached) {
+            return cached;
+        }
+
         let currentAggData = await this.repository.findOneBy({
             playerID,
             eventID: eventSeriesID
@@ -148,6 +199,18 @@ export class PlayerSeriesPerformanceAggService {
             });
         }
 
+        // Cache for 1 hour (60 * 60 * 1000 = 3600000ms)
+        await this.taggedCacheService.setWithTags(
+            cacheKey,
+            currentAggData,
+            [
+                CacheTags.tournament.event(eventSeriesID),
+                CacheTags.player.byId(playerID),
+                CacheTags.playerSeriesPerformance.player(eventSeriesID, playerID),
+            ],
+            3600000,
+        );
+
         return currentAggData;
     }
 
@@ -155,6 +218,12 @@ export class PlayerSeriesPerformanceAggService {
         if(!playerIDs) playerIDs = await this.repository.getAllPlayerIdsInSeries(eventSeriesID);
 
         await this.processBatch(eventSeriesID, playerIDs, { chunkSize: 50, delayMs: 200 });
+
+        // Invalidate all performance caches for this event series
+        await this.taggedCacheService.invalidateByTag(
+            CacheTags.playerSeriesPerformance.event(eventSeriesID)
+        );
+
 
         return true;
     }
@@ -191,7 +260,14 @@ export class PlayerSeriesPerformanceAggService {
         try {
             const shouldUpdate = await this.aggregateNeedsUpdate(playerID, eventSeriesID);
             if(!shouldUpdate) return false;
+
             await this.repository.calculateAndSavePlayerPerformanceAgg(playerID, eventSeriesID);
+
+            // Invalidate performance caches for this player
+            await this.taggedCacheService.invalidateByTag(
+                CacheTags.playerSeriesPerformance.player(eventSeriesID, playerID)
+            );
+
             return true;
         } catch(error) {
             console.error(`Failed to update player performance data for playerId: ${playerID} and eventId: ${eventSeriesID}:`, error);
