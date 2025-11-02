@@ -1,4 +1,4 @@
-import { Injectable, Logger, NotFoundException } from "@nestjs/common";
+import { Injectable, NotFoundException } from "@nestjs/common";
 import { SFSixRankedProfileService } from "../../domain/sfsixRankedProfile/sfsixRankedProfile.service";
 import { SFSixRankedCharacterRankingService } from "../../domain/sfsixRankedCharacterRanking/sfsixRankedCharacterRanking.service";
 import { SFSixRankedCharacterService } from "../../domain/sfsixRankedCharacter/sfsixRankedCharacter.service";

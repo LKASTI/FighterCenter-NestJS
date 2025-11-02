@@ -14,10 +14,7 @@ import { Cache } from 'cache-manager';
  */
 @Injectable()
 export class TaggedCacheService {
-    // Maps tag -> Set of cache keys with that tag
     private tagToKeys = new Map<string, Set<string>>();
-
-    // Maps cache key -> Set of tags for that key (reverse mapping)
     private keyToTags = new Map<string, Set<string>>();
 
     constructor(
@@ -59,6 +56,7 @@ export class TaggedCacheService {
      * @param tag Tag to invalidate
      */
     async invalidateByTag(tag: string): Promise<void> {
+        // Get all keys mapped to this tag
         const keys = this.tagToKeys.get(tag);
 
         if (!keys || keys.size === 0) {

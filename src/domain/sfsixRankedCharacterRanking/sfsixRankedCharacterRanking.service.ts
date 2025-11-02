@@ -37,12 +37,11 @@ export class SFSixRankedCharacterRankingService {
 
         const result = await this.repository.findAll(query);
 
-        // Cache for 6 hours (6 * 60 * 60 * 1000 = 21600000ms)
         await this.taggedCacheService.setWithTags(
             cacheKey,
             result,
             [CacheTags.ranked.allRankedData()],
-            21600000,
+            21600000, //6 hours
         );
 
         return result;
@@ -58,12 +57,11 @@ export class SFSixRankedCharacterRankingService {
 
         const result = await this.repository.findAllPhases();
 
-        // Cache for 12 hours (12 * 60 * 60 * 1000 = 43200000ms)
         await this.taggedCacheService.setWithTags(
             cacheKey,
             result,
             [CacheTags.ranked.allRankedData()],
-            43200000,
+            43200000, // 12 hours
         );
 
         return result;
@@ -79,12 +77,11 @@ export class SFSixRankedCharacterRankingService {
 
         const result = await this.repository.findAllWeeklyDatesByPhase(phase);
 
-        // Cache for 12 hours (12 * 60 * 60 * 1000 = 43200000ms)
         await this.taggedCacheService.setWithTags(
             cacheKey,
             result,
             [CacheTags.ranked.phase(phase), CacheTags.ranked.allRankedData()],
-            43200000,
+            43200000, // 12 hours
         );
 
         return result;
@@ -105,7 +102,6 @@ export class SFSixRankedCharacterRankingService {
             query,
         );
 
-        // Cache for 24 hours (24 * 60 * 60 * 1000 = 86400000ms)
         await this.taggedCacheService.setWithTags(
             cacheKey,
             result,
@@ -114,7 +110,7 @@ export class SFSixRankedCharacterRankingService {
                 CacheTags.ranked.phase(query.phase),
                 CacheTags.ranked.allRankedData(),
             ],
-            86400000,
+            86400000, // 24 hours
         );
 
         return result;
@@ -130,12 +126,11 @@ export class SFSixRankedCharacterRankingService {
 
         const result = await this.repository.findAllDistinctDatePhaseSeason();
 
-        // Cache for 12 hours (12 * 60 * 60 * 1000 = 43200000ms)
         await this.taggedCacheService.setWithTags(
             cacheKey,
             result,
             [CacheTags.ranked.allRankedData()],
-            43200000,
+            43200000, // 12 hours
         );
 
         return result;
@@ -154,12 +149,11 @@ export class SFSixRankedCharacterRankingService {
         });
 
         if (result) {
-            // Cache for 12 hours (12 * 60 * 60 * 1000 = 43200000ms)
             await this.taggedCacheService.setWithTags(
                 cacheKey,
                 result,
                 [CacheTags.ranked.allRankedData()],
-                43200000,
+                43200000, // 12 hours
             );
         }
 

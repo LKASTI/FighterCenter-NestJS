@@ -12,7 +12,7 @@ import {
     HttpCode,
     Patch,
     BadRequestException,
-    Logger, UseGuards,
+    UseGuards,
 } from "@nestjs/common";
 import {
     CreateSFSixRankedCharacterRankingDTO,
@@ -28,8 +28,7 @@ import { DisableEndpoint } from "../decorators/endpoint-status-toggles";
 @UseGuards(FeatureFlagGuard)
 export class SFSixRankedCharacterRankingController {
     constructor(
-        private readonly service: SFSixRankedCharacterRankingService,
-        private readonly logger: Logger,
+        private readonly service: SFSixRankedCharacterRankingService
     ) {}
 
     @DisableEndpoint()
@@ -54,9 +53,6 @@ export class SFSixRankedCharacterRankingController {
         @Query(new ValidationPipe({ transform: true }))
         query: FindSFSixRankedCharacterRankingsQueryDTO,
     ) {
-        // console.log(`Query: ${JSON.stringify(query)}`);
-        // this.logger.log(`Query: ${JSON.stringify(query)}`, 'SFSixRankedCharacterRankingController');
-        // console.log("ISO Date", query.date.toISOString());
         if (!query.phase)
             throw new BadRequestException(
                 `Request must contain a phase and date`,
@@ -80,8 +76,6 @@ export class SFSixRankedCharacterRankingController {
         @Param("phase", ParseIntPipe) phase: number,
     ) {
         const dates = await this.service.findAllWeeklyDatesByPhase(phase);
-        // console.log(dates);
-        // this.logger.log(`Found ${JSON.stringify(dates)} dates for phase ${phase}`, 'SFSixRankedCharacterRankingController');
         return dates;
     }
 

@@ -2,8 +2,6 @@
  * Converts a query object to a consistent hash string for cache keys.
  *
  * Ensures that query parameters in different orders produce the same hash:
- *   hashQuery({ phase: 1, date: '2024-01-01' })
- *   === hashQuery({ date: '2024-01-01', phase: 1 })
  *
  * @param query Query object to hash
  * @returns Short hash string for use in cache keys
