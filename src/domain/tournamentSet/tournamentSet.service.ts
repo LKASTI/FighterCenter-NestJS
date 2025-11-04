@@ -7,11 +7,16 @@ import {
 } from "src/dtos/tournamentSet.dto";
 import { TournamentSetRepository } from "src/domain/tournamentSet/tournamentSet.repository";
 
+import { TaggedCacheService } from "../../common/cache/tagged-cache.service";
+import { CacheKeys, CacheTags } from "../../common/cache/cache-keys.util";
+import { hashQuery } from "../../common/cache/query-hash.util";
+
 @Injectable()
 export class TournamentSetService {
     constructor(
         @InjectRepository(TournamentSetRepository)
         private readonly tournamentSetRepository: TournamentSetRepository,
+        private readonly taggedCacheService: TaggedCacheService,
     ) {}
 
     public async create(createTournamentSetDTO: CreateTournamentSetDTO) {
@@ -21,7 +26,33 @@ export class TournamentSetService {
     }
 
     public async findAll(query: FindTournamentSetsQueryDTO) {
-        return await this.tournamentSetRepository.findAll(query);
+        const queryHash = hashQuery(query);
+        const cacheKey = CacheKeys.tournamentSet.list(queryHash);
+        const cached = await this.taggedCacheService.get<any>(cacheKey);
+
+        if (cached) {
+            return cached;
+        }
+
+        const result = await this.tournamentSetRepository.findAll(query);
+
+        // Cache for 10 minutes (10 * 60 * 1000 = 600000ms)
+        const tags = [];
+
+        // If querying by tournamentID, tag with that tournament
+        if (query.tournamentID) {
+            tags.push(CacheTags.tournament.byId(query.tournamentID));
+            tags.push(CacheTags.tournamentSet.tournament(query.tournamentID));
+        }
+
+        await this.taggedCacheService.setWithTags(
+            cacheKey,
+            result,
+            tags.length > 0 ? tags : ['tournament-sets-all'],
+            600000,
+        );
+
+        return result;
     }
 
     public async findById(id: number) {
@@ -37,9 +68,29 @@ export class TournamentSetService {
     }
 
     public async findAllByTournamentID(tournamentID: number) {
-        return await this.tournamentSetRepository.findAllByTournamentID(
+        const cacheKey = CacheKeys.tournamentSet.byTournamentId(tournamentID);
+        const cached = await this.taggedCacheService.get<any>(cacheKey);
+
+        if (cached) {
+            return cached;
+        }
+
+        const result = await this.tournamentSetRepository.findAllByTournamentID(
             tournamentID,
         );
+
+        // Cache for 15 minutes (15 * 60 * 1000 = 900000ms)
+        await this.taggedCacheService.setWithTags(
+            cacheKey,
+            result,
+            [
+                CacheTags.tournament.byId(tournamentID),
+                CacheTags.tournamentSet.tournament(tournamentID),
+            ],
+            900000,
+        );
+
+        return result;
     }
 
     public async update(
