@@ -4,9 +4,13 @@ import { TournamentController } from "src/controllers/tournament.controller";
 import { Tournament } from "src/domain/entities/tournament.entity";
 import { TournamentService } from "src/domain/tournament/tournament.service";
 import { TournamentRepository } from "src/domain/tournament/tournament.repository";
+import { CommonModule } from "../../common/common.module";
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Tournament])],
+    imports: [
+        TypeOrmModule.forFeature([Tournament]),
+        CommonModule
+    ],
     providers: [TournamentService, TournamentRepository],
     controllers: [TournamentController],
     exports: [TournamentService],

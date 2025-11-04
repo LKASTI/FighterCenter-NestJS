@@ -7,12 +7,16 @@ import {
 } from "src/dtos/sfsixRankedCharacterRanking.dto";
 import { SFSixRankedCharacterRanking } from "src/domain/entities/sfsixRankedCharacterRanking.entity";
 import { SFSixRankedCharacterRankingRepository } from "src/domain/sfsixRankedCharacterRanking/sfsixRankedCharacterRanking.repository";
+import { TaggedCacheService } from "src/common/cache/tagged-cache.service";
+import { CacheKeys, CacheTags } from "src/common/cache/cache-keys.util";
+import { hashQuery } from "src/common/cache/query-hash.util";
 
 @Injectable()
 export class SFSixRankedCharacterRankingService {
     constructor(
         @InjectRepository(SFSixRankedCharacterRankingRepository)
         private readonly repository: SFSixRankedCharacterRankingRepository,
+        private readonly taggedCacheService: TaggedCacheService,
     ) {}
 
     public async create(
@@ -24,33 +28,136 @@ export class SFSixRankedCharacterRankingService {
     }
 
     public async findAll(query: FindSFSixRankedCharacterRankingsQueryDTO) {
-        return await this.repository.findAll(query);
+        const cacheKey = CacheKeys.ranked.allRankings(hashQuery(query));
+        const cached = await this.taggedCacheService.get(cacheKey);
+
+        if (cached) {
+            return cached;
+        }
+
+        const result = await this.repository.findAll(query);
+
+        await this.taggedCacheService.setWithTags(
+            cacheKey,
+            result,
+            [CacheTags.ranked.allRankedData()],
+            21600000, //6 hours
+        );
+
+        return result;
     }
 
     public async findAllPhases() {
-        return await this.repository.findAllPhases();
+        const cacheKey = CacheKeys.ranked.allPhases();
+        const cached = await this.taggedCacheService.get(cacheKey);
+
+        if (cached) {
+            return cached;
+        }
+
+        const result = await this.repository.findAllPhases();
+
+        await this.taggedCacheService.setWithTags(
+            cacheKey,
+            result,
+            [CacheTags.ranked.allRankedData()],
+            43200000, // 12 hours
+        );
+
+        return result;
     }
 
     public async findAllWeeklyDatesByPhase(phase: number) {
-        return await this.repository.findAllWeeklyDatesByPhase(phase);
+        const cacheKey = CacheKeys.ranked.weeklyDatesByPhase(phase);
+        const cached = await this.taggedCacheService.get(cacheKey);
+
+        if (cached) {
+            return cached;
+        }
+
+        const result = await this.repository.findAllWeeklyDatesByPhase(phase);
+
+        await this.taggedCacheService.setWithTags(
+            cacheKey,
+            result,
+            [CacheTags.ranked.phase(phase), CacheTags.ranked.allRankedData()],
+            43200000, // 12 hours
+        );
+
+        return result;
     }
 
     public async findAllRankedPlayerAndCharacterInfoByDateAndPhase(
         query: FindSFSixRankedCharacterRankingsQueryDTO,
     ) {
-        return await this.repository.findAllRankedPlayerAndCharacterInfoByDateAndPhase(
+        const dateString = query.date.toISOString();
+        const cacheKey = CacheKeys.ranked.rankingsByDatePhase(dateString, query.phase);
+        const cached = await this.taggedCacheService.get(cacheKey);
+
+        if (cached) {
+            return cached;
+        }
+
+        const result = await this.repository.findAllRankedPlayerAndCharacterInfoByDateAndPhase(
             query,
         );
+
+        await this.taggedCacheService.setWithTags(
+            cacheKey,
+            result,
+            [
+                CacheTags.ranked.date(dateString),
+                CacheTags.ranked.phase(query.phase),
+                CacheTags.ranked.allRankedData(),
+            ],
+            86400000, // 24 hours
+        );
+
+        return result;
     }
 
     public async findAllDistinctDatePhaseSeason() {
-        return await this.repository.findAllDistinctDatePhaseSeason();
+        const cacheKey = CacheKeys.ranked.distinctDatePhaseSeason();
+        const cached = await this.taggedCacheService.get(cacheKey);
+
+        if (cached) {
+            return cached;
+        }
+
+        const result = await this.repository.findAllDistinctDatePhaseSeason();
+
+        await this.taggedCacheService.setWithTags(
+            cacheKey,
+            result,
+            [CacheTags.ranked.allRankedData()],
+            43200000, // 12 hours
+        );
+
+        return result;
     }
 
     public async findById(id: number): Promise<SFSixRankedCharacterRanking> {
-        return await this.repository.findOneBy({
+        const cacheKey = CacheKeys.ranked.byId(id);
+        const cached = await this.taggedCacheService.get<SFSixRankedCharacterRanking>(cacheKey);
+
+        if (cached) {
+            return cached;
+        }
+
+        const result = await this.repository.findOneBy({
             sfsixRankedCharacterRankingID: id,
         });
+
+        if (result) {
+            await this.taggedCacheService.setWithTags(
+                cacheKey,
+                result,
+                [CacheTags.ranked.allRankedData()],
+                43200000, // 12 hours
+            );
+        }
+
+        return result;
     }
 
     public async findOneBy(

@@ -12,6 +12,9 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { PlayerTournamentRunRepository } from "../../domain/playerTournamentRun/playerTournamentRun.repository";
 import { EventRepository } from "../../domain/event/event.repository";
 
+import { TaggedCacheService } from "../../common/cache/tagged-cache.service";
+import { CacheTags } from "../../common/cache/cache-keys.util";
+
 @Injectable()
 export class TournamentManagerService {
     private static readonly seriesMutationLocks = new Map<number, Promise<any>>();
@@ -25,6 +28,7 @@ export class TournamentManagerService {
         private readonly playerTournamentRunRepository: PlayerTournamentRunRepository,
         @InjectRepository(EventRepository)
         private readonly eventRepository: EventRepository,
+        private readonly taggedCacheService: TaggedCacheService,
     ) {}
 
     public async deleteTournamentData(tournamentSeriesId: number, tournamentId: number, updatedBy?: string) {
@@ -53,7 +57,6 @@ export class TournamentManagerService {
         if(!exists) {
             throw new NotFoundException("Tournament not found for the given series");
         }
-
         console.log(`🗑️  Deleting tournament ${tournamentId} from series ${tournamentSeriesId}`);
 
         // 1. Get affected player IDs BEFORE deletion
@@ -68,6 +71,9 @@ export class TournamentManagerService {
 
         // 2. Delete tournament data (matches, sets, PTRs, tournament)
         const result = await this.tournamentManagerRepository.deleteTournamentData(tournamentId);
+
+        // Invalidate all caches related to this tournament and event
+        await this.invalidateTournamentCaches(tournamentId, tournamentSeriesId);
 
         // 3. Update event's lastUpdatedTournamentDate to invalidate caches
         await this.eventRepository.update(
@@ -130,7 +136,12 @@ export class TournamentManagerService {
             throw new NotFoundException(`Game season ${request.gameSeason} is invalid`);
         }
 
-        return await this.tournamentService.update(tournamentId, mappedRequest);
+        const result = await this.tournamentService.update(tournamentId, mappedRequest);
+
+        // Invalidate all caches related to this tournament and event
+        await this.invalidateTournamentCaches(tournamentId, tournamentSeriesId);
+
+        return result;
 
     }
 
@@ -144,5 +155,22 @@ export class TournamentManagerService {
             return false;
         }
         return true;
+    }
+
+    /**
+     * Invalidate all caches related to a tournament and its event series
+     * Called after tournament import, update, or deletion
+     */
+    private async invalidateTournamentCaches(tournamentId: number, eventSeriesId: number): Promise<void> {
+        await this.taggedCacheService.invalidateByTags([
+            // Specific tournament caches
+            CacheTags.tournament.byId(tournamentId),
+            // Event-level caches (affects all tournaments in the event, player performance, etc.)
+            CacheTags.tournament.event(eventSeriesId),
+            // Tournament list caches
+            CacheTags.tournament.allLists(),
+            // Player performance caches for this event
+            CacheTags.playerSeriesPerformance.event(eventSeriesId),
+        ]);
     }
 }

@@ -12,14 +12,11 @@ import {
     FindLatestTournamentsQueryDTO,
     TournamentSeriesTopXPlayersDTO,
 } from "../features/tournamentSeries/tournamentSeries.dto";
-import { TournamentService } from "../domain/tournament/tournament.service";
-import { Tournament } from "../domain/entities";
 
 @Controller("tournamentSeries")
 export class TournamentSeriesController {
     constructor(
         private readonly service: TournamentSeriesService,
-        private readonly tournamentService: TournamentService
     ) {}
 
     @Get("findPlayersByTournamentId/:id")
@@ -32,32 +29,7 @@ export class TournamentSeriesController {
         @Query(new ValidationPipe({ transform: true }))
         query: FindLatestTournamentsQueryDTO,
     ) {
-        const { eventSeriesIds = [] } = query;
-        const tournaments: Tournament [] = [];
-        if( eventSeriesIds.length > 0) {
-            for(let i = 0; i < eventSeriesIds.length; i++) {
-                const eventSeriesId = parseInt(eventSeriesIds[i]);
-                try {
-                    const res = await this.tournamentService.findAll({
-                        eventID: eventSeriesId,
-                        order: "DESC",
-                        sortBy: "dates",
-                        limit: 1
-                    })
-                    if (res.data && res.data.length > 0) {
-                        tournaments.push(res.data[0]);
-                    }
-                } catch (error) {
-                    console.error(`Error fetching tournaments for event series ID ${eventSeriesId}:`, error);
-                    return {
-                        data: []
-                    }
-                }
-            }
-        }
-        return {
-            data: tournaments
-        }
+        return await this.service.findLatestTournaments(query);
     }
 
     @Post("findTopXPlayersByTournamentIds")

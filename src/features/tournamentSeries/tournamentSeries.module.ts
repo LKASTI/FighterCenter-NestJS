@@ -7,6 +7,7 @@ import { TournamentSetModule } from "../../domain/tournamentSet/tournamentSet.mo
 import { TournamentSeriesRepository } from "./tournamentSeries.repository";
 import { TournamentSeriesController } from "../../controllers/tournamentSeries.controller";
 import { TournamentModule } from "../../domain/tournament/tournament.module";
+import { CommonModule } from "../../common/common.module";
 
 @Module({
     imports: [
@@ -14,7 +15,8 @@ import { TournamentModule } from "../../domain/tournament/tournament.module";
         TournamentSetModule,
         PlayerModule,
         EventModule,
-        TournamentModule
+        TournamentModule,
+        CommonModule
     ],
     providers: [TournamentSeriesService, TournamentSeriesRepository],
     controllers: [TournamentSeriesController],

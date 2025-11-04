@@ -4,9 +4,13 @@ import { EventController } from "src/controllers/event.controller";
 import { Event } from "src/domain/entities/event.entity";
 import { EventRepository } from "src/domain/event/event.repository";
 import { EventService } from "src/domain/event/event.service";
+import { CommonModule } from "../../common/common.module";
 
 @Module({
-    imports: [TypeOrmModule.forFeature([Event])],
+    imports: [
+        TypeOrmModule.forFeature([Event]),
+        CommonModule
+    ],
     providers: [EventService, EventRepository],
     controllers: [EventController],
     exports: [EventService, EventRepository],

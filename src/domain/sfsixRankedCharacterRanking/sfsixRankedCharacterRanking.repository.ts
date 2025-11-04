@@ -183,7 +183,7 @@ export class SFSixRankedCharacterRankingRepository extends Repository<SFSixRanke
             [query.phase, query.date.toISOString(), query.limit],
         );
 
-        console.log(`sql data`, data);
+        // console.log(`sql data`, data);
 
         return {
             data: data,
