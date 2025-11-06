@@ -62,24 +62,7 @@ export abstract class BaseAuthGuard implements CanActivate {
      * Extract token from request cookies or headers
      */
     protected extractToken(request: any): string {
-        let token = "";
-
-        if (process.env.NODE_ENV === "production") {
-            token = request.cookies["auth-token"];
-        } else if (process.env.NODE_ENV === "development") {
-            console.log("Request headers/cookies: ");
-            console.log(request.headers);
-            console.log(request.cookies);
-            const authToken = request.headers["x-auth-token"] as string;
-            if (!authToken) {
-                throw new UnauthorizedException("No auth token provided in headers");
-            }
-            token = authToken.startsWith("Bearer ")
-                ? authToken.slice(7)
-                : authToken;
-        }
-
-        return token;
+        return request.cookies["auth-token"];
     }
 
     /**

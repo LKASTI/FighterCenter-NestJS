@@ -22,13 +22,19 @@ async function bootstrap() {
 
     const allowedOrigins = [process.env.FRONTEND_URL];
 
-    // Add localhost variants for development
-    if (process.env.NODE_ENV === "development") {
+    // Add localhost variants for local development
+    if (process.env.NODE_ENV === "local") {
         allowedOrigins.push(
             "http://localhost:5173",
             "https://localhost:5173",
-            process.env.VERCEL_URL,
         );
+    }
+
+    // Add Vercel preview URLs for development environment
+    if (process.env.NODE_ENV === "development") {
+        if (process.env.VERCEL_URL) {
+            allowedOrigins.push(process.env.VERCEL_URL);
+        }
     }
 
     app.enableCors({
@@ -49,7 +55,8 @@ async function bootstrap() {
 
     app.use(cookieParser());
 
-    if (process.env.NODE_ENV === "development") {
+    // Apply basic auth in local and development environments
+    if (process.env.NODE_ENV === "local" || process.env.NODE_ENV === "development") {
         const basicAuthMiddleware = new BasicAuth();
         app.use(basicAuthMiddleware.use.bind(basicAuthMiddleware));
     }

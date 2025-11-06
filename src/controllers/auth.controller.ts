@@ -29,34 +29,34 @@ export class AuthController {
 
         const token = this.jwtService.sign(payload);
 
-        const isLocalDevelopment = process.env.NODE_ENV === "development";
+        const nodeEnv = process.env.NODE_ENV;
+        const isLocal = nodeEnv === "local";
 
-        if (isLocalDevelopment) {
-            console.log("Development mode: passing token via URL");
-            res.redirect(
-                `${process.env.FRONTEND_URL}/auth/callback?token=${token}`,
-            );
-        } else {
-            console.log("=== COOKIE DEBUG ===");
-            console.log("Frontend URL:", process.env.FRONTEND_URL);
-            console.log("Request Origin:", req.get("Origin"));
-            console.log("Request Host:", req.get("Host"));
-            console.log("Node Environment:", process.env.NODE_ENV);
+        // Cookie configuration based on environment
+        const cookieOptions: any = {
+            httpOnly: true,
+            secure: !isLocal, // HTTP only in local environment
+            sameSite: "lax", // Changed from "none" for better CSRF protection
+            maxAge: parseInt(process.env.JWT_EXPIRATION_DURATION || "900") * 1000, // 15 minutes default
+            path: "/",
+        };
 
-            const cookieOptions = {
-                httpOnly: true,
-                secure: process.env.NODE_ENV === "production", // HTTPS in production
-                sameSite:
-                    process.env.NODE_ENV === "production" ? "none" : "lax",
-                maxAge: parseInt(process.env.COOKIE_EXPIRATION_DURATION) * 1000, //TODO:
-                path: "/",
-            };
-            res.cookie("auth-token", token, cookieOptions);
-
-            console.log("Response headers before redirect:", res.getHeaders());
-
-            res.redirect(`${process.env.FRONTEND_URL}/auth/callback`);
+        // Add domain for local development (works across all localhost ports)
+        if (isLocal) {
+            cookieOptions.domain = "localhost";
         }
+
+        res.cookie("auth-token", token, cookieOptions);
+
+        // Debug logging in non-production environments
+        if (nodeEnv !== "production") {
+            console.log("=== AUTH CALLBACK DEBUG ===");
+            console.log("Environment:", nodeEnv);
+            console.log("Frontend URL:", process.env.FRONTEND_URL);
+            console.log("Cookie Options:", cookieOptions);
+        }
+
+        res.redirect(`${process.env.FRONTEND_URL}/auth/callback`);
     }
 
     @Get("me")
@@ -67,7 +67,19 @@ export class AuthController {
 
     @Post("logout")
     async logout(@Res() res) {
-        res.clearCookie("auth-token");
+        const nodeEnv = process.env.NODE_ENV;
+        const isLocal = nodeEnv === "local";
+
+        // Clear cookie with same options used when setting it
+        const clearOptions: any = {
+            path: "/",
+        };
+
+        if (isLocal) {
+            clearOptions.domain = "localhost";
+        }
+
+        res.clearCookie("auth-token", clearOptions);
         res.json({ success: true });
     }
 }

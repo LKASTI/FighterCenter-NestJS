@@ -44,7 +44,7 @@ import { CommonModule } from "./common/common.module";
                 JWT_SECRET: Joi.string().min(32).required(),
                 FRONTEND_URL: Joi.string().uri().required(),
                 NODE_ENV: Joi.string()
-                    .valid("development", "production", "test")
+                    .valid("development", "production", "local")
                     .default("development"),
                 // R2 configuration
                 CLOUDFLARE_ACCOUNT_ID: Joi.string().required(),
