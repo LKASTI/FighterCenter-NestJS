@@ -10,26 +10,29 @@ import { JwtStrategy } from "./strategies/jwt.strategy";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { EncryptionModule } from "./encryption/encryption.module";
 import { SeriesAuthGuard } from "./guards/seriesAuth.guard";
+import { JwtRefreshTokenModule } from "../domain/jwtRefreshToken/jwtRefreshToken.module";
 
 @Module({
     imports: [
         StartggUserModule,
         TournamentDataParserModule,
         EncryptionModule,
+        JwtRefreshTokenModule,
 
         PassportModule.register({ defaultStrategy: "jwt" }),
-        ConfigModule.forRoot(), // Make sure this is included to load environment variables
+        ConfigModule.forRoot(), // loads environment variables
         JwtModule.registerAsync({
             imports: [ConfigModule],
             inject: [ConfigService],
-            useFactory: (configService: ConfigService) => ({
-                secret: configService.get<string>("JWT_SECRET"),
-                signOptions: {
-                    expiresIn: parseInt(
-                        configService.get<string>("COOKIE_EXPIRATION_DURATION"),
-                    ), // Match your cookie expiration
-                },
-            }),
+            useFactory: (configService: ConfigService) => {
+                const expirationDuration = parseInt(configService.get<string>("JWT_EXPIRATION_DURATION") || "900"); // 15 minutes
+                return {
+                    secret: configService.get<string>("JWT_SECRET"),
+                    signOptions: {
+                        expiresIn: expirationDuration,
+                    },
+                };
+            },
         }),
 
         HttpModule,

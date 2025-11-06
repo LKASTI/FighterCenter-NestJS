@@ -1,5 +1,6 @@
-import { BeforeInsert, Column, CreateDateColumn, Entity, PrimaryColumn, UpdateDateColumn } from "typeorm";
+import { BeforeInsert, Column, CreateDateColumn, Entity, OneToMany, PrimaryColumn, UpdateDateColumn } from "typeorm";
 import { v4 as uuid } from "uuid";
+import { JwtRefreshToken } from "./jwtRefreshToken.entity";
 
 @Entity("startgg_user")
 export class StartggUser {
@@ -54,4 +55,7 @@ export class StartggUser {
 
     @UpdateDateColumn({ name: "updated_at" })
     updatedAt: Date;
+
+    @OneToMany(() => JwtRefreshToken, token => token.user)
+    refreshTokens: JwtRefreshToken[];
 }

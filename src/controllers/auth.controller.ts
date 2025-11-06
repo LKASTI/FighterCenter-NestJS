@@ -1,11 +1,15 @@
-import { Controller, Get, Post, Req, Res, UseGuards } from "@nestjs/common";
+import { Controller, Get, Post, Req, Res, UseGuards, UnauthorizedException } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
 import { JwtService } from "@nestjs/jwt";
 import { JwtAuthGuard } from "../authentication/guards/jwtAuth.guard";
+import { JwtRefreshTokenService } from "../domain/jwtRefreshToken/jwtRefreshToken.service";
 
 @Controller("auth")
 export class AuthController {
-    constructor(private readonly jwtService: JwtService) {}
+    constructor(
+        private readonly jwtService: JwtService,
+        private readonly jwtRefreshTokenService: JwtRefreshTokenService,
+    ) {}
 
     @Get("startgg")
     @UseGuards(AuthGuard("startgg"))
@@ -27,33 +31,53 @@ export class AuthController {
             sf6ProfileCharacters: user.sf6ProfileCharacters
         };
 
-        const token = this.jwtService.sign(payload);
+        // Create access token (15 minutes)
+        const accessToken = this.jwtService.sign(payload);
+
+        // Create refresh token (7 days)
+        const { plainToken: refreshToken } = await this.jwtRefreshTokenService.createRefreshToken(
+            user.startggUserID,
+            req.headers['user-agent'],
+            req.ip,
+        );
 
         const nodeEnv = process.env.NODE_ENV;
         const isLocal = nodeEnv === "local";
 
-        // Cookie configuration based on environment
-        const cookieOptions: any = {
+        // Access token cookie configuration
+        const accessCookieOptions: any = {
             httpOnly: true,
-            secure: !isLocal, // HTTP only in local environment
-            sameSite: "lax", // Changed from "none" for better CSRF protection
-            maxAge: parseInt(process.env.JWT_EXPIRATION_DURATION || "900") * 1000, // 15 minutes default
+            secure: !isLocal,
+            sameSite: "lax",
+            maxAge: parseInt(process.env.JWT_EXPIRATION_DURATION || "900") * 1000, // 15 minutes
             path: "/",
         };
 
-        // Add domain for local development (works across all localhost ports)
+        // Refresh token cookie configuration
+        const refreshCookieOptions: any = {
+            httpOnly: true,
+            secure: !isLocal,
+            sameSite: "lax",
+            maxAge: parseInt(process.env.REFRESH_TOKEN_EXPIRATION || "604800") * 1000, // 7 days
+            path: "/auth/refresh", // Only sent to refresh endpoint
+        };
+
+        // Add domain for local development
         if (isLocal) {
-            cookieOptions.domain = "localhost";
+            accessCookieOptions.domain = "localhost";
+            refreshCookieOptions.domain = "localhost";
         }
 
-        res.cookie("auth-token", token, cookieOptions);
+        res.cookie("auth-token", accessToken, accessCookieOptions);
+        res.cookie("refresh-token", refreshToken, refreshCookieOptions);
 
         // Debug logging in non-production environments
         if (nodeEnv !== "production") {
             console.log("=== AUTH CALLBACK DEBUG ===");
             console.log("Environment:", nodeEnv);
-            console.log("Frontend URL:", process.env.FRONTEND_URL);
-            console.log("Cookie Options:", cookieOptions);
+            console.log("User ID:", user.startggUsername);
+            console.log("Access Token Expiry:", accessCookieOptions.maxAge / 1000, "seconds");
+            console.log("Refresh Token Expiry:", refreshCookieOptions.maxAge / 1000, "seconds");
         }
 
         res.redirect(`${process.env.FRONTEND_URL}/auth/callback`);
@@ -65,21 +89,87 @@ export class AuthController {
         return req.user;
     }
 
-    @Post("logout")
-    async logout(@Res() res) {
+    @Post("refresh")
+    async refreshAccessToken(@Req() req, @Res() res) {
+        const refreshToken = req.cookies['refresh-token'];
+
+        if (!refreshToken) {
+            throw new UnauthorizedException('No refresh token provided');
+        }
+
+        // Validate refresh token
+        const dbToken = await this.jwtRefreshTokenService.validateRefreshToken(refreshToken);
+
+        if (!dbToken) {
+            throw new UnauthorizedException('Invalid or expired refresh token');
+        }
+
+        // Create new access token
+        const user = dbToken.user;
+        const payload = {
+            sub: user.startggId,
+            username: user.startggUsername,
+            gamerTag: user.startggGamerTag,
+            roles: user.roles,
+            tournamentSeriesAssigned: user.tournamentSeriesAssigned,
+            sf6ProfileCharacters: user.sf6ProfileCharacters,
+        };
+
+        const accessToken = this.jwtService.sign(payload);
+
         const nodeEnv = process.env.NODE_ENV;
         const isLocal = nodeEnv === "local";
 
-        // Clear cookie with same options used when setting it
-        const clearOptions: any = {
+        // Set new access token cookie
+        const accessCookieOptions: any = {
+            httpOnly: true,
+            secure: !isLocal,
+            sameSite: "lax",
+            maxAge: parseInt(process.env.JWT_EXPIRATION_DURATION || "900") * 1000, // 15 minutes
             path: "/",
         };
 
         if (isLocal) {
-            clearOptions.domain = "localhost";
+            accessCookieOptions.domain = "localhost";
         }
 
-        res.clearCookie("auth-token", clearOptions);
+        res.cookie("auth-token", accessToken, accessCookieOptions);
+
+        return res.json({
+            success: true,
+            message: 'Token refreshed successfully'
+        });
+    }
+
+    @Post("logout")
+    @UseGuards(JwtAuthGuard)
+    async logout(@Req() req, @Res() res) {
+        const user = req.user;
+
+        // Revoke all refresh tokens for this user
+        await this.jwtRefreshTokenService.revokeAllUserTokens(user.id);
+
+        const nodeEnv = process.env.NODE_ENV;
+        const isLocal = nodeEnv === "local";
+
+        // Clear access token cookie
+        const clearAccessOptions: any = {
+            path: "/",
+        };
+
+        // Clear refresh token cookie
+        const clearRefreshOptions: any = {
+            path: "/auth/refresh",
+        };
+
+        if (isLocal) {
+            clearAccessOptions.domain = "localhost";
+            clearRefreshOptions.domain = "localhost";
+        }
+
+        res.clearCookie("auth-token", clearAccessOptions);
+        res.clearCookie("refresh-token", clearRefreshOptions);
+
         res.json({ success: true });
     }
 }
