@@ -54,12 +54,13 @@ export class AuthController {
         };
 
         // Refresh token cookie configuration
+        // Note: Path includes /api prefix for local dev (Vite proxy) and production (Vercel rewrite)
         const refreshCookieOptions: any = {
             httpOnly: true,
             secure: !isLocal,
             sameSite: "lax",
             maxAge: parseInt(process.env.REFRESH_TOKEN_EXPIRATION || "604800") * 1000, // 7 days
-            path: "/auth/refresh", // Only sent to refresh endpoint
+            path: "/api/auth/refresh", // Only sent to refresh endpoint
         };
 
         // Add domain for local development
@@ -159,7 +160,7 @@ export class AuthController {
 
         // Clear refresh token cookie
         const clearRefreshOptions: any = {
-            path: "/auth/refresh",
+            path: "/api/auth/refresh",
         };
 
         if (isLocal) {
