@@ -6,10 +6,14 @@ import { JwtRefreshTokenService } from "../domain/jwtRefreshToken/jwtRefreshToke
 
 @Controller("auth")
 export class AuthController {
+    private proxyPrefix: string;
+
     constructor(
         private readonly jwtService: JwtService,
         private readonly jwtRefreshTokenService: JwtRefreshTokenService,
-    ) {}
+    ) {
+        this.proxyPrefix = process.env.IS_PREVIEW? '/api-preview' : '/api'
+    }
 
     @Get("startgg")
     @UseGuards(AuthGuard("startgg"))
@@ -60,7 +64,7 @@ export class AuthController {
             secure: !isLocal,
             sameSite: "lax",
             maxAge: parseInt(process.env.REFRESH_TOKEN_EXPIRATION || "604800") * 1000, // 7 days
-            path: "/api/auth/refresh", // Only sent to refresh endpoint
+            path: this.proxyPrefix + "/auth/refresh", // Only sent to refresh endpoint
         };
 
         // Add domain for local development
@@ -152,7 +156,7 @@ export class AuthController {
 
         const nodeEnv = process.env.NODE_ENV;
         const isLocal = nodeEnv === "local";
-        const proxyPrefix = process.env.IS_PREVIEW? '/api-preview' : '/api'
+
 
         // Clear access token cookie
         const clearAccessOptions: any = {
@@ -161,7 +165,7 @@ export class AuthController {
 
         // Clear refresh token cookie
         const clearRefreshOptions: any = {
-            path: proxyPrefix + "/auth/refresh",
+            path: this.proxyPrefix + "/auth/refresh",
         };
 
         if (isLocal) {

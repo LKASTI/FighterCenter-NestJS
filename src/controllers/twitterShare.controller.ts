@@ -43,10 +43,10 @@ export class TwitterShareController {
         if(!request || !request.pageUrl || !request.imageUrl) {
             throw new Error('Invalid request: pageUrl and imageUrl are required');
         }
-
+        const proxyPrefix = process.env.IS_PREVIEW? '/api-preview' : '/api';
         request.createDate = new Date();
         const twitterShareData = await this.twitterShareService.createAndSave(request);
-        const publicUrl = process.env.NODE_ENV !== 'production'? process.env.BACKEND_URL : process.env.FRONTEND_URL + '/api';
+        const publicUrl = process.env.NODE_ENV !== 'production'? process.env.BACKEND_URL : process.env.FRONTEND_URL + proxyPrefix;
         const shareUrl = publicUrl + '/twitterShare/share/' + twitterShareData.twitterShareID;
 
         return shareUrl;
