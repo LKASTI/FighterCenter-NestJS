@@ -46,6 +46,7 @@ import { CommonModule } from "./common/common.module";
                 NODE_ENV: Joi.string()
                     .valid("development", "production", "local")
                     .default("development"),
+                IS_PREVIEW: Joi.boolean().required(),
                 // R2 configuration
                 CLOUDFLARE_ACCOUNT_ID: Joi.string().required(),
                 R2_ACCESS_KEY_ID: Joi.string().required(),

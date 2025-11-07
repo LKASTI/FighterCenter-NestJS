@@ -152,6 +152,7 @@ export class AuthController {
 
         const nodeEnv = process.env.NODE_ENV;
         const isLocal = nodeEnv === "local";
+        const proxyPrefix = process.env.IS_PREVIEW? '/api-preview' : '/api'
 
         // Clear access token cookie
         const clearAccessOptions: any = {
@@ -160,7 +161,7 @@ export class AuthController {
 
         // Clear refresh token cookie
         const clearRefreshOptions: any = {
-            path: "/api/auth/refresh",
+            path: proxyPrefix + "/auth/refresh",
         };
 
         if (isLocal) {
