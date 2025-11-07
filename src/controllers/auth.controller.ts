@@ -6,13 +6,15 @@ import { JwtRefreshTokenService } from "../domain/jwtRefreshToken/jwtRefreshToke
 
 @Controller("auth")
 export class AuthController {
-    private proxyPrefix: string;
+    private readonly proxyPrefix: string;
 
     constructor(
         private readonly jwtService: JwtService,
         private readonly jwtRefreshTokenService: JwtRefreshTokenService,
     ) {
         this.proxyPrefix = process.env.IS_PREVIEW? '/api-preview' : '/api'
+        console.log(process.env.IS_PREVIEW);
+        console.log(this.proxyPrefix)
     }
 
     @Get("startgg")
