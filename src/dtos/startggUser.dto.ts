@@ -2,6 +2,7 @@ import { Transform, Type } from "class-transformer";
 import {
     IsArray,
     IsDate,
+    IsEmail,
     IsInt,
     IsNotEmpty,
     IsOptional,
@@ -43,6 +44,10 @@ export class CreateStartggUserDTO {
     @IsOptional()
     @IsString()
     readonly startggGamerTag: string;
+
+    @IsOptional()
+    @IsEmail()
+    readonly email?: string;
 
     @IsOptional()
     @Transform(({ value: roleValues }) => {

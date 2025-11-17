@@ -37,6 +37,9 @@ export class StartggUser {
     @Column("varchar", { name: "startgg_gamer_tag", length: 100 })
     startggGamerTag: string;
 
+    @Column("varchar", { name: "email", length: 255, nullable: true })
+    email: string;
+
     @Column("varchar", { name: "roles", length: 100, array: true })
     roles: string[];
 

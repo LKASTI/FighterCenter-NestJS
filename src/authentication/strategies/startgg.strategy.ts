@@ -47,6 +47,7 @@ export class StartGGStrategy extends PassportStrategy(Strategy, "startgg") {
             startggTokenExpiresIn: tokenExpiresIn,
             startggUsername: userData.slug,
             startggGamerTag: userData.player?.gamerTag,
+            email: userData.authorizations?.[0]?.externalUsername || null,
             roles: [],
             tournamentSeriesAssigned: [],
         });
@@ -64,6 +65,9 @@ export class StartGGStrategy extends PassportStrategy(Strategy, "startgg") {
 			  player {
 				gamerTag
 				id
+			  }
+			  authorizations(types: [EMAIL]) {
+				externalUsername
 			  }
 			}
 		  }
