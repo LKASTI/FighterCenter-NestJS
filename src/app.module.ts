@@ -31,6 +31,7 @@ import {
 } from "./domain/playerSeriesPerformanceAgg/playerSeriesPerformanceAgg.module";
 import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { CommonModule } from "./common/common.module";
+import { PaymentModule } from "./features/payment/payment.module";
 
 @Module({
     imports: [
@@ -118,7 +119,9 @@ import { CommonModule } from "./common/common.module";
         // startgg api module
         StartggApiModule,
         // top 8 maker module
-        Top8MakerModule
+        Top8MakerModule,
+        // payment module
+        PaymentModule
     ],
     controllers: [AppController],
     providers: [
