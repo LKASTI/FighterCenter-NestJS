@@ -7,7 +7,9 @@ import { BasicAuth } from "./authentication/basicAuth";
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
 async function bootstrap() {
-    const app = await NestFactory.create(AppModule);
+    const app = await NestFactory.create(AppModule, {
+        rawBody: true, // Enable raw body for Stripe webhook signature verification
+    });
 
     app.useGlobalPipes(
         new ValidationPipe({

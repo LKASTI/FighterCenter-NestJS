@@ -53,6 +53,10 @@ import { CommonModule } from "./common/common.module";
                 R2_SECRET_ACCESS_KEY: Joi.string().required(),
                 R2_BUCKET_NAME: Joi.string().required(),
                 R2_PUBLIC_URL: Joi.string().uri().required(),
+                // Stripe configuration
+                STRIPE_SECRET_KEY: Joi.string().required(),
+                STRIPE_WEBHOOK_SECRET: Joi.string().required(),
+                STRIPE_PRICE_ID: Joi.string().required(),
             }),
         }),
         // Throttling

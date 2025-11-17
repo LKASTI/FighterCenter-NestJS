@@ -70,6 +70,7 @@ export class BasicAuth implements NestMiddleware {
         const skippablePaths = [
             "/auth/startgg", // OAuth initiation
             "/auth/startgg/callback", // OAuth callback
+            "/webhooks/stripe", // Stripe webhook endpoint
             "/health",
             "/ping",
             "/client/media",
