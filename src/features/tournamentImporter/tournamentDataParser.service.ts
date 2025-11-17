@@ -282,26 +282,32 @@ export class TournamentDataParserService {
         const gamePatchesResponse = await this.sfsixGamePatchService.findAll(new FindSFSixGamePatchDTO());
         const patches = gamePatchesResponse.data as SFSixGamePatch[];
 
-        let correctPatch = '';
-        let correctSeason = '';
-        if(patches && patches.length > 1) {
-            let prevEle = patches[0];
-            for(let i = 1; i <= patches.length - 1; i += 1) {
-                const currentEle = patches[i];
-                if(startDate > currentEle.date) {
-                    prevEle = patches[i];
-                    continue;
-                }
-                correctPatch = prevEle.patch;
-                const convertedSeason = toWords(prevEle.patchSeason);
-                correctSeason = convertedSeason.charAt(0).toUpperCase() + convertedSeason.slice(1);
-                break
-            }
-        } else {
-            correctPatch = params.gamePatch ?? null;
-            correctSeason = params.gameSeason ?? null;
+        // Fallback
+        if (!patches || patches.length === 0) {
+            return [params.gamePatch ?? null, params.gameSeason ?? null];
         }
-        return [correctPatch, correctSeason];
+
+        let applicablePatch: SFSixGamePatch | null = null;
+
+        for (const patch of patches) {
+            if (startDate >= patch.date) {
+                applicablePatch = patch;
+            } else {
+                // Stop once iterated patch after start date
+                break;
+            }
+        }
+
+        // Fallback
+        if (!applicablePatch) {
+            return [params.gamePatch ?? null, params.gameSeason ?? null];
+        }
+
+        // Convert season number to capitalized word
+        const convertedSeason = toWords(applicablePatch.patchSeason);
+        const correctSeason = convertedSeason.charAt(0).toUpperCase() + convertedSeason.slice(1);
+
+        return [applicablePatch.patch, correctSeason];
     }
 
     private parseStartGGSetNodeRecord(
