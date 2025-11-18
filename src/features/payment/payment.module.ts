@@ -12,11 +12,13 @@ import { WebhookService } from "./services/webhook.service";
 import { SubscriptionController } from "./controllers/subscription.controller";
 import { StripeWebhookHandlers } from "./handlers/stripe-webhook.handler";
 import { StartggUserModule } from "../../domain/startggUser/startggUser.module";
+import { AuthModule } from "../../authentication/auth.module";
 
 @Module({
     imports: [
         TypeOrmModule.forFeature([Subscription, StripeWebhookEvent]),
         StartggUserModule,
+        AuthModule,
         // Configure StripeModule with webhook support
         StripeModule.forRootAsync({
             inject: [ConfigService],

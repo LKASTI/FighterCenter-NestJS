@@ -20,7 +20,7 @@ import { join } from "path";
 import { StartggUserModule } from "./domain/startggUser/startggUser.module";
 import { AuthModule } from "./authentication/auth.module";
 import * as Joi from "joi";
-import { TournamentSeriesModule } from "./features/tournamentSeries/tournamentSeries.module";
+import { TournamentSeriesModule } from "@features/tournament-series";
 import { EncryptionModule } from "./authentication/encryption/encryption.module";
 import { TwitterShareModule } from "./features/twitterShare/twitterShare.module";
 import { StartggApiModule } from "./features/startggApi/startggApi.module";

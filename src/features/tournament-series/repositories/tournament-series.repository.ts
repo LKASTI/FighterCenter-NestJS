@@ -1,5 +1,5 @@
-import { PlayerTournamentRunRepository } from "../../domain/playerTournamentRun/playerTournamentRun.repository";
-import { TournamentSeriesPlayerDTO } from "./tournamentSeries.dto";
+import { PlayerTournamentRunRepository } from "@domain/playerTournamentRun/playerTournamentRun.repository";
+import { TournamentSeriesPlayerDto } from "../dtos/response/tournament-series-player.response.dto";
 import { Injectable } from "@nestjs/common";
 import { plainToInstance } from "class-transformer";
 
@@ -11,7 +11,7 @@ export class TournamentSeriesRepository {
 
     public async findPlayersByTournamentId(
         id: number,
-    ): Promise<TournamentSeriesPlayerDTO[]> {
+    ): Promise<TournamentSeriesPlayerDto[]> {
         const data = await this.playerTournamentRunRepository.query(
             `
                 SELECT p.player_id AS "playerID",
@@ -42,7 +42,7 @@ export class TournamentSeriesRepository {
             .join(",");
         const data = await this.playerTournamentRunRepository.query(
             `
-                SELECT 
+                SELECT
                     ptr.player_id AS "playerID",
                     ptr.tournament_id AS "tournamentID",
                     ptr.player_entry_name AS "playerName",

@@ -1,11 +1,12 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { FindLatestTournamentsQueryDTO, TournamentSeriesPlayerDTO } from "./tournamentSeries.dto";
-import { TournamentSeriesRepository } from "./tournamentSeries.repository";
-import { TaggedCacheService } from "../../common/cache/tagged-cache.service";
-import { CacheKeys, CacheTags } from "../../common/cache/cache-keys.util";
-import { hashQuery } from "../../common/cache/query-hash.util";
-import { Tournament } from "../../domain/entities";
-import { TournamentService } from "../../domain/tournament/tournament.service";
+import { FindLatestTournamentsQueryDto } from "../dtos/request/find-latest-tournaments-query.dto";
+import { TournamentSeriesPlayerDto } from "../dtos/response/tournament-series-player.response.dto";
+import { TournamentSeriesRepository } from "../repositories/tournament-series.repository";
+import { TaggedCacheService } from "@common/cache/tagged-cache.service";
+import { CacheKeys, CacheTags } from "@common/cache/cache-keys.util";
+import { hashQuery } from "@common/cache/query-hash.util";
+import { Tournament } from "@domain/entities";
+import { TournamentService } from "@domain/tournament/tournament.service";
 
 @Injectable()
 export class TournamentSeriesService {
@@ -18,9 +19,9 @@ export class TournamentSeriesService {
 
     public async findPlayersByTournamentId(
         id: number,
-    ): Promise<TournamentSeriesPlayerDTO[]> {
+    ): Promise<TournamentSeriesPlayerDto[]> {
         const cacheKey = CacheKeys.tournamentSeries.playersByTournamentId(id);
-        const cached = await this.taggedCacheService.get<TournamentSeriesPlayerDTO[]>(cacheKey);
+        const cached = await this.taggedCacheService.get<TournamentSeriesPlayerDto[]>(cacheKey);
 
         if (cached) {
             return cached;
@@ -44,10 +45,10 @@ export class TournamentSeriesService {
     public async findTopXPlayersByTournamentIds(
         x: number,
         tournamentIDs: number[],
-    ): Promise<TournamentSeriesPlayerDTO[]> {
+    ): Promise<TournamentSeriesPlayerDto[]> {
         const queryHash = hashQuery({ x, tournamentIDs: tournamentIDs.sort() });
         const cacheKey = CacheKeys.tournamentSeries.topPlayersByTournamentIds(queryHash);
-        const cached = await this.taggedCacheService.get<TournamentSeriesPlayerDTO[]>(cacheKey);
+        const cached = await this.taggedCacheService.get<TournamentSeriesPlayerDto[]>(cacheKey);
 
         if (cached) {
             return cached;
@@ -71,7 +72,7 @@ export class TournamentSeriesService {
         return result;
     }
 
-    public async findLatestTournaments(query: FindLatestTournamentsQueryDTO) {
+    public async findLatestTournaments(query: FindLatestTournamentsQueryDto) {
         const { eventSeriesIds = [] } = query;
         // Cache this query
         const queryHash = hashQuery({ eventSeriesIds: eventSeriesIds.sort() });

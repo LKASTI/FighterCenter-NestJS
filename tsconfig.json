@@ -16,6 +16,14 @@
         "noImplicitAny": false,
         "strictBindCallApply": false,
         "forceConsistentCasingInFileNames": false,
-        "noFallthroughCasesInSwitch": false
+        "noFallthroughCasesInSwitch": false,
+        "paths": {
+            "@features/*": ["src/features/*"],
+            "@domain/*": ["src/domain/*"],
+            "@common/*": ["src/common/*"],
+            "@config/*": ["src/config/*"],
+            "@authentication/*": ["src/authentication/*"],
+            "@decorators/*": ["src/decorators/*"]
+        }
     }
 }
