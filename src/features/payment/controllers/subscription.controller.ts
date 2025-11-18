@@ -5,18 +5,23 @@ import {
     Post,
     Query,
     Req,
-    UseGuards,
     ValidationPipe,
     UnauthorizedException,
 } from "@nestjs/common";
+import { ApiTags } from "@nestjs/swagger";
 import { SubscriptionService } from "../services/subscription.service";
-import { BasicStartggAuthGuard } from "../../../authentication/guards/basicStartggAuth.guard";
 import { CreateCheckoutSessionDTO } from "../dtos/createCheckoutSession.dto";
 import { SubscriptionStatusDTO } from "../dtos/subscriptionStatus.dto";
 import { StartggUser } from "../../../domain/entities/startggUser.entity";
 import { ProductType } from "../interfaces/productTypes.enum";
+import {
+    ApiSubscriptionPost,
+    ApiSubscriptionGet,
+    ApiSubscriptionPostWithQuery,
+} from "../decorators/subscription-swagger.decorators";
 
 @Controller("subscription")
+@ApiTags("Subscription")
 export class SubscriptionController {
     constructor(
         private readonly subscriptionService: SubscriptionService,
@@ -26,7 +31,7 @@ export class SubscriptionController {
      * Create a Stripe checkout session for subscription
      */
     @Post("checkout")
-    @UseGuards(BasicStartggAuthGuard)
+    @ApiSubscriptionPost("Create Stripe checkout session for subscription")
     async createCheckoutSession(
         @Body(new ValidationPipe()) dto: CreateCheckoutSessionDTO,
         @Req() req: any,
@@ -49,7 +54,7 @@ export class SubscriptionController {
      * Get subscription status for the authenticated user
      */
     @Get("status")
-    @UseGuards(BasicStartggAuthGuard)
+    @ApiSubscriptionGet("Get subscription status for authenticated user", SubscriptionStatusDTO)
     async getSubscriptionStatus(
         @Req() req: any,
         @Query("productType") productType?: ProductType,
@@ -86,10 +91,10 @@ export class SubscriptionController {
     }
 
     /**
-     * Check if user has access to a feature (simple boolean check)
+     * Check if user has access to a feature
      */
     @Get("has-access")
-    @UseGuards(BasicStartggAuthGuard)
+    @ApiSubscriptionGet("Check if user has active subscription access")
     async hasAccess(
         @Req() req: any,
         @Query("productType") productType?: ProductType,
@@ -112,7 +117,7 @@ export class SubscriptionController {
      * Cancel subscription (at period end)
      */
     @Post("cancel")
-    @UseGuards(BasicStartggAuthGuard)
+    @ApiSubscriptionPostWithQuery("Cancel subscription at end of current billing period", SubscriptionStatusDTO)
     async cancelSubscription(
         @Req() req: any,
         @Query("productType") productType?: ProductType,
@@ -148,7 +153,7 @@ export class SubscriptionController {
      * Resume a canceled subscription
      */
     @Post("resume")
-    @UseGuards(BasicStartggAuthGuard)
+    @ApiSubscriptionPostWithQuery("Resume a previously canceled subscription", SubscriptionStatusDTO)
     async resumeSubscription(
         @Req() req: any,
         @Query("productType") productType?: ProductType,
