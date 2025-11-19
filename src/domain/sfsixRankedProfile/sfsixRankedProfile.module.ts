@@ -1,9 +1,9 @@
 import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
-import { SFSixRankedProfileController } from "src/controllers/sfsixRankedProfile.controller";
-import { SFSixRankedProfile } from "src/domain/entities/sfsixRankedProfile.entity";
-import { SFSixRankedProfileRepository } from "src/domain/sfsixRankedProfile/sfsixRankedProfile.repository";
-import { SFSixRankedProfileService } from "src/domain/sfsixRankedProfile/sfsixRankedProfile.service";
+import { SFSixRankedProfile } from "@domain/entities/sfsixRankedProfile.entity";
+import { SFSixRankedProfileController } from "./controllers/sfsix-ranked-profile.controller";
+import { SFSixRankedProfileService } from "./services/sfsix-ranked-profile.service";
+import { SFSixRankedProfileRepository } from "./repositories/sfsix-ranked-profile.repository";
 
 @Module({
     imports: [TypeOrmModule.forFeature([SFSixRankedProfile])],

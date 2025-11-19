@@ -11,7 +11,7 @@ import { EncryptionModule } from "../../authentication/encryption/encryption.mod
 import { PassportModule } from "@nestjs/passport";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { JwtModule } from "@nestjs/jwt";
-import { StartggUserModule } from "../startggUser/startggUser.module";
+import { StartggUserModule } from "../startggUser/startgg-user.module";
 import { StartggApiModule } from "@features/startgg-api";
 import { TournamentMatchModule } from "../tournamentMatch/tournamentMatch.module";
 import { TournamentSetModule } from "../tournamentSet/tournamentSet.module";

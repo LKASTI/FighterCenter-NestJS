@@ -2,7 +2,7 @@ import { Controller, Get, Post, Req, Res, UseGuards, UnauthorizedException } fro
 import { AuthGuard } from "@nestjs/passport";
 import { JwtService } from "@nestjs/jwt";
 import { JwtAuthGuard } from "../authentication/guards/jwtAuth.guard";
-import { JwtRefreshTokenService } from "../domain/jwtRefreshToken/jwtRefreshToken.service";
+import { JwtRefreshTokenService } from "@domain/jwtRefreshToken";
 
 @Controller("auth")
 export class AuthController {

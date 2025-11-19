@@ -1,9 +1,9 @@
 import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
-import { SFSixRankedCharacterController } from "src/controllers/sfsixRankedCharacter.controller";
-import { SFSixRankedCharacter } from "src/domain/entities/sfsixRankedCharacter.entity";
-import { SFSixRankedCharacterRepository } from "src/domain/sfsixRankedCharacter/sfsixRankedCharacter.repository";
-import { SFSixRankedCharacterService } from "src/domain/sfsixRankedCharacter/sfsixRankedCharacter.service";
+import { SFSixRankedCharacter } from "@domain/entities/sfsixRankedCharacter.entity";
+import { SFSixRankedCharacterController } from "./controllers/sfsix-ranked-character.controller";
+import { SFSixRankedCharacterService } from "./services/sfsix-ranked-character.service";
+import { SFSixRankedCharacterRepository } from "./repositories/sfsix-ranked-character.repository";
 
 @Module({
     imports: [TypeOrmModule.forFeature([SFSixRankedCharacter])],

@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
-import { SFSixRankedProfileService } from "@domain/sfsixRankedProfile/sfsixRankedProfile.service";
-import { SFSixRankedCharacterRankingService } from "@domain/sfsixRankedCharacterRanking/sfsixRankedCharacterRanking.service";
-import { SFSixRankedCharacterService } from "@domain/sfsixRankedCharacter/sfsixRankedCharacter.service";
+import { SFSixRankedProfileService } from "@domain/sfsixRankedProfile";
+import { SfsixRankedCharacterRankingService } from "@domain/sfsixRankedCharacterRanking/services/sfsix-ranked-character-ranking.service";
+import { SFSixRankedCharacterService } from "@domain/sfsixRankedCharacter";
 import { TaggedCacheService } from "@common/cache/tagged-cache.service";
 import { CacheTags } from "@common/cache/cache-keys.util";
 import * as path from "path";
@@ -23,7 +23,7 @@ export class RankedDataParserService {
     constructor(
         private readonly rankedProfileService: SFSixRankedProfileService,
         private readonly rankedCharacterService: SFSixRankedCharacterService,
-        private readonly rankedCharacterRankingService: SFSixRankedCharacterRankingService,
+        private readonly rankedCharacterRankingService: SfsixRankedCharacterRankingService,
         private readonly taggedCacheService: TaggedCacheService,
     ) {}
 

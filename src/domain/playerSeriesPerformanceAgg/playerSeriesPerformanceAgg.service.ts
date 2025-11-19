@@ -1,10 +1,10 @@
 import { Injectable } from "@nestjs/common";
 import { PlayerSeriesPerformanceAgg } from "../entities/PlayerSeriesPerformanceAgg.entity";
 import { PlayerSeriesPerformanceAggRepository } from "./playerSeriesPerformanceAgg.repository";
-import { EventService } from "../event/event.service";
-import { TournamentSetRepository } from "../tournamentSet/tournamentSet.repository";
+import { EventService } from "@domain/event";
+import { TournamentSetRepository } from "@domain/tournamentSet";
 import { InjectRepository } from "@nestjs/typeorm";
-import { TournamentMatchRepository } from "../tournamentMatch/tournamentMatch.repository";
+import { TournamentMatchRepository } from "@domain/tournamentMatch";
 import { TaggedCacheService } from "../../common/cache/tagged-cache.service";
 import { CacheKeys, CacheTags } from "../../common/cache/cache-keys.util";
 

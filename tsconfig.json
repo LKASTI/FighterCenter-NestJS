@@ -23,7 +23,10 @@
             "@common/*": ["src/common/*"],
             "@config/*": ["src/config/*"],
             "@authentication/*": ["src/authentication/*"],
-            "@decorators/*": ["src/decorators/*"]
+            "@decorators/*": ["src/decorators/*"],
+            "@entities": ["src/domain/entities"],
+            "@entities/*": ["src/domain/entities/*"],
+            "@dtos/*": ["src/dtos/*"]
         }
     }
 }

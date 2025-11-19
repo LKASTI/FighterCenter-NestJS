@@ -6,18 +6,18 @@ import { ConfigModule, ConfigService } from "@nestjs/config";
 import { PlayerModule } from "./domain/player/player.module";
 import { SFSixRankedProfileModule } from "./domain/sfsixRankedProfile/sfsixRankedProfile.module";
 import { SFSixRankedCharacterModule } from "./domain/sfsixRankedCharacter/sfsixRankedCharacter.module";
-import { SFSixRankedCharacterRankingModule } from "./domain/sfsixRankedCharacterRanking/sfsixRankedCharacterRanking.module";
+import { SfsixRankedCharacterRankingModule } from "./domain/sfsixRankedCharacterRanking/sfsix-ranked-character-ranking.module";
 import { RankedDataParserModule } from "@features/ranked-parser";
 import { EventModule } from "./domain/event/event.module";
 import { TournamentModule } from "./domain/tournament/tournament.module";
-import { PlayerTournamentRunModule } from "./domain/playerTournamentRun/playerTournamentRun.module";
+import { PlayerTournamentRunModule } from "./domain/playerTournamentRun/player-tournament-run.module";
 import { TournamentSetModule } from "./domain/tournamentSet/tournamentSet.module";
 import { TournamentMatchModule } from "./domain/tournamentMatch/tournamentMatch.module";
 import { TournamentDataParserModule } from "@features/tournament-importer";
 import { HttpModule } from "@nestjs/axios";
 import { ServeStaticModule } from "@nestjs/serve-static";
 import { join } from "path";
-import { StartggUserModule } from "./domain/startggUser/startggUser.module";
+import { StartggUserModule } from "./domain/startggUser/startgg-user.module";
 import { AuthModule } from "./authentication/auth.module";
 import * as Joi from "joi";
 import { TournamentSeriesModule } from "@features/tournament-series";
@@ -25,7 +25,7 @@ import { EncryptionModule } from "./authentication/encryption/encryption.module"
 import { TwitterShareModule } from "@features/twitter-share";
 import { StartggApiModule } from "@features/startgg-api";
 import { Top8MakerModule } from "@features/top8-maker";
-import { SFSixGamePatchModule } from "./domain/sfsixGamePatch/sfsixGamePatch.module";
+import { SFSixGamePatchModule } from "@domain/sfsixGamePatch";
 import {
     PlayerSeriesPerformanceAggModule
 } from "./domain/playerSeriesPerformanceAgg/playerSeriesPerformanceAgg.module";
@@ -97,7 +97,7 @@ import { PaymentModule } from "./features/payment/payment.module";
         PlayerModule,
         SFSixRankedProfileModule,
         SFSixRankedCharacterModule,
-        SFSixRankedCharacterRankingModule,
+        SfsixRankedCharacterRankingModule,
         EventModule,
         TournamentModule,
         PlayerTournamentRunModule,

@@ -1,5 +1,5 @@
 import { Module } from "@nestjs/common";
-import { PlayerTournamentRunModule } from "@domain/playerTournamentRun/playerTournamentRun.module";
+import { PlayerTournamentRunModule } from "@domain/playerTournamentRun/player-tournament-run.module";
 import { PlayerModule } from "@domain/player/player.module";
 import { EventModule } from "@domain/event/event.module";
 import { TournamentSeriesService } from "./services/tournament-series.service";

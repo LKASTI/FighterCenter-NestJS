@@ -11,7 +11,7 @@ import { SubscriptionService } from "./services/subscription.service";
 import { WebhookService } from "./services/webhook.service";
 import { SubscriptionController } from "./controllers/subscription.controller";
 import { StripeWebhookHandlers } from "./handlers/stripe-webhook.handler";
-import { StartggUserModule } from "../../domain/startggUser/startggUser.module";
+import { StartggUserModule } from "../../domain/startggUser/startgg-user.module";
 import { AuthModule } from "../../authentication/auth.module";
 
 @Module({

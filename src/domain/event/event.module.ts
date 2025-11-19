@@ -1,10 +1,10 @@
 import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
-import { EventController } from "src/controllers/event.controller";
-import { Event } from "src/domain/entities/event.entity";
-import { EventRepository } from "src/domain/event/event.repository";
-import { EventService } from "src/domain/event/event.service";
-import { CommonModule } from "../../common/common.module";
+import { Event } from "@domain/entities/event.entity";
+import { EventController } from "./controllers/event.controller";
+import { EventService } from "./services/event.service";
+import { EventRepository } from "./repositories/event.repository";
+import { CommonModule } from "@common/common.module";
 
 @Module({
     imports: [

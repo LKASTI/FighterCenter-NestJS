@@ -1,7 +1,7 @@
 import { ExecutionContext, ForbiddenException, Injectable } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { Reflector } from "@nestjs/core";
-import { StartggUserService } from "../../domain/startggUser/startggUser.service";
+import { StartggUserService } from "../../domain/startggUser/services/startgg-user.service";
 import { BaseAuthGuard } from "./baseAuth.guard";
 import { StartggUser } from "../../domain/entities";
 

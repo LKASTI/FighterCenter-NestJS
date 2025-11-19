@@ -6,7 +6,7 @@ import { TaggedCacheService } from "@common/cache/tagged-cache.service";
 import { CacheKeys, CacheTags } from "@common/cache/cache-keys.util";
 import { hashQuery } from "@common/cache/query-hash.util";
 import { Tournament } from "@domain/entities";
-import { TournamentService } from "@domain/tournament/tournament.service";
+import { TournamentService } from "@domain/tournament";
 
 @Injectable()
 export class TournamentSeriesService {

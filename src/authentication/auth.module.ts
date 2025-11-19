@@ -1,7 +1,7 @@
 import { Module } from "@nestjs/common";
 import { HttpModule } from "@nestjs/axios";
 import { TournamentDataParserModule } from "@features/tournament-importer";
-import { StartggUserModule } from "../domain/startggUser/startggUser.module";
+import { StartggUserModule } from "../domain/startggUser/startgg-user.module";
 import { PassportModule } from "@nestjs/passport";
 import { JwtModule } from "@nestjs/jwt";
 import { AuthController } from "../controllers/auth.controller";
@@ -10,7 +10,7 @@ import { JwtStrategy } from "./strategies/jwt.strategy";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { EncryptionModule } from "./encryption/encryption.module";
 import { SeriesAuthGuard } from "./guards/seriesAuth.guard";
-import { JwtRefreshTokenModule } from "../domain/jwtRefreshToken/jwtRefreshToken.module";
+import { JwtRefreshTokenModule } from "@domain/jwtRefreshToken";
 
 @Module({
     imports: [

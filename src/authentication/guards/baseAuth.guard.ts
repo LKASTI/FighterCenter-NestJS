@@ -1,7 +1,7 @@
 import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
-import { StartggUserService } from "../../domain/startggUser/startggUser.service";
-import { StartggRefreshTokenResponse } from "../../domain/startggUser/startggUser.interfaces";
+import { StartggUserService } from "../../domain/startggUser/services/startgg-user.service";
+import { StartggRefreshTokenResponse } from "../../domain/startggUser/types/startgg-user.types";
 import { StartggUser } from "../../domain/entities";
 
 @Injectable()

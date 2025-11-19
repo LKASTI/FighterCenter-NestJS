@@ -1,9 +1,9 @@
 import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
-import { TournamentMatchController } from "src/controllers/tournamentMatch.controller";
-import { TournamentMatch } from "src/domain/entities/tournamentMatch.entity";
-import { TournamentMatchRepository } from "src/domain/tournamentMatch/tournamentMatch.repository";
-import { TournamentMatchService } from "src/domain/tournamentMatch/tournamentMatch.service";
+import { TournamentMatch } from "@domain/entities/tournamentMatch.entity";
+import { TournamentMatchController } from "./controllers/tournament-match.controller";
+import { TournamentMatchService } from "./services/tournament-match.service";
+import { TournamentMatchRepository } from "./repositories/tournament-match.repository";
 
 @Module({
     imports: [TypeOrmModule.forFeature([TournamentMatch])],

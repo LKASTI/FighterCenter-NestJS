@@ -3,7 +3,7 @@ import { Injectable } from "@nestjs/common";
 import { PassportStrategy } from "@nestjs/passport";
 import { Strategy } from "passport-oauth2";
 import { HttpService } from "@nestjs/axios";
-import { StartggUserService } from "../../domain/startggUser/startggUser.service";
+import { StartggUserService } from "../../domain/startggUser/services/startgg-user.service";
 import { EncryptionService } from "../encryption/encryption.service";
 
 @Injectable()

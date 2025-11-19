@@ -5,9 +5,9 @@ import {
     Injectable,
     NotFoundException,
 } from "@nestjs/common";
-import { EventService } from "@domain/event/event.service";
-import { TournamentService } from "@domain/tournament/tournament.service";
-import { PlayerService } from "@domain/player/player.service";
+import { EventService } from "@domain/event";
+import { TournamentService } from "@domain/tournament";
+import { PlayerService } from "@domain/player";
 import {
     StartGGTournamentDataV2ParserDTO,
 } from "../dtos/request/tournament-data-parser.dto";
@@ -35,7 +35,7 @@ import {
 import { firstValueFrom } from "rxjs";
 import { EncryptionService } from "@authentication/encryption/encryption.service";
 import { StartggUser } from "@domain/entities";
-import { SFSixGamePatchService } from "@domain/sfsixGamePatch/sfsixGamePatch.service";
+import { SFSixGamePatchService } from "@domain/sfsixGamePatch";
 import { FindSFSixGamePatchDTO } from "@domain/../dtos/sfsixGamePatch.dto";
 import { SFSixGamePatch } from "@domain/entities/sfsixGamePatch.entity";
 import { toWords } from "number-to-words";
@@ -46,7 +46,7 @@ import { Set as StartGGSet, SetConnection } from "@features/startgg-api"
 import {
     PlayerSeriesPerformanceAggService
 } from "@domain/playerSeriesPerformanceAgg/playerSeriesPerformanceAgg.service";
-import { StartggUserService } from "@domain/startggUser/startggUser.service";
+import { StartggUserService } from "@domain/startggUser/services/startgg-user.service";
 import { TaggedCacheService } from "@common/cache/tagged-cache.service";
 import { CacheTags } from "@common/cache/cache-keys.util";
 

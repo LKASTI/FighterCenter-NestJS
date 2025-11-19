@@ -1,4 +1,4 @@
-import { PlayerTournamentRunRepository } from "@domain/playerTournamentRun/playerTournamentRun.repository";
+import { PlayerTournamentRunRepository } from "@domain/playerTournamentRun/repositories/player-tournament-run.repository";
 import { TournamentSeriesPlayerDto } from "../dtos/response/tournament-series-player.response.dto";
 import { Injectable } from "@nestjs/common";
 import { plainToInstance } from "class-transformer";

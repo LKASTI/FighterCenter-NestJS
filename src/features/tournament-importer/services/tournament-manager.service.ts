@@ -1,16 +1,16 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
 import { TournamentManagerRepository } from "../repositories/tournament-manager.repository";
-import { TournamentService } from "@domain/tournament/tournament.service";
+import { TournamentService } from "@domain/tournament";
 import { FindTournamentsQueryDTO, UpdateTournamentDTO } from "../../../dtos/tournament.dto";
 import { UpdateSeriesTournamentDTO } from "../dtos/request/tournament-manager.dto";
-import { SFSixGamePatchService } from "@domain/sfsixGamePatch/sfsixGamePatch.service";
+import { SFSixGamePatchService } from "@domain/sfsixGamePatch";
 import { FindSFSixGamePatchDTO } from "../../../dtos/sfsixGamePatch.dto";
 import { toWords } from "number-to-words";
 import { Tournament } from "@domain/entities";
 import { PlayerSeriesPerformanceAggService } from "@domain/playerSeriesPerformanceAgg/playerSeriesPerformanceAgg.service";
 import { InjectRepository } from "@nestjs/typeorm";
-import { PlayerTournamentRunRepository } from "@domain/playerTournamentRun/playerTournamentRun.repository";
-import { EventRepository } from "@domain/event/event.repository";
+import { PlayerTournamentRunRepository } from "@domain/playerTournamentRun/repositories/player-tournament-run.repository";
+import { EventRepository } from "@domain/event";
 
 import { TaggedCacheService } from "@common/cache/tagged-cache.service";
 import { CacheTags } from "@common/cache/cache-keys.util";

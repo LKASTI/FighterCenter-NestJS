@@ -5,7 +5,7 @@ import { SubscriptionRepository } from "../repositories/subscription.repository"
 import { StripeService } from "./stripe.service";
 import { Subscription } from "../entities/subscription.entity";
 import { ProductType } from "../interfaces/productTypes.enum";
-import { StartggUserService } from "../../../domain/startggUser/startggUser.service";
+import { StartggUserService } from "../../../domain/startggUser/services/startgg-user.service";
 import Stripe from "stripe";
 
 @Injectable()

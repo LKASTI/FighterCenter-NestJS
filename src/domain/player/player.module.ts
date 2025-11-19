@@ -1,9 +1,9 @@
 import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
-import { PlayerController } from "src/controllers/player.controller";
-import { Player } from "src/domain/entities/player.entity";
-import { PlayerRepository } from "src/domain/player/player.repository";
-import { PlayerService } from "src/domain/player/player.service";
+import { Player } from "@domain/entities/player.entity";
+import { PlayerController } from "./controllers/player.controller";
+import { PlayerService } from "./services/player.service";
+import { PlayerRepository } from "./repositories/player.repository";
 
 @Module({
     imports: [TypeOrmModule.forFeature([Player])],

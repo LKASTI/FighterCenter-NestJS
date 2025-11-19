@@ -1,10 +1,10 @@
 import { Module } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
-import { TournamentSetController } from "src/controllers/tournamentSet.controller";
-import { TournamentSet } from "src/domain/entities/tournamentSet.entity";
-import { TournamentSetRepository } from "src/domain/tournamentSet/tournamentSet.repository";
-import { TournamentSetService } from "src/domain/tournamentSet/tournamentSet.service";
-import { CommonModule } from "../../common/common.module";
+import { TournamentSet } from "@domain/entities/tournamentSet.entity";
+import { CommonModule } from "@common/common.module";
+import { TournamentSetController } from "./controllers/tournament-set.controller";
+import { TournamentSetService } from "./services/tournament-set.service";
+import { TournamentSetRepository } from "./repositories/tournament-set.repository";
 
 @Module({
     imports: [
