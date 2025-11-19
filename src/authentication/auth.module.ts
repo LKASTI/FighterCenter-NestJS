@@ -1,6 +1,6 @@
 import { Module } from "@nestjs/common";
 import { HttpModule } from "@nestjs/axios";
-import { TournamentDataParserModule } from "../features/tournamentImporter/tournamentDataParser.module";
+import { TournamentDataParserModule } from "@features/tournament-importer";
 import { StartggUserModule } from "../domain/startggUser/startggUser.module";
 import { PassportModule } from "@nestjs/passport";
 import { JwtModule } from "@nestjs/jwt";
