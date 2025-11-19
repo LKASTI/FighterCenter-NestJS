@@ -12,7 +12,7 @@ import { PassportModule } from "@nestjs/passport";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { JwtModule } from "@nestjs/jwt";
 import { StartggUserModule } from "../startggUser/startggUser.module";
-import { StartggApiModule } from "../../features/startggApi/startggApi.module";
+import { StartggApiModule } from "@features/startgg-api";
 import { TournamentMatchModule } from "../tournamentMatch/tournamentMatch.module";
 import { TournamentSetModule } from "../tournamentSet/tournamentSet.module";
 import { CommonModule } from "../../common/common.module";

@@ -2,7 +2,7 @@ import { Module } from "@nestjs/common";
 import { EncryptionModule } from "../../authentication/encryption/encryption.module";
 import { Top8MakerService } from "./top8maker.service";
 import { Top8makerController } from "../../controllers/top8maker.controller";
-import { StartggApiModule } from "../startggApi/startggApi.module";
+import { StartggApiModule } from "@features/startgg-api";
 import { AuthModule } from "../../authentication/auth.module";
 
 @Module({

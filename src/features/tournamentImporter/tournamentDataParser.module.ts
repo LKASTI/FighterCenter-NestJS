@@ -16,7 +16,7 @@ import { EncryptionModule } from "../../authentication/encryption/encryption.mod
 import { SFSixGamePatchModule } from "../../domain/sfsixGamePatch/sfsixGamePatch.module";
 import { TournamentManagerService } from "./tournamentManager.service";
 import { TournamentManagerRepository } from "./tournamentManager.repository";
-import { StartggApiModule } from "../startggApi/startggApi.module";
+import { StartggApiModule } from "@features/startgg-api";
 import {
     PlayerSeriesPerformanceAggModule
 } from "../../domain/playerSeriesPerformanceAgg/playerSeriesPerformanceAgg.module";

@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { StartggApiService } from "../startggApi/startggApi.service";
+import { StartggApiService } from "@features/startgg-api";
 import { Top8MakerDataResponse, Top8MakerPlayer } from "./top8maker.dto";
 
 

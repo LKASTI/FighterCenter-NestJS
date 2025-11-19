@@ -41,8 +41,8 @@ import { SFSixGamePatch } from "../../domain/entities/sfsixGamePatch.entity";
 import { toWords } from "number-to-words";
 import { InjectDataSource } from "@nestjs/typeorm";
 import { DataSource } from "typeorm";
-import { StartggApiService } from "../startggApi/startggApi.service";
-import { Set as StartGGSet, SetConnection } from "../startggApi/startggApi.graphql"
+import { StartggApiService } from "@features/startgg-api";
+import { Set as StartGGSet, SetConnection } from "@features/startgg-api"
 import {
     PlayerSeriesPerformanceAggService
 } from "../../domain/playerSeriesPerformanceAgg/playerSeriesPerformanceAgg.service";

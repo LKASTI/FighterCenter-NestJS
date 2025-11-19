@@ -1,11 +1,11 @@
 import { BadRequestException, Inject, Injectable, Scope } from "@nestjs/common";
 import { GraphQLClient } from "graphql-request";
-import { Event, QueryEventArgs, SetConnection, Tournament } from "./startggApi.graphql";
-import { GetEventQuery, GetEventTop8PlayerDataQuery, GetTournamentSetsQuery } from "./startggApi.queries";
+import { Event, QueryEventArgs, SetConnection, Tournament } from "../graphql/startgg-api.graphql";
+import { GetEventQuery, GetEventTop8PlayerDataQuery, GetTournamentSetsQuery } from "../graphql/startgg-api.queries";
 import { REQUEST } from "@nestjs/core";
 import { Request } from "express";
-import { StartggUser } from "../../domain/entities";
-import { EncryptionService } from "../../authentication/encryption/encryption.service";
+import { StartggUser } from "@domain/entities";
+import { EncryptionService } from "@authentication/encryption/encryption.service";
 
 @Injectable({ scope: Scope.REQUEST })
 export class StartggApiService {

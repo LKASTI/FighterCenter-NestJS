@@ -23,7 +23,7 @@ import * as Joi from "joi";
 import { TournamentSeriesModule } from "@features/tournament-series";
 import { EncryptionModule } from "./authentication/encryption/encryption.module";
 import { TwitterShareModule } from "./features/twitterShare/twitterShare.module";
-import { StartggApiModule } from "./features/startggApi/startggApi.module";
+import { StartggApiModule } from "@features/startgg-api";
 import { Top8MakerModule } from "./features/top8maker/top8maker.module";
 import { SFSixGamePatchModule } from "./domain/sfsixGamePatch/sfsixGamePatch.module";
 import {
