@@ -28,7 +28,7 @@ import {
 export class SFSixRankedCharacterController {
     constructor(private readonly service: SFSixRankedCharacterService) {}
 
-    @ApiSFSixRankedCharacterPost("Create a new SF6 ranked character", SFSixRankedCharacter, true)
+    @ApiSFSixRankedCharacterPost("Create a new SF6 ranked character entity", SFSixRankedCharacter, true)
     @Post()
     async create(
         @Body() sfsixRankedCharacterDTO: CreateSFSixRankedCharacterDto,
@@ -36,7 +36,7 @@ export class SFSixRankedCharacterController {
         return await this.service.create(sfsixRankedCharacterDTO);
     }
 
-    @ApiSFSixRankedCharacterGet("Get all SF6 ranked characters with optional filters")
+    @ApiSFSixRankedCharacterGet("Get all SF6 ranked character entities with optional filters")
     @Get()
     async findAll(
         @Query(new ValidationPipe({ transform: true }))
@@ -45,7 +45,7 @@ export class SFSixRankedCharacterController {
         return await this.service.findAll(query);
     }
 
-    @ApiSFSixRankedCharacterGet("Get an SF6 ranked character by ID", SFSixRankedCharacter)
+    @ApiSFSixRankedCharacterGet("Get an SF6 ranked character entity by ID", SFSixRankedCharacter)
     @Get(":id")
     async findByID(
         @Param("id", ParseIntPipe) id: number,
@@ -59,7 +59,7 @@ export class SFSixRankedCharacterController {
         return rankedCharacter;
     }
 
-    @ApiSFSixRankedCharacterPatch("Update an SF6 ranked character", SFSixRankedCharacter, true)
+    @ApiSFSixRankedCharacterPatch("Update an SF6 ranked character entity", SFSixRankedCharacter, true)
     @Patch(":id")
     async update(
         @Param("id", ParseIntPipe) id: number,
@@ -77,7 +77,7 @@ export class SFSixRankedCharacterController {
         return rankedCharacter;
     }
 
-    @ApiSFSixRankedCharacterDelete("Delete an SF6 ranked character", true)
+    @ApiSFSixRankedCharacterDelete("Delete an SF6 ranked character entity", true)
     @Delete(":id")
     @HttpCode(204) // No Content
     async remove(@Param("id", ParseIntPipe) id: number): Promise<void> {

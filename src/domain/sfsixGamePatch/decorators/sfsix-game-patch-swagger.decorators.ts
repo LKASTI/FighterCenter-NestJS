@@ -1,10 +1,11 @@
-import { applyDecorators } from "@nestjs/common";
-import { ApiOperation, ApiResponse } from "@nestjs/swagger";
+import { createApiDecorator, StandardResponses } from "@common/decorators";
 
 export function ApiSFSixGamePatchGet(summary: string, responseType?: any) {
-    return applyDecorators(
-        ApiOperation({ summary }),
-        ApiResponse({ status: 200, description: "Success", type: responseType }),
-        ApiResponse({ status: 500, description: "Internal server error" }),
-    );
+    return createApiDecorator({
+        summary,
+        responses: [
+            StandardResponses.success("Success", responseType),
+            StandardResponses.serverError(),
+        ],
+    });
 }

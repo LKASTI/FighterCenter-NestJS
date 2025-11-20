@@ -1,57 +1,33 @@
-import { applyDecorators } from "@nestjs/common";
-import {
-    ApiOperation,
-    ApiResponse,
-    ApiParam
-} from "@nestjs/swagger";
+import { ApiParam } from "@nestjs/swagger";
+import { createApiDecorator, StandardResponses } from "@common/decorators";
 
 export function ApiTournamentSeriesGet(
     summary: string,
     responseType?: any
 ) {
-    return applyDecorators(
-        ApiOperation({ summary }),
-        ApiResponse({
-            status: 200,
-            description: "Success",
-            type: responseType
-        }),
-        ApiResponse({
-            status: 404,
-            description: "Resource not found"
-        }),
-        ApiResponse({
-            status: 500,
-            description: "Internal server error"
-        }),
-    );
+    return createApiDecorator({
+        summary,
+        responses: [
+            StandardResponses.success("Success", responseType),
+            StandardResponses.notFound("Resource"),
+            StandardResponses.serverError(),
+        ],
+    });
 }
 
 export function ApiTournamentSeriesPost(
     summary: string,
     responseType?: any
 ) {
-    return applyDecorators(
-        ApiOperation({ summary }),
-        ApiResponse({
-            status: 201,
-            description: "Resource created successfully",
-            type: responseType
-        }),
-        ApiResponse({
-            status: 200,
-            description: "Success",
-            type: responseType
-        }),
-        ApiResponse({
-            status: 400,
-            description: "Invalid input data"
-        }),
-        ApiResponse({
-            status: 500,
-            description: "Internal server error"
-        }),
-    );
+    return createApiDecorator({
+        summary,
+        responses: [
+            StandardResponses.created("Resource created successfully", responseType),
+            StandardResponses.success("Success", responseType),
+            { status: 400, description: "Invalid input data" },
+            StandardResponses.serverError(),
+        ],
+    });
 }
 
 export function ApiTournamentSeriesGetById(
@@ -59,26 +35,20 @@ export function ApiTournamentSeriesGetById(
     paramName: string,
     responseType?: any
 ) {
-    return applyDecorators(
-        ApiOperation({ summary }),
-        ApiParam({
-            name: paramName,
-            description: `ID of the ${paramName}`,
-            type: Number,
-            required: true
-        }),
-        ApiResponse({
-            status: 200,
-            description: "Success",
-            type: responseType
-        }),
-        ApiResponse({
-            status: 404,
-            description: "Resource not found"
-        }),
-        ApiResponse({
-            status: 500,
-            description: "Internal server error"
-        }),
-    );
+    return createApiDecorator({
+        summary,
+        responses: [
+            StandardResponses.success("Success", responseType),
+            StandardResponses.notFound("Resource"),
+            StandardResponses.serverError(),
+        ],
+        additionalDecorators: [
+            ApiParam({
+                name: paramName,
+                description: `ID of the ${paramName}`,
+                type: Number,
+                required: true
+            }),
+        ],
+    });
 }

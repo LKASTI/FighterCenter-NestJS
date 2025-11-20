@@ -13,7 +13,7 @@ export class RankedDataParserController {
     @ApiRankedParserPost(
         "Parse a specific JSON ranked data file and store in database",
         undefined,
-        true // This endpoint is disabled
+        true
     )
     public async parseJSONrankedFile(@Body() body: ParseRankedFileDto) {
         return this.service.parseJSONrankedFile(
@@ -26,7 +26,7 @@ export class RankedDataParserController {
 
     @Post("parseRankedFileDirectory")
     @ApiRankedParserPost(
-        "Parse all JSON ranked data files in the directory and store in database"
+        "Parse all JSON ranked data files in the directory and store in database",
     )
     public async parseRankedFileDirectory() {
         return this.service.parseRankedFileDirectory();

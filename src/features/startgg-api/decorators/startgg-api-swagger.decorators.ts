@@ -1,49 +1,27 @@
-import { applyDecorators, UseGuards } from "@nestjs/common";
-import {
-    ApiOperation,
-    ApiResponse,
-    ApiQuery,
-    ApiParam
-} from "@nestjs/swagger";
+import { ApiQuery, ApiParam } from "@nestjs/swagger";
 import { FeatureFlagGuard } from "@authentication/guards/feature-flag.guard";
-import { DisableEndpoint } from "@decorators/endpoint-status-toggles";
+import { createApiDecorator, StandardResponses } from "@common/decorators";
+
+const startggResponses = (responseType?: any) => [
+    StandardResponses.success("Success", responseType),
+    { status: 400, description: "Bad request - invalid parameters" },
+    { status: 401, description: "Unauthorized - no valid Start.gg token" },
+    StandardResponses.rateLimit(),
+    StandardResponses.serverError(),
+];
 
 export function ApiStartggGet(
     summary: string,
     responseType?: any,
     isDisabled: boolean = false
 ) {
-    const decorators = [
-        ApiOperation({ summary }),
-        UseGuards(FeatureFlagGuard),
-        ApiResponse({
-            status: 200,
-            description: "Success",
-            type: responseType
-        }),
-        ApiResponse({
-            status: 400,
-            description: "Bad request - invalid parameters"
-        }),
-        ApiResponse({
-            status: 401,
-            description: "Unauthorized - no valid Start.gg token"
-        }),
-        ApiResponse({
-            status: 429,
-            description: "Rate limit exceeded"
-        }),
-        ApiResponse({
-            status: 500,
-            description: "Internal server error"
-        }),
-    ];
-
-    if (isDisabled) {
-        decorators.push(DisableEndpoint());
-    }
-
-    return applyDecorators(...decorators);
+    return createApiDecorator({
+        summary,
+        guard: FeatureFlagGuard,
+        responses: startggResponses(responseType),
+        isDisabled,
+        excludeFromSwagger: true,
+    });
 }
 
 export function ApiStartggGetWithQuery(
@@ -53,43 +31,21 @@ export function ApiStartggGetWithQuery(
     responseType?: any,
     isDisabled: boolean = false
 ) {
-    const decorators = [
-        ApiOperation({ summary }),
-        UseGuards(FeatureFlagGuard),
-        ApiQuery({
-            name: queryName,
-            description: queryDescription,
-            required: true,
-            type: String
-        }),
-        ApiResponse({
-            status: 200,
-            description: "Success",
-            type: responseType
-        }),
-        ApiResponse({
-            status: 400,
-            description: "Bad request - invalid parameters"
-        }),
-        ApiResponse({
-            status: 401,
-            description: "Unauthorized - no valid Start.gg token"
-        }),
-        ApiResponse({
-            status: 429,
-            description: "Rate limit exceeded"
-        }),
-        ApiResponse({
-            status: 500,
-            description: "Internal server error"
-        }),
-    ];
-
-    if (isDisabled) {
-        decorators.push(DisableEndpoint());
-    }
-
-    return applyDecorators(...decorators);
+    return createApiDecorator({
+        summary,
+        guard: FeatureFlagGuard,
+        responses: startggResponses(responseType),
+        isDisabled,
+        excludeFromSwagger: true,
+        additionalDecorators: [
+            ApiQuery({
+                name: queryName,
+                description: queryDescription,
+                required: true,
+                type: String
+            }),
+        ],
+    });
 }
 
 export function ApiStartggGetWithParam(
@@ -99,41 +55,19 @@ export function ApiStartggGetWithParam(
     responseType?: any,
     isDisabled: boolean = false
 ) {
-    const decorators = [
-        ApiOperation({ summary }),
-        UseGuards(FeatureFlagGuard),
-        ApiParam({
-            name: paramName,
-            description: paramDescription,
-            required: true,
-            type: String
-        }),
-        ApiResponse({
-            status: 200,
-            description: "Success",
-            type: responseType
-        }),
-        ApiResponse({
-            status: 400,
-            description: "Bad request - invalid parameters"
-        }),
-        ApiResponse({
-            status: 401,
-            description: "Unauthorized - no valid Start.gg token"
-        }),
-        ApiResponse({
-            status: 429,
-            description: "Rate limit exceeded"
-        }),
-        ApiResponse({
-            status: 500,
-            description: "Internal server error"
-        }),
-    ];
-
-    if (isDisabled) {
-        decorators.push(DisableEndpoint());
-    }
-
-    return applyDecorators(...decorators);
+    return createApiDecorator({
+        summary,
+        guard: FeatureFlagGuard,
+        responses: startggResponses(responseType),
+        isDisabled,
+        excludeFromSwagger: true,
+        additionalDecorators: [
+            ApiParam({
+                name: paramName,
+                description: paramDescription,
+                required: true,
+                type: String
+            }),
+        ],
+    });
 }
