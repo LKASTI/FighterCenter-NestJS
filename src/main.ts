@@ -8,6 +8,37 @@ import { BasicAuth } from "./authentication/basicAuth";
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
 async function bootstrap() {
+    // Production environment validation
+    if (process.env.NODE_ENV === 'production') {
+        // Validate JWT secret strength
+        if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
+            throw new Error(
+                'PRODUCTION ERROR: JWT_SECRET must be at least 32 characters. ' +
+                'Current length: ' + (process.env.JWT_SECRET?.length || 0)
+            );
+        }
+
+        // Ensure HTTPS for frontend URL
+        if (process.env.FRONTEND_URL?.startsWith('http://')) {
+            throw new Error(
+                'PRODUCTION ERROR: FRONTEND_URL must use HTTPS in production. ' +
+                'Current: ' + process.env.FRONTEND_URL
+            );
+        }
+
+        // Validate refresh token expiration is reasonable
+        const refreshExpiry = parseInt(process.env.REFRESH_TOKEN_EXPIRATION || '604800');
+        if (refreshExpiry > 2592000) { // More than 30 days
+            console.warn(
+                '⚠️  WARNING: REFRESH_TOKEN_EXPIRATION is longer than 30 days (' +
+                Math.floor(refreshExpiry / 86400) + ' days). ' +
+                'Consider shortening for better security.'
+            );
+        }
+
+        console.log('✅ Production environment validation passed');
+    }
+
     const app = await NestFactory.create(AppModule, {
         rawBody: true, // Enable raw body for Stripe webhook signature verification
     });
