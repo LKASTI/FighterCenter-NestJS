@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, UnauthorizedException } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { StartggUserRepository } from "../repositories/startgg-user.repository";
 import { CreateStartggUserDto, FindStartggUsersQueryDto, UpdateStartggUserDto } from "../dtos/request";
@@ -114,7 +114,16 @@ export class StartggUserService {
             };
         } catch (error) {
             console.error('Failed to refresh StartGG token:', error);
-            throw error
+
+            // Check if it's a 401 (refresh token expired)
+            if (error.response?.status === 401) {
+                throw new UnauthorizedException({
+                    code: 'STARTGG_REAUTH_REQUIRED',
+                    message: 'Start.gg authorization expired. Please re-authorize.',
+                });
+            }
+
+            throw error;
         }
     }
 

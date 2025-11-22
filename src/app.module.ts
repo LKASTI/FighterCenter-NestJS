@@ -30,6 +30,7 @@ import {
     PlayerSeriesPerformanceAggModule
 } from "./domain/playerSeriesPerformanceAgg/playerSeriesPerformanceAgg.module";
 import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
+import { ScheduleModule } from "@nestjs/schedule";
 import { CommonModule } from "./common/common.module";
 import { PaymentModule } from "./features/payment/payment.module";
 
@@ -65,6 +66,8 @@ import { PaymentModule } from "./features/payment/payment.module";
             ttl: 60000, // 1 minute
             limit: 100, // 75 requests per minute
         }]),
+        // Scheduled Tasks (Cron Jobs)
+        ScheduleModule.forRoot(),
         // For serving static images
         ServeStaticModule.forRoot({
             rootPath: join(__dirname, "..", "..", "client"),

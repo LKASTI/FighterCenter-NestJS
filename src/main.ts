@@ -2,6 +2,7 @@ import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
 import { ValidationPipe } from "@nestjs/common";
 import * as cookieParser from "cookie-parser";
+import helmet from "helmet";
 import "reflect-metadata";
 import { BasicAuth } from "./authentication/basicAuth";
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
@@ -56,6 +57,13 @@ async function bootstrap() {
     });
 
     app.use(cookieParser());
+
+    // Apply security headers (Helmet)
+    // Note: CSP is disabled for now
+    app.use(helmet({
+        contentSecurityPolicy: false, // Disabled - requires frontend compatibility testing
+        crossOriginEmbedderPolicy: false, // Disabled - may interfere with external embeds
+    }));
 
     // Apply basic auth in local and development environments
     if (process.env.NODE_ENV === "local" || process.env.NODE_ENV === "development") {

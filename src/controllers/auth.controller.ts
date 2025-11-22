@@ -1,6 +1,7 @@
 import { Controller, Get, Post, Req, Res, UseGuards, UnauthorizedException } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
 import { JwtService } from "@nestjs/jwt";
+import { Throttle } from "@nestjs/throttler";
 import { JwtAuthGuard } from "../authentication/guards/jwtAuth.guard";
 import { JwtRefreshTokenService } from "@domain/jwtRefreshToken";
 
@@ -25,6 +26,7 @@ export class AuthController {
 
     @Get("startgg/callback")
     @UseGuards(AuthGuard("startgg"))
+    @Throttle({ default: { limit: 20, ttl: 900000 } }) // 20 requests per 15 minutes
     async startggCallback(@Req() req, @Res() res) {
         const user = req.user;
 
@@ -97,6 +99,7 @@ export class AuthController {
     }
 
     @Post("refresh")
+    @Throttle({ default: { limit: 50, ttl: 900000 } }) // 50 requests per 15 minutes
     async refreshAccessToken(@Req() req, @Res() res) {
         const refreshToken = req.cookies['refresh-token'];
 
@@ -150,6 +153,7 @@ export class AuthController {
 
     @Post("logout")
     @UseGuards(JwtAuthGuard)
+    @Throttle({ default: { limit: 100, ttl: 900000 } }) // 100 requests per 15 minutes
     async logout(@Req() req, @Res() res) {
         const user = req.user;
 
