@@ -18,6 +18,7 @@ export class BasicAuth implements NestMiddleware {
 
         // Check if Authorization header exists and is Basic auth
         if (!auth || !auth.startsWith("Basic ")) {
+            res.setHeader('WWW-Authenticate', 'Basic realm="FighterCenter Development"');
             return res.status(401).json({
                 statusCode: 401,
                 message: "Authentication required for development environment",
@@ -48,6 +49,7 @@ export class BasicAuth implements NestMiddleware {
             if (username === validUsername && password === validPassword) {
                 next(); // Authentication successful
             } else {
+                res.setHeader('WWW-Authenticate', 'Basic realm="FighterCenter Development"');
                 return res.status(401).json({
                     statusCode: 401,
                     message: "Invalid credentials",
@@ -57,6 +59,7 @@ export class BasicAuth implements NestMiddleware {
         } catch (error) {
             console.error("Basic auth parsing error:", error);
 
+            res.setHeader('WWW-Authenticate', 'Basic realm="FighterCenter Development"');
             return res.status(401).json({
                 statusCode: 401,
                 message: "Invalid authorization header format",
