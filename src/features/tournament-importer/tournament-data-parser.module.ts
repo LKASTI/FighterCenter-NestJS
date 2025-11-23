@@ -21,6 +21,8 @@ import { PlayerSeriesPerformanceAggModule } from "@domain/playerSeriesPerformanc
 import { CommonModule } from "@common/common.module";
 import { TournamentGraphicUploadService } from "./services/tournament-graphic-upload.service";
 import { R2UploadService } from "@features/twitter-share";
+import { TournamentImportAuditLogModule } from "@domain/tournamentImportAuditLog/tournament-import-audit-log.module";
+import { TournamentRollbackService } from "./services/tournament-rollback.service";
 
 @Module({
     imports: [
@@ -32,6 +34,7 @@ import { R2UploadService } from "@features/twitter-share";
         PlayerModule,
         PlayerTournamentRunModule,
         PlayerSeriesPerformanceAggModule,
+        TournamentImportAuditLogModule,
         SFSixGamePatchModule,
         StartggUserModule,
         StartggApiModule,
@@ -58,6 +61,7 @@ import { R2UploadService } from "@features/twitter-share";
         TournamentDataParserService,
         TournamentManagerService,
         TournamentManagerRepository,
+        TournamentRollbackService,
         TournamentGraphicUploadService,
         R2UploadService,
     ],

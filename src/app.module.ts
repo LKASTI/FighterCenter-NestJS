@@ -13,6 +13,7 @@ import { TournamentModule } from "./domain/tournament/tournament.module";
 import { PlayerTournamentRunModule } from "./domain/playerTournamentRun/player-tournament-run.module";
 import { TournamentSetModule } from "./domain/tournamentSet/tournamentSet.module";
 import { TournamentMatchModule } from "./domain/tournamentMatch/tournamentMatch.module";
+import { TournamentImportAuditLogModule } from "./domain/tournamentImportAuditLog/tournament-import-audit-log.module";
 import { TournamentDataParserModule } from "@features/tournament-importer";
 import { HttpModule } from "@nestjs/axios";
 import { ServeStaticModule } from "@nestjs/serve-static";
@@ -106,6 +107,7 @@ import { PaymentModule } from "./features/payment/payment.module";
         PlayerTournamentRunModule,
         TournamentSetModule,
         TournamentMatchModule,
+        TournamentImportAuditLogModule,
         StartggUserModule,
         TournamentSeriesModule,
         SFSixGamePatchModule,

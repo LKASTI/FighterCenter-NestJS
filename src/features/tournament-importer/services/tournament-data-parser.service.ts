@@ -49,6 +49,9 @@ import {
 import { StartggUserService } from "@domain/startggUser/services/startgg-user.service";
 import { TaggedCacheService } from "@common/cache/tagged-cache.service";
 import { CacheTags } from "@common/cache/cache-keys.util";
+import { TournamentImportContext } from "../types/tournament-import-context";
+import { TournamentRollbackService } from "./tournament-rollback.service";
+import { TournamentImportAuditLogService } from "@domain/tournamentImportAuditLog/services/tournament-import-audit-log.service";
 
 interface BatchJob {
     page: number;
@@ -72,6 +75,8 @@ export class TournamentDataParserService {
         private readonly encryptionService: EncryptionService,
         private readonly startggUserService: StartggUserService,
         private readonly taggedCacheService: TaggedCacheService,
+        private readonly tournamentRollbackService: TournamentRollbackService,
+        private readonly tournamentImportAuditLogService: TournamentImportAuditLogService,
     ) {}
 
     private readonly BATCH_REQUEST_CONFIG = {
@@ -140,6 +145,9 @@ export class TournamentDataParserService {
         req: any,
         tournamentSeriesId: number
     ) {
+        // Initialize import context for tracking and potential rollback
+        const context = new TournamentImportContext();
+
         try {
             this.initializeVariables(params, req);
 
@@ -168,6 +176,7 @@ export class TournamentDataParserService {
                 tournamentSeriesId,
                 params.eventRegion,
                 params.eventDates,
+                context,
             );
             if (!tournamentData.events) {
                 throw new NotFoundException(
@@ -203,7 +212,7 @@ export class TournamentDataParserService {
                 vodLink: params.vodLink,
                 tournamentTop8GraphicImage: params.top8GraphicUrl ?? null,
                 top8GraphicIsFile: !params.top8GraphicUrl,
-            });
+            }, context);
             if (!newTournament)
                 throw new BadRequestException(
                     "Tournament for given data already exists",
@@ -221,11 +230,12 @@ export class TournamentDataParserService {
                 startggSlug,
                 startggEventSlug,
                 startggEventID.toString(),
-                newTournament.tournamentID
+                newTournament.tournamentID,
+                context
             )
 
             // Update player performance agg
-            this.runPlayerPerformanceAggUpdates(newEvent.eventID, Array.from(new Set(this.playerIdsForProcessing)));
+            this.runPlayerPerformanceAggUpdates(newEvent.eventID, Array.from(new Set(this.playerIdsForProcessing)), context);
 
             // Invalidate all caches related to this tournament import
             await this.invalidateTournamentCaches(
@@ -233,11 +243,28 @@ export class TournamentDataParserService {
                 this.responseStats.eventID as number
             );
 
+            // Mark import as successful
+            context.importStatus = "succeeded";
+            context.endTime = new Date();
+
+            // Create success audit log
+            await this.tournamentImportAuditLogService.create({
+                tournamentSeriesId: context.eventId,
+                status: "success",
+                errorMessage: null,
+                errorStack: null,
+                createdEntities: context.getSummary(),
+                startTime: context.startTime,
+                endTime: context.endTime,
+                durationMs: context.getDurationMs(),
+            });
             // return stats
             return this.responseStats;
         } catch (error) {
             console.error(`❌ Tournament parsing failed:`, error.message)
             console.error(error);
+            // Rollback all changes made during import
+            await this.tournamentRollbackService.rollbackImport(context, error);
             throw error;
         }
     }
@@ -479,18 +506,23 @@ export class TournamentDataParserService {
     }
 
     private processingPromises = new Set<Promise<void>>();
+    private batchProcessingErrors: Error[] = [];
 
     //#region Batch Processing
     private async processDataBatch(
         slug: string,
         eventSlug: string,
         eventId: string,
-        tournamentId: number
+        tournamentId: number,
+        context: TournamentImportContext
     ) {
         const activeBatches = new Map<number, BatchJob>();
         let currentPage = 1;
         let totalPages: number | null = null;
         let processedBatches = 0;
+
+        // Clear any errors from previous imports
+        this.batchProcessingErrors = [];
 
         console.log('🔄 Starting optimized batch processing...');
 
@@ -522,7 +554,14 @@ export class TournamentDataParserService {
 
                 // Process this batch immediately (don't await - parallel processing)
                 if (setsResponse?.nodes?.length) {
-                    const processingPromise = this.processBatch(setsResponse.nodes, tournamentId, ++processedBatches, totalPages);
+                    const processingPromise = this.processBatch(setsResponse.nodes, tournamentId, ++processedBatches, totalPages, context)
+                        .catch((error) => {
+                            // Attach batch info to error for better debugging
+                            error.batchNumber = processedBatches;
+                            // Store error to be thrown after all batches complete
+                            this.batchProcessingErrors.push(error);
+                            console.error(`❌ Batch ${error.batchNumber} failed: ${error.message}`);
+                        });
                     this.processingPromises.add(processingPromise);
                     // Clean up completed promises
                     processingPromise.finally(() => {
@@ -557,6 +596,13 @@ export class TournamentDataParserService {
         if (this.processingPromises.size > 0) {
             console.log(`⏳ Waiting for ${this.processingPromises.size} remaining batch processing tasks to complete...`);
             await Promise.all(this.processingPromises);
+        }
+
+        // Check if any batches failed during processing
+        if (this.batchProcessingErrors.length > 0) {
+            const firstError = this.batchProcessingErrors[0];
+            console.error(`❌ ${this.batchProcessingErrors.length} batch(es) failed during processing. Throwing first error.`);
+            throw firstError;
         }
 
         // Apply character fallback for PTRs that have no characters after all batches
@@ -695,7 +741,8 @@ export class TournamentDataParserService {
         sets: StartGGSet[],
         tournamentId: number,
         batchNumber: number,
-        totalBatches: number | null
+        totalBatches: number | null,
+        context: TournamentImportContext
     ) {
         const validSets = sets.filter(set =>
             set?.slots?.length === 2 && set.winnerId
@@ -714,14 +761,15 @@ export class TournamentDataParserService {
         const playerCharacterMap = this.aggregateCharactersByPlayer(parsedSets);
         // Batch operations
         // startggId -> playerId
-        const playerIdMap = await this.createPlayersAndPTRsBatched(tournamentId, parsedSets, playerCharacterMap);
+        const playerIdMap = await this.createPlayersAndPTRsBatched(tournamentId, parsedSets, playerCharacterMap, context);
         this.playerIdsForProcessing.push(...Array.from(playerIdMap.values()));
         // Create sets
-        const tournamentSetIdMap = await this.createTournamentSetsBatched(parsedSets, tournamentId, playerIdMap);
+        const tournamentSetIdMap = await this.createTournamentSetsBatched(parsedSets, tournamentId, playerIdMap, context);
         // Create matches
         await this.createTournamentMatchesBatched(
             parsedSets,
-            tournamentSetIdMap
+            tournamentSetIdMap,
+            context
         )
 
         console.log(`✅ Completed batch ${batchNumber}: ${parsedSets.length} sets processed`);
@@ -884,6 +932,7 @@ export class TournamentDataParserService {
         tournamentSeriesId: number,
         eventRegion: string | null,
         eventDates: Date[] | null,
+        context: TournamentImportContext,
     ): Promise<Event> {
         let event: Event;
         // const eventsQuery = await this.eventService.findAll({
@@ -895,6 +944,8 @@ export class TournamentDataParserService {
 
         if (eventsQuery) {
             event = eventsQuery;
+            context.eventWasCreated = false;
+            console.log(`♻️  Reusing existing event: ${event.eventID}`);
         } else {
             event = await this.eventService.create({
                 eventName: eventName,
@@ -902,10 +953,14 @@ export class TournamentDataParserService {
                 dates: eventDates,
             });
 
+            context.eventWasCreated = true;
             console.log(
                 `New event created:\n\tid: ${event.eventID}\n\tname: ${event.eventName}`,
             );
         }
+
+        // Track in context for rollback
+        context.eventId = event.eventID;
 
         // Update stats
         this.responseStats["eventID"] = event.eventID;
@@ -915,6 +970,7 @@ export class TournamentDataParserService {
 
     private async createTournament(
         createTournamentDTO: CreateTournamentDTO,
+        context: TournamentImportContext,
     ): Promise<Tournament> {
         // dates is not considered when finding tournaments
         const tournamentsQuery = await this.tournamentService.findAll({
@@ -930,6 +986,9 @@ export class TournamentDataParserService {
         const newTourney =
             await this.tournamentService.create(createTournamentDTO);
 
+        // Track in context for rollback
+        context.tournamentId = newTourney.tournamentID;
+
         // Update stats
         this.responseStats["tournamentID"] = newTourney.tournamentID;
 
@@ -939,7 +998,8 @@ export class TournamentDataParserService {
     private async createPlayersAndPTRsBatched(
         tournamentID: number,
         setsData: StartGGTournamentSetRecord[],
-        playerCharacterMap: Map<number, Set<string>>
+        playerCharacterMap: Map<number, Set<string>>,
+        context: TournamentImportContext
     ) {
         const playerRepo = this.dataSource.getRepository(Player);
         const ptrRepo = this.dataSource.getRepository(PlayerTournamentRun);
@@ -1012,6 +1072,9 @@ export class TournamentDataParserService {
             savedPlayers.forEach(player => {
                 existingPlayerMap.set(player.startggPlayerID, player.playerID);
                 this.responseStats["playerIDs"].push(player.playerID);
+
+                // Track in context for rollback
+                context.playerIds.add(player.playerID);
             });
         }
 
@@ -1103,6 +1166,9 @@ export class TournamentDataParserService {
                     this.ptrsWithoutCharacters.set(ptrKey, startggId);
                 }
 
+                // Track in context for rollback
+                context.ptrKeys.push({ playerID: playerId, tournamentID });
+
                 // Update stats
                 this.responseStats["playerTournamentRunIDs"].push([playerId, tournamentID]);
             }
@@ -1144,7 +1210,8 @@ export class TournamentDataParserService {
     private async createTournamentSetsBatched(
         setsData: StartGGTournamentSetRecord[],
         tournamentId: number,
-        playerIdMap: Map<number, number>
+        playerIdMap: Map<number, number>,
+        context: TournamentImportContext
     ): Promise<Map<number, number>> { // Map: startggSetId -> tournamentSetId
         const tournamentSets = [];
         const startggSetIds = [];
@@ -1185,15 +1252,20 @@ export class TournamentDataParserService {
             savedSets.forEach(set => {
                 setIdMap.set(set.startggSetID, set.tournamentSetID);
                 this.responseStats.setIDs.push(set.tournamentSetID);
+
+                // Track in context for rollback
+                context.setIds.push(set.tournamentSetID);
             });
         }
+
 
         return setIdMap;
     }
 
     private async createTournamentMatchesBatched(
         setsData: StartGGTournamentSetRecord[],
-        tournamentSetIds: Map<number, number>
+        tournamentSetIds: Map<number, number>,
+        context: TournamentImportContext
     ) {
         const tournamentMatches = [];
 
@@ -1223,6 +1295,9 @@ export class TournamentDataParserService {
 
             savedMatches.forEach(match => {
                 this.responseStats.matchIDs.push(match.tournamentMatchID);
+
+                // Track in context for rollback
+                context.matchIds.push(match.tournamentMatchID);
             });
         }
     }
@@ -1231,10 +1306,17 @@ export class TournamentDataParserService {
     // Update Player Performance Aggs
     private runPlayerPerformanceAggUpdates(
         eventSeriesID: number,
-        playerIDs: number[] | undefined
+        playerIDs: number[] | undefined,
+        context: TournamentImportContext
     ) {
         setImmediate(async () => {
            try {
+               // Only run aggregates if import succeeded
+               if (context.importStatus !== 'succeeded') {
+                   console.log('⏭️  Skipping aggregate update - import did not succeed');
+                   return;
+               }
+
                await this.delay(1000);
                const items = await this.playerSeriesPerformanceAggService.getAllForSeriesTable(eventSeriesID);
                if (items.length > 0) {
