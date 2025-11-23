@@ -1,6 +1,6 @@
-import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { IsArray, IsInt, IsOptional, IsNumber, Min } from "class-validator";
-import { Type } from "class-transformer";
+import { ApiProperty } from "@nestjs/swagger";
+import { IsArray, IsInt, IsNumber, Min } from "class-validator";
+import { Transform, Type } from "class-transformer";
 
 export class FindTopXPlayersDto {
     @ApiProperty({
@@ -17,6 +17,12 @@ export class FindTopXPlayersDto {
         description: "Number of top players to retrieve (e.g., 8 for top 8)",
         example: 8,
         minimum: 1
+    })
+    @Transform(({ value }) => {
+        if (typeof value === 'string') {
+            return parseInt(value, 10);
+        }
+        return value;
     })
     @Type(() => Number)
     @IsNumber()

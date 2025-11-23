@@ -1,10 +1,8 @@
 import {
-    Body,
     Controller,
     Get,
     Param,
     ParseIntPipe,
-    Post,
     Query,
     ValidationPipe,
 } from "@nestjs/common";
@@ -17,7 +15,6 @@ import { FindTopXPlayersDto } from "../dtos/request/find-top-x-players.dto";
 import {
     ApiTournamentSeriesGet,
     ApiTournamentSeriesGetById,
-    ApiTournamentSeriesPost
 } from "../decorators/tournament-series-swagger.decorators";
 import { TournamentSeriesPlayerDto } from "../dtos/response/tournament-series-player.response.dto";
 import { LatestTournamentsResponseDto } from "../dtos/response/latest-tournaments.response.dto";
@@ -59,12 +56,12 @@ export class TournamentSeriesController {
         [TournamentSeriesPlayerDto]
     )
     async findTopXPlayersByTournamentIds(
-        @Body(new ValidationPipe({ transform: true }))
-        findTopXPlayersDto: FindTopXPlayersDto,
+        @Query(new ValidationPipe({ transform: true }))
+        query: FindTopXPlayersDto,
     ): Promise<TournamentSeriesPlayerDto[]> {
         return await this.service.findTopXPlayersByTournamentIds(
-            findTopXPlayersDto.x,
-            findTopXPlayersDto.tournamentIDs,
+            query.x,
+            query.tournamentIDs,
         );
     }
 }
