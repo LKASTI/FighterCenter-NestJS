@@ -46,7 +46,4 @@ export class JwtRefreshToken {
 
     @Column("varchar", { name: "user_agent", length: 500, nullable: true })
     userAgent: string;
-
-    @Column("varchar", { name: "ip_address", length: 45, nullable: true })
-    ipAddress: string;
 }

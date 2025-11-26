@@ -24,7 +24,6 @@ export class JwtRefreshTokenService {
     async createRefreshToken(
         startggUserID: string,
         userAgent?: string,
-        ipAddress?: string,
     ): Promise<{ plainToken: string; dbToken: JwtRefreshToken }> {
         // Generate random token (similar to Start.gg OAuth tokens)
         const plainToken = crypto.randomBytes(64).toString('hex');
@@ -50,7 +49,6 @@ export class JwtRefreshTokenService {
             startggUserID,
             expiresAt,
             userAgent,
-            ipAddress,
         });
 
         const dbToken = await this.jwtRefreshTokenRepo.save(refreshToken);
@@ -60,10 +58,15 @@ export class JwtRefreshTokenService {
     }
 
     /**
-     * Validate refresh token
+     * Validate refresh token with optional session binding
      * Uses hash for fast lookup, then verifies with decryption
+     * @param plainToken - The refresh token to validate
+     * @param userAgent - Optional user agent for session binding validation
      */
-    async validateRefreshToken(plainToken: string): Promise<JwtRefreshToken | null> {
+    async validateRefreshToken(
+        plainToken: string,
+        userAgent?: string,
+    ): Promise<JwtRefreshToken | null> {
         // Hash the incoming token for lookup
         const tokenHash = crypto
             .createHash('sha256')
@@ -97,6 +100,16 @@ export class JwtRefreshTokenService {
         } catch (error) {
             this.logger.error('Failed to decrypt refresh token:', error);
             return null;  // Decryption failed
+        }
+
+        // Session binding validation (if context provided)
+        if (userAgent && dbToken.userAgent && dbToken.userAgent !== userAgent) {
+            this.logger.warn(
+                `User agent mismatch for refresh token ${dbToken.jwtRefreshTokenID}. ` +
+                `Expected: ${dbToken.userAgent}, Got: ${userAgent}`
+            );
+            // In strict mode, we could revoke the token here
+            // For now, log the warning and allow (can be tightened later)
         }
 
         // Update last used timestamp

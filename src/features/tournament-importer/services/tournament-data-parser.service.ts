@@ -273,7 +273,7 @@ export class TournamentDataParserService {
 
     private initializeVariables(params: StartGGTournamentDataV2ParserDTO, req: any): void {
         this.req = req;
-        this.startggApiToken = process.env.STARTGG_API_KEY
+        this.startggApiToken = ""
         if(this.req && this.req.user && this.req.user.startggEncryptedToken) {
             this.startggApiToken = this.encryptionService.decrypt((req.user as StartggUser).startggEncryptedToken);
             if(!this.startggApiToken) {

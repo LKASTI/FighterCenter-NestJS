@@ -45,7 +45,6 @@ export class AuthController {
         const { plainToken: refreshToken } = await this.jwtRefreshTokenService.createRefreshToken(
             user.startggUserID,
             req.headers['user-agent'],
-            req.ip,
         );
 
         const nodeEnv = process.env.NODE_ENV;
@@ -97,8 +96,11 @@ export class AuthController {
             throw new UnauthorizedException('No refresh token provided');
         }
 
-        // Validate refresh token
-        const dbToken = await this.jwtRefreshTokenService.validateRefreshToken(refreshToken);
+        // Validate refresh token with session binding
+        const dbToken = await this.jwtRefreshTokenService.validateRefreshToken(
+            refreshToken,
+            req.headers['user-agent'],
+        );
 
         if (!dbToken) {
             throw new UnauthorizedException('Invalid or expired refresh token');

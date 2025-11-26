@@ -15,19 +15,24 @@ export class StartggApiService {
     ) {
     }
 
+    /**
+     * Get Start.gg API token from request user or fallback to environment variable
+     *
+     * SECURITY NOTE (Finding 20):
+     * - Primary: Uses user's OAuth token (preferred, user-specific)
+     *
+     * Environment variable concerns:
+     * - Shared key across all requests
+     * - Visible in process environment
+     * - Rotation requires redeployment
+     * - No per-user audit trail
+     *
+     */
     private getTokenFromRequest(): string {
-        try {
-            if(this.request.user && (this.request.user as StartggUser).startggEncryptedToken) {
-                return this.encryptionService.decrypt((this.request.user as StartggUser).startggEncryptedToken);
-            } else {
-                throw new BadRequestException();
-            }
-        } catch {
-            const backupToken = process.env.STARTGG_API_KEY; // backup token
-            if(!backupToken) {
-                throw new BadRequestException("No token provided");
-            }
-            return backupToken;
+        if(this.request.user && (this.request.user as StartggUser).startggEncryptedToken) {
+            return this.encryptionService.decrypt((this.request.user as StartggUser).startggEncryptedToken);
+        } else {
+            throw new BadRequestException();
         }
     }
 

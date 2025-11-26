@@ -6,6 +6,7 @@ import helmet from "helmet";
 import "reflect-metadata";
 import { BasicAuth } from "./authentication/basicAuth";
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { GlobalExceptionFilter } from "./common/filters/global-exception.filter";
 
 async function bootstrap() {
     const logger = new Logger('Bootstrap');
@@ -75,6 +76,9 @@ async function bootstrap() {
     const app = await NestFactory.create(AppModule, {
         rawBody: true, // Enable raw body for Stripe webhook signature verification
     });
+
+    // Global exception filter for error message sanitization
+    app.useGlobalFilters(new GlobalExceptionFilter());
 
     app.useGlobalPipes(
         new ValidationPipe({
