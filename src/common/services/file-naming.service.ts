@@ -50,12 +50,26 @@ export class FileNamingService {
     };
   }
 
+  /**
+   * Sanitizes a string for safe use in filenames
+   * Prevents path traversal attacks and file system issues
+   * @param input - The string to sanitize
+   * @param maxLength - Maximum length of the sanitized string (default: 50)
+   * @returns Sanitized filename-safe string
+   */
   sanitizeForFilename(input: string, maxLength: number = 50): string {
     return input
       .toLowerCase()
-      .replace(/[^a-z0-9]+/g, '-')
+      // Remove path separators (/, \) and parent directory references (..)
+      .replace(/[\/\\]/g, '')
+      .replace(/\.{2,}/g, '.')
+      // Replace special characters and whitespace with dash
+      .replace(/[^a-z0-9.-]+/g, '-')
+      // Remove consecutive dashes
       .replace(/-+/g, '-')
-      .replace(/^-|-$/g, '')
+      // Remove leading/trailing dashes and dots
+      .replace(/^[-.]|[-.]$/g, '')
+      // Limit length
       .substring(0, maxLength);
   }
 

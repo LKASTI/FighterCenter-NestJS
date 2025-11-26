@@ -13,6 +13,7 @@ import { FileInterceptor } from "@nestjs/platform-express";
 import { Throttle } from "@nestjs/throttler";
 import { imageUploadConfig } from "@common/interceptors/image-upload.config";
 import { TournamentGraphicUploadService } from "../services/tournament-graphic-upload.service";
+import { validateImageFile } from "@common/utils/file-validation.util";
 
 @ApiTags("Tournament Data Parser")
 
@@ -46,6 +47,9 @@ export class TournamentDataParserController {
         if (!body.seriesName) {
             throw new BadRequestException('seriesName is required');
         }
+
+        // Validate file content via magic bytes (defense in depth)
+        await validateImageFile(file);
 
         try {
             const imageUrl = await this.tournamentGraphicUploadService.uploadGraphic(

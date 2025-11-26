@@ -7,6 +7,7 @@ import { FileInterceptor } from "@nestjs/platform-express";
 import { R2UploadService } from "../services/r2/r2-upload.service";
 import { imageUploadConfig } from "@common/interceptors/image-upload.config";
 import { ApiTwitterShareGet, ApiTwitterSharePost, ApiTwitterShareUpload } from "../decorators/twitter-share-swagger.decorators";
+import { validateImageFile } from "@common/utils/file-validation.util";
 
 @ApiTags("Twitter Share")
 @Controller('twitterShare')
@@ -31,6 +32,9 @@ export class TwitterShareController {
         if (!file) {
             throw new Error('No image file provided');
         }
+
+        // Validate file content via magic bytes (defense in depth)
+        await validateImageFile(file);
 
         const imageUrl = await this.r2UploadService.uploadTierlistImage(
             file.buffer,
