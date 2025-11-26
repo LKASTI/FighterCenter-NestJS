@@ -1,7 +1,10 @@
 import { InjectDataSource } from "@nestjs/typeorm";
 import { DataSource } from "typeorm";
+import { Logger } from "@nestjs/common";
 
 export class TournamentManagerRepository {
+    private readonly logger = new Logger(TournamentManagerRepository.name);
+
     constructor(
         @InjectDataSource()
         private dataSource: DataSource
@@ -57,7 +60,7 @@ export class TournamentManagerRepository {
                 };
             })
         } catch (error) {
-            console.error("Error deleting tournament data:", error);
+            this.logger.error("Error deleting tournament data:", error);
             throw error;
         }
     }

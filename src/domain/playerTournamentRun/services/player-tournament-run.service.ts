@@ -32,7 +32,6 @@ export class PlayerTournamentRunService {
             await this.playerTournamentRunRepository.findAllForSeriesTable(
                 eventID,
             );
-        // console.log(tmp)
         return tmp;
     }
 

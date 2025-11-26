@@ -4,6 +4,7 @@ import {
     BadRequestException,
     Injectable,
     NotFoundException,
+    Logger,
 } from "@nestjs/common";
 import { EventService } from "@domain/event";
 import { TournamentService } from "@domain/tournament";
@@ -79,6 +80,8 @@ export class TournamentDataParserService {
         private readonly tournamentImportAuditLogService: TournamentImportAuditLogService,
     ) {}
 
+    private readonly logger = new Logger(TournamentDataParserService.name);
+
     private readonly BATCH_REQUEST_CONFIG = {
         perPage: 23,           // Optimal for 1000 object limit
         concurrency: 2,        // Safe for rate limits
@@ -121,11 +124,11 @@ export class TournamentDataParserService {
         req: any,
         tournamentSeriesId: number
     ) {
-        console.log("Received request to parse StartGG tournament data V2 for series ID:", tournamentSeriesId);
+        this.logger.log(`Received request to parse StartGG tournament data V2 for series ID: ${tournamentSeriesId}`);
 
         const lockKey = tournamentSeriesId;
         if(await TournamentDataParserService.seriesImportLocks.get(lockKey)) {
-            console.log(`⏳ Waiting for concurrent import to finish for event ${tournamentSeriesId}...`);
+            this.logger.log(`⏳ Waiting for concurrent import to finish for event ${tournamentSeriesId}...`);
             await TournamentDataParserService.seriesImportLocks.get(lockKey);
         }
 
@@ -133,7 +136,7 @@ export class TournamentDataParserService {
         TournamentDataParserService.seriesImportLocks.set(lockKey, importPromise);
 
         try {
-            console.log("🚀 Starting tournament import...");
+            this.logger.log("🚀 Starting tournament import...");
             return await importPromise;
         } finally {
             TournamentDataParserService.seriesImportLocks.delete(lockKey);
@@ -217,7 +220,7 @@ export class TournamentDataParserService {
                 throw new BadRequestException(
                     "Tournament for given data already exists",
                 );
-            console.log(
+            this.logger.log(
                 `New Tournament created:\n\tid: ${newTournament.tournamentID}\n\tname:${newTournament.tournamentName}`,
             );
 
@@ -261,8 +264,7 @@ export class TournamentDataParserService {
             // return stats
             return this.responseStats;
         } catch (error) {
-            console.error(`❌ Tournament parsing failed:`, error.message)
-            console.error(error);
+            this.logger.error(`❌ Tournament parsing failed: ${error.message}`, error.stack);
             // Rollback all changes made during import
             await this.tournamentRollbackService.rollbackImport(context, error);
             throw error;
@@ -530,7 +532,7 @@ export class TournamentDataParserService {
         // Clear any errors from previous imports
         this.batchProcessingErrors = [];
 
-        console.log('🔄 Starting optimized batch processing...');
+        this.logger.log('🔄 Starting optimized batch processing...');
 
         // Phase 1: Carefully spaced startup
         currentPage = await this.startInitialBatches(
@@ -543,19 +545,19 @@ export class TournamentDataParserService {
 
         // Phase 2: Process batches as they complete
         while (activeBatches.size > 0) {
-            console.log(`⏳ Waiting for next batch to complete... Active batches: ${activeBatches.size}`);
+            this.logger.debug(`⏳ Waiting for next batch to complete... Active batches: ${activeBatches.size}`);
             try {
                 const completedPage = await this.waitForNextBatch(activeBatches);
                 const result = await activeBatches.get(completedPage)!.promise;
                 // Result is already unwrapped by waitForNextBatch, so it's guaranteed to be success
                 const setsResponse = result.success ? result.data : null;
                 activeBatches.delete(completedPage);
-                console.log(`� Batch ${completedPage} data retrieved`);
+                this.logger.debug(`� Batch ${completedPage} data retrieved`);
 
                 // Update total pages on first response
                 if (totalPages === null && setsResponse?.pageInfo?.totalPages) {
                     totalPages = setsResponse.pageInfo.totalPages;
-                    console.log(`📊 Total pages to process: ${totalPages}`);
+                    this.logger.log(`📊 Total pages to process: ${totalPages}`);
                 }
 
                 // Process this batch immediately (don't await - parallel processing)
@@ -566,7 +568,7 @@ export class TournamentDataParserService {
                             error.batchNumber = processedBatches;
                             // Store error to be thrown after all batches complete
                             this.batchProcessingErrors.push(error);
-                            console.error(`❌ Batch ${error.batchNumber} failed: ${error.message}`);
+                            this.logger.error(`❌ Batch ${error.batchNumber} failed: ${error.message}`);
                         });
                     this.processingPromises.add(processingPromise);
                     // Clean up completed promises
@@ -600,21 +602,21 @@ export class TournamentDataParserService {
 
         // Wait for all batch processing to complete
         if (this.processingPromises.size > 0) {
-            console.log(`⏳ Waiting for ${this.processingPromises.size} remaining batch processing tasks to complete...`);
+            this.logger.log(`⏳ Waiting for ${this.processingPromises.size} remaining batch processing tasks to complete...`);
             await Promise.all(this.processingPromises);
         }
 
         // Check if any batches failed during processing
         if (this.batchProcessingErrors.length > 0) {
             const firstError = this.batchProcessingErrors[0];
-            console.error(`❌ ${this.batchProcessingErrors.length} batch(es) failed during processing. Throwing first error.`);
+            this.logger.error(`❌ ${this.batchProcessingErrors.length} batch(es) failed during processing. Throwing first error.`);
             throw firstError;
         }
 
         // Apply character fallback for PTRs that have no characters after all batches
         await this.applyProfileCharacterFallback(tournamentId);
 
-        console.log('✅ Tournament processing completed!');
+        this.logger.log('✅ Tournament processing completed!');
     }
 
     private async handleBatchError(
@@ -626,11 +628,11 @@ export class TournamentDataParserService {
         failedPage?: number
     ) {
         if (error.message === 'RATE_LIMIT_EXCEEDED') {
-            console.log('⚠️  Rate limit hit, implementing backoff...');
+            this.logger.warn('⚠️  Rate limit hit, implementing backoff...');
 
             // Check if we can reduce perPage further
             if (this.BATCH_REQUEST_CONFIG.perPage <= 0) {
-                console.error('❌ Cannot reduce perPage further (already at 0). Rate limit cannot be resolved.');
+                this.logger.error('❌ Cannot reduce perPage further (already at 0). Rate limit cannot be resolved.');
                 throw new Error('RATE_LIMIT_UNRESOLVABLE: perPage reached 0');
             }
 
@@ -638,7 +640,7 @@ export class TournamentDataParserService {
 
             // Reduce perPage immediately
             const newPerPage = Math.max(0, this.BATCH_REQUEST_CONFIG.perPage - 3);
-            console.log(`📉 Reducing perPage from ${this.BATCH_REQUEST_CONFIG.perPage} to ${newPerPage}`);
+            this.logger.log(`📉 Reducing perPage from ${this.BATCH_REQUEST_CONFIG.perPage} to ${newPerPage}`);
             this.BATCH_REQUEST_CONFIG.perPage = newPerPage;
 
             const retryCount = this.retryAttempts.get(failedPage || 0) || 0;
@@ -659,17 +661,17 @@ export class TournamentDataParserService {
                 // Queue for end-of-process retry
                 if (failedPage) {
                     this.failedBatches.add(failedPage);
-                    console.log(`📝 Page ${failedPage} queued for final retry phase`);
+                    this.logger.log(`📝 Page ${failedPage} queued for final retry phase`);
                 }
             }
 
             // Global rate limiting adjustment
             if (this.consecutiveFailures >= 3) {
-                console.log('🐌 Slowing down all requests due to repeated failures');
+                this.logger.warn('🐌 Slowing down all requests due to repeated failures');
                 this.BATCH_REQUEST_CONFIG.steadyStateDelay *= 1.2; // Slow down by 50%
             }
         } else {
-            console.error(`❌ Batch processing error:`, error.message);
+            this.logger.error(`❌ Batch processing error: ${error.message}`);
             throw error;
         }
     }
@@ -683,7 +685,7 @@ export class TournamentDataParserService {
     ): Promise<number> {
         let currentPage = 1;
 
-        console.log(`🟡 Starting ${concurrency} initial batches...`);
+        this.logger.log(`🟡 Starting ${concurrency} initial batches...`);
 
         for (let i = 0; i < concurrency; i++) {
             this.startBatch(slug, eventSlug, eventId, currentPage, activeBatches);
@@ -719,7 +721,7 @@ export class TournamentDataParserService {
         );
 
         activeBatches.set(page, { page, promise });
-        console.log(`📡 Started batch ${page}`);
+        this.logger.debug(`📡 Started batch ${page}`);
     }
 
     private async waitForNextBatch(activeBatches: Map<number, BatchJob>): Promise<number> {
@@ -755,11 +757,11 @@ export class TournamentDataParserService {
         );
 
         if (validSets.length === 0) {
-            console.log(`⚠️  Batch ${batchNumber}: No valid sets found`);
+            this.logger.warn(`⚠️  Batch ${batchNumber}: No valid sets found`);
             return;
         }
 
-        console.log(`🔄 Processing batch ${batchNumber}${totalBatches ? `/${totalBatches}` : ''}: ${validSets.length} sets`);
+        this.logger.log(`🔄 Processing batch ${batchNumber}${totalBatches ? `/${totalBatches}` : ''}: ${validSets.length} sets`);
 
         // Convert to internal format
         const parsedSets = validSets.map(set => this.parseStartGGSetNodeRecord(set));
@@ -778,7 +780,7 @@ export class TournamentDataParserService {
             context
         )
 
-        console.log(`✅ Completed batch ${batchNumber}: ${parsedSets.length} sets processed`);
+        this.logger.log(`✅ Completed batch ${batchNumber}: ${parsedSets.length} sets processed`);
     }
     //#endregion
 
@@ -824,7 +826,7 @@ export class TournamentDataParserService {
                 return startggUser.sf6ProfileCharacters;
             }
         } catch (error) {
-            console.warn(`Failed to fetch profile characters for startggId ${startggId}:`, error.message);
+            this.logger.warn(`Failed to fetch profile characters for startggId ${startggId}: ${error.message}`);
         }
         return [];
     }
@@ -838,11 +840,11 @@ export class TournamentDataParserService {
      */
     private async applyProfileCharacterFallback(tournamentId: number): Promise<void> {
         if (this.ptrsWithoutCharacters.size === 0) {
-            console.log('No PTRs need character fallback');
+            this.logger.debug('No PTRs need character fallback');
             return;
         }
 
-        console.log(`Applying profile character fallback for ${this.ptrsWithoutCharacters.size} PTRs...`);
+        this.logger.log(`Applying profile character fallback for ${this.ptrsWithoutCharacters.size} PTRs...`);
 
         const updatePromises = [];
 
@@ -854,7 +856,7 @@ export class TournamentDataParserService {
                 // Parse the ptrKey to get playerId and tournamentId
                 const [playerId, tournamentIdFromKey] = ptrKey.split('-').map(Number);
 
-                console.log(`Updating PTR for player ${playerId} with profile characters: ${profileCharacters.join(', ')}`);
+                this.logger.debug(`Updating PTR for player ${playerId} with profile characters: ${profileCharacters.join(', ')}`);
 
                 // Update the PTR with profile characters
                 const updatePromise = this.dataSource
@@ -873,7 +875,7 @@ export class TournamentDataParserService {
 
         await Promise.all(updatePromises);
 
-        console.log(`✅ Applied profile character fallback to ${updatePromises.length} PTRs`);
+        this.logger.log(`✅ Applied profile character fallback to ${updatePromises.length} PTRs`);
 
         // Clear the map after applying fallback
         this.ptrsWithoutCharacters.clear();
@@ -951,7 +953,7 @@ export class TournamentDataParserService {
         if (eventsQuery) {
             event = eventsQuery;
             context.eventWasCreated = false;
-            console.log(`♻️  Reusing existing event: ${event.eventID}`);
+            this.logger.log(`♻️  Reusing existing event: ${event.eventID}`);
         } else {
             event = await this.eventService.create({
                 eventName: eventName,
@@ -960,7 +962,7 @@ export class TournamentDataParserService {
             });
 
             context.eventWasCreated = true;
-            console.log(
+            this.logger.log(
                 `New event created:\n\tid: ${event.eventID}\n\tname: ${event.eventName}`,
             );
         }
@@ -985,7 +987,6 @@ export class TournamentDataParserService {
             eventID: createTournamentDTO.eventID,
         });
 
-        // console.log(tournamentsQuery)
 
         if (tournamentsQuery.meta["total"] > 0) return null;
 
@@ -1207,7 +1208,7 @@ export class TournamentDataParserService {
         }
 
         if(existingPlayerMap.size === 0) {
-            console.log(`🟢 No existing players found,`);
+            this.logger.debug(`🟢 No existing players found`);
         }
 
         return existingPlayerMap; // Return startggId -> playerId mapping for use in createSets
@@ -1319,7 +1320,7 @@ export class TournamentDataParserService {
            try {
                // Only run aggregates if import succeeded
                if (context.importStatus !== 'succeeded') {
-                   console.log('⏭️  Skipping aggregate update - import did not succeed');
+                   this.logger.log('⏭️  Skipping aggregate update - import did not succeed');
                    return;
                }
 
@@ -1331,7 +1332,7 @@ export class TournamentDataParserService {
                    await this.playerSeriesPerformanceAggService.updateAllForSeries(eventSeriesID);
                }
            } catch {
-                console.error('Error updating player performance aggs in background');
+                this.logger.error('Error updating player performance aggs in background');
            }
         });
     }

@@ -77,7 +77,6 @@ export class PlayerTournamentRunController {
         @Param("eventID", ParseIntPipe) eventID: number,
     ) {
         const tmp = await this.service.findAllForSeriesTable(eventID);
-        // console.log(tmp)
         return tmp;
     }
 

@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post, Res, UploadedFile, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Get, Param, Post, Res, UploadedFile, UseInterceptors, Logger } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import { TwitterShareService } from "../services/twitter-share.service";
 import { CreateTwitterShareDto } from "../dtos/request/create-twitter-share.dto";
@@ -11,6 +11,8 @@ import { ApiTwitterShareGet, ApiTwitterSharePost, ApiTwitterShareUpload } from "
 @ApiTags("Twitter Share")
 @Controller('twitterShare')
 export class TwitterShareController {
+    private readonly logger = new Logger(TwitterShareController.name);
+
     constructor(
         private readonly twitterShareService: TwitterShareService,
         private readonly r2UploadService: R2UploadService
@@ -90,8 +92,8 @@ export class TwitterShareController {
             </body>
             </html>
         `
-        console.log("Twitter read share page for ID:", sharedId);
-        console.log(html);
+        this.logger.debug("Twitter read share page for ID:", sharedId);
+        this.logger.debug(html);
         res.setHeader('Content-Type', 'text/html');
         res.send(html);
     }

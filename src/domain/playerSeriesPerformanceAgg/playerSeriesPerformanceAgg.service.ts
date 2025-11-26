@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import { PlayerSeriesPerformanceAgg } from "../entities/PlayerSeriesPerformanceAgg.entity";
 import { PlayerSeriesPerformanceAggRepository } from "./playerSeriesPerformanceAgg.repository";
 import { EventService } from "@domain/event";
@@ -32,6 +32,8 @@ interface RawSet {
 
 @Injectable()
 export class PlayerSeriesPerformanceAggService {
+    private readonly logger = new Logger(PlayerSeriesPerformanceAggService.name);
+
     constructor(
         private readonly repository: PlayerSeriesPerformanceAggRepository,
         private readonly eventService: EventService,
@@ -246,7 +248,7 @@ export class PlayerSeriesPerformanceAggService {
             }
 
             const processed = Math.min(i + chunkSize, playerIDs.length);
-            console.log(`PlayerPeformance Batch progress: ${processed}/${playerIDs.length} players`);
+            this.logger.debug(`PlayerPeformance Batch progress: ${processed}/${playerIDs.length} players`);
         }
     }
 
@@ -270,7 +272,7 @@ export class PlayerSeriesPerformanceAggService {
 
             return true;
         } catch(error) {
-            console.error(`Failed to update player performance data for playerId: ${playerID} and eventId: ${eventSeriesID}:`, error);
+            this.logger.error(`Failed to update player performance data for playerId: ${playerID} and eventId: ${eventSeriesID}:`, error);
             throw error;
         }
     }

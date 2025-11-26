@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException } from "@nestjs/common";
+import { Injectable, UnauthorizedException, Logger } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
 import { StartggUserRepository } from "../repositories/startgg-user.repository";
 import { CreateStartggUserDto, FindStartggUsersQueryDto, UpdateStartggUserDto } from "../dtos/request";
@@ -10,6 +10,8 @@ import { ConfigService } from "@nestjs/config";
 
 @Injectable()
 export class StartggUserService {
+    private readonly logger = new Logger(StartggUserService.name);
+
     constructor(
         @InjectRepository(StartggUserRepository)
         private readonly startggUserRepository: StartggUserRepository,
@@ -32,7 +34,6 @@ export class StartggUserService {
         let user = await this.startggUserRepository.findOne({
             where: { startggId: createStartggUserDTO.startggId },
         });
-        // console.log("findOrCreate user:", user);
         if (!user) {
             user =
                 await this.startggUserRepository.createAndSave(
@@ -49,8 +50,8 @@ export class StartggUserService {
                 user.startggEncryptedToken = res.encryptedAccessToken;
                 user.startggTokenExpiresIn = res.expiresIn;
             } catch (error) {
-                console.error('Failed to refresh token for existing user:', error);
-                console.log('Since refreshed failed, updating token to latest startgg response tokens');
+                this.logger.error('Failed to refresh token for existing user:', error);
+                this.logger.log('Since refreshed failed, updating token to latest startgg response tokens');
                 await this.update(user.startggUserID, {
                     startggEncryptedRefreshToken: createStartggUserDTO.startggEncryptedRefreshToken,
                     startggEncryptedToken: createStartggUserDTO.startggEncryptedToken,
@@ -71,7 +72,7 @@ export class StartggUserService {
     public async refreshStartggToken(encryptedRefreshToken: string, startggUserId: string): Promise<StartggRefreshTokenResponse> {
         const decryptedRefreshToken = this.encryptionService.decrypt(encryptedRefreshToken);
         if(!decryptedRefreshToken) {
-            console.error('Failed to decrypt StartGG refresh token');
+            this.logger.error('Failed to decrypt StartGG refresh token');
             return null;
         }
         try {
@@ -91,9 +92,8 @@ export class StartggUserService {
             );
 
             const { access_token: accessToken, refresh_token: refreshToken, expires_in: expiresIn } = response.data;
-            // console.log('startgg refresh response:', response.data);
             if (!accessToken || !refreshToken) {
-                console.error('StartGG refresh response missing tokens:', response.data.keys());
+                this.logger.error('StartGG refresh response missing tokens:', response.data.keys());
                 throw new Error('Invalid StartGG refresh response' + JSON.stringify(response.data));
             }
             const expire = Date.now() + (expiresIn || 604800) * 1000;
@@ -113,7 +113,7 @@ export class StartggUserService {
                 expiresIn: expire
             };
         } catch (error) {
-            console.error('Failed to refresh StartGG token:', error);
+            this.logger.error('Failed to refresh StartGG token:', error);
 
             // Check if it's a 401 (refresh token expired)
             if (error.response?.status === 401) {

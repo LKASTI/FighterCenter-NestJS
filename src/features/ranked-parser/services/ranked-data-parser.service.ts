@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, NotFoundException, Logger } from "@nestjs/common";
 import { SFSixRankedProfileService } from "@domain/sfsixRankedProfile";
 import { SfsixRankedCharacterRankingService } from "@domain/sfsixRankedCharacterRanking/services/sfsix-ranked-character-ranking.service";
 import { SFSixRankedCharacterService } from "@domain/sfsixRankedCharacter";
@@ -20,6 +20,8 @@ type RankedPlayerRecord = {
 
 @Injectable()
 export class RankedDataParserService {
+    private readonly logger = new Logger(RankedDataParserService.name);
+
     constructor(
         private readonly rankedProfileService: SFSixRankedProfileService,
         private readonly rankedCharacterService: SFSixRankedCharacterService,
@@ -42,7 +44,7 @@ export class RankedDataParserService {
                 phaseT[0] !== "P" ||
                 seasonT[0] !== "S"
             ) {
-                console.log(
+                this.logger.warn(
                     `File ${file} does not match the format P[phase]_S[season]_YYYY-MM-DD.json`,
                 );
                 continue;
@@ -50,7 +52,6 @@ export class RankedDataParserService {
             const phase = parseInt(phaseT[1]);
             const season = parseInt(seasonT[1]);
             const date = new Date(dateT.split(".")[0]);
-            // console.log(phase, season, date)
 
             const jsonData: RankedPlayerRecord[] = JSON.parse(
                 await fs.readFile(path.join(directoryPath, file), "utf-8"),
@@ -59,7 +60,7 @@ export class RankedDataParserService {
             for (const record of jsonData) {
                 await this.parseRankedPlayerRecord(record, date, phase, season);
             }
-            console.log(`File ${file} parsed`);
+            this.logger.log(`File ${file} parsed`);
         }
 
         // Invalidate all ranked data caches after batch import
@@ -112,7 +113,6 @@ export class RankedDataParserService {
             await this.rankedProfileService.findById(parsedUsercode);
         if (!rankedProfile) {
             // create ranked profile
-            // console.log("i = " + i + " Creating ranked profile " + parsedUsercode)
             rankedProfile = await this.rankedProfileService.create({
                 usercode: parsedUsercode,
                 flag: record.Country,

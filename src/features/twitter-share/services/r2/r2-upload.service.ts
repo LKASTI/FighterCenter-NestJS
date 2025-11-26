@@ -1,10 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { S3Client, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { v4 as uuid } from 'uuid';
 
 @Injectable()
 export class R2UploadService {
+    private readonly logger = new Logger(R2UploadService.name);
     private s3Client: S3Client;
     private bucketName: string;
     private publicUrl: string;
@@ -64,7 +65,7 @@ export class R2UploadService {
             });
             await this.s3Client.send(deleteCommand);
         } catch (error) {
-            console.log(`File ${key} not found or already deleted`);
+            this.logger.log(`File ${key} not found or already deleted`);
         }
     }
 

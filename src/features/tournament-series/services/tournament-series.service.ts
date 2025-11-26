@@ -1,4 +1,4 @@
-import { Inject, Injectable } from "@nestjs/common";
+import { Inject, Injectable, Logger } from "@nestjs/common";
 import { FindLatestTournamentsQueryDto } from "../dtos/request/find-latest-tournaments-query.dto";
 import { TournamentSeriesPlayerDto } from "../dtos/response/tournament-series-player.response.dto";
 import { TournamentSeriesRepository } from "../repositories/tournament-series.repository";
@@ -10,6 +10,8 @@ import { TournamentService } from "@domain/tournament";
 
 @Injectable()
 export class TournamentSeriesService {
+    private readonly logger = new Logger(TournamentSeriesService.name);
+
     constructor(
         @Inject()
         private readonly tournamentSeriesRepository: TournamentSeriesRepository,
@@ -98,7 +100,7 @@ export class TournamentSeriesService {
                         tournaments.push(res.data[0]);
                     }
                 } catch (error) {
-                    console.error(`Error fetching tournaments for event series ID ${eventSeriesId}:`, error);
+                    this.logger.error(`Error fetching tournaments for event series ID ${eventSeriesId}:`, error);
                     return {
                         data: []
                     }

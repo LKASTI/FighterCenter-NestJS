@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, NotFoundException, Logger } from "@nestjs/common";
 import { TournamentManagerRepository } from "../repositories/tournament-manager.repository";
 import { TournamentService } from "@domain/tournament";
 import { FindTournamentsQueryDTO, UpdateTournamentDTO } from "../../../dtos/tournament.dto";
@@ -17,6 +17,7 @@ import { CacheTags } from "@common/cache/cache-keys.util";
 
 @Injectable()
 export class TournamentManagerService {
+    private readonly logger = new Logger(TournamentManagerService.name);
     private static readonly seriesMutationLocks = new Map<number, Promise<any>>();
 
     constructor(
@@ -36,7 +37,7 @@ export class TournamentManagerService {
 
         // Wait for any ongoing mutations to this series
         if (TournamentManagerService.seriesMutationLocks.has(lockKey)) {
-            console.log(`⏳ Waiting for concurrent series mutation to finish for series ${tournamentSeriesId}...`);
+            this.logger.log(`⏳ Waiting for concurrent series mutation to finish for series ${tournamentSeriesId}...`);
             await TournamentManagerService.seriesMutationLocks.get(lockKey);
         }
 
@@ -57,7 +58,7 @@ export class TournamentManagerService {
         if(!exists) {
             throw new NotFoundException("Tournament not found for the given series");
         }
-        console.log(`🗑️  Deleting tournament ${tournamentId} from series ${tournamentSeriesId}`);
+        this.logger.log(`🗑️  Deleting tournament ${tournamentId} from series ${tournamentSeriesId}`);
 
         // 1. Get affected player IDs BEFORE deletion
         const affectedPlayerIds = await this.playerTournamentRunRepository
@@ -67,7 +68,7 @@ export class TournamentManagerService {
             })
             .then(ptrs => ptrs.map(ptr => ptr.playerID));
 
-        console.log(`📊 Found ${affectedPlayerIds.length} affected players: [${affectedPlayerIds.join(', ')}]`);
+        this.logger.log(`📊 Found ${affectedPlayerIds.length} affected players: [${affectedPlayerIds.join(', ')}]`);
 
         // 2. Delete tournament data (matches, sets, PTRs, tournament)
         const result = await this.tournamentManagerRepository.deleteTournamentData(tournamentId);
@@ -84,25 +85,25 @@ export class TournamentManagerService {
             }
         );
 
-        console.log(`✅ Tournament deleted, event ${tournamentSeriesId} lastUpdatedTournamentDate updated`);
+        this.logger.log(`✅ Tournament deleted, event ${tournamentSeriesId} lastUpdatedTournamentDate updated`);
 
         // 4. Trigger aggregate recalculation for affected players
         // Run in background to avoid blocking the response
         if (affectedPlayerIds.length > 0) {
             setImmediate(async () => {
                 try {
-                    console.log(`🔄 Starting background update of performance aggregates for ${affectedPlayerIds.length} players`);
+                    this.logger.log(`🔄 Starting background update of performance aggregates for ${affectedPlayerIds.length} players`);
                     await this.playerSeriesPerformanceAggService.updateAllForSeries(
                         tournamentSeriesId,
                         affectedPlayerIds
                     );
-                    console.log(`✅ Successfully updated performance aggregates for ${affectedPlayerIds.length} players after tournament deletion`);
+                    this.logger.log(`✅ Successfully updated performance aggregates for ${affectedPlayerIds.length} players after tournament deletion`);
                 } catch (error) {
-                    console.error('❌ Error updating player performance aggs after deletion:', error);
+                    this.logger.error('❌ Error updating player performance aggs after deletion:', error);
                 }
             });
         } else {
-            console.log(`⚠️  No players affected by tournament deletion, skipping aggregate updates`);
+            this.logger.log(`⚠️  No players affected by tournament deletion, skipping aggregate updates`);
         }
 
         return result;
@@ -151,7 +152,7 @@ export class TournamentManagerService {
         tournamentQuery.tournamentID = tournamentId;
         const res = await this.tournamentService.findAll(tournamentQuery);
         if(!res.data || (res.data && res.data.length === 0)) {
-            console.log("Tournament not found for the given series");
+            this.logger.log("Tournament not found for the given series");
             return false;
         }
         return true;

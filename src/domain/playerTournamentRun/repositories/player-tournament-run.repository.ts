@@ -98,7 +98,6 @@ export class PlayerTournamentRunRepository extends Repository<PlayerTournamentRu
 
     public async findAll(query: FindPlayerTournamentRunsQueryDto) {
         const queryBuilder = this.createQueryBuilder("playerTournamentRun");
-        // console.log(query)
         // Apply filters if provided
         if (query.playerID) {
             queryBuilder.andWhere("playerTournamentRun.playerID = :playerID", {

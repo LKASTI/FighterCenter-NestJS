@@ -3,8 +3,11 @@ import { Player } from "@domain/entities/player.entity";
 import { Repository } from "typeorm";
 import { CreatePlayerDto } from "../dtos/request/create-player.dto";
 import { FindPlayersQueryDto } from "../dtos/request/find-players-query.dto";
+import { Logger } from "@nestjs/common";
 
 export class PlayerRepository extends Repository<Player> {
+    private readonly logger = new Logger(PlayerRepository.name);
+
     constructor(
         @InjectRepository(Player)
         private playerRepository: Repository<Player>,
@@ -22,7 +25,7 @@ export class PlayerRepository extends Repository<Player> {
             const savedPlayer = await this.playerRepository.save(newPlayer);
             return savedPlayer;
         } catch (error) {
-            console.log("Error in player createAndSave: ", error);
+            this.logger.error("Error in player createAndSave: ", error);
             throw error;
         }
     }

@@ -3,8 +3,11 @@ import { Event } from "@domain/entities/event.entity";
 import { Repository } from "typeorm";
 import { CreateEventDto } from "../dtos/request/create-event.dto";
 import { FindEventsQueryDto } from "../dtos/request/find-events-query.dto";
+import { Logger } from "@nestjs/common";
 
 export class EventRepository extends Repository<Event> {
+    private readonly logger = new Logger(EventRepository.name);
+
     constructor(
         @InjectRepository(Event)
         private repository: Repository<Event>,
@@ -18,7 +21,7 @@ export class EventRepository extends Repository<Event> {
             const savedEvent = await this.repository.save(newEvent);
             return savedEvent;
         } catch (error) {
-            console.log("Error in event createAndSave: ", error);
+            this.logger.error("Error in event createAndSave: ", error);
             throw error;
         }
     }

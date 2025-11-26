@@ -1,6 +1,6 @@
 import { NestFactory } from "@nestjs/core";
 import { AppModule } from "./app.module";
-import { ValidationPipe } from "@nestjs/common";
+import { ValidationPipe, Logger } from "@nestjs/common";
 import * as cookieParser from "cookie-parser";
 import helmet from "helmet";
 import "reflect-metadata";
@@ -8,6 +8,8 @@ import { BasicAuth } from "./authentication/basicAuth";
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 
 async function bootstrap() {
+    const logger = new Logger('Bootstrap');
+
     // Production environment validation
     if (process.env.NODE_ENV === 'production') {
         // Validate JWT secret strength
@@ -32,14 +34,14 @@ async function bootstrap() {
         // Validate refresh token expiration is reasonable
         const refreshExpiry = parseInt(process.env.REFRESH_TOKEN_EXPIRATION || '604800');
         if (refreshExpiry > 2592000) { // More than 30 days
-            console.warn(
+            logger.warn(
                 '⚠️  WARNING: REFRESH_TOKEN_EXPIRATION is longer than 30 days (' +
                 Math.floor(refreshExpiry / 86400) + ' days). ' +
                 'Consider shortening for better security.'
             );
         }
 
-        console.log('✅ Production environment validation passed');
+        logger.log('✅ Production environment validation passed');
     }
 
     const app = await NestFactory.create(AppModule, {
