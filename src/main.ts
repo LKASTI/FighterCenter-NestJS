@@ -11,6 +11,9 @@ async function bootstrap() {
     // Production environment validation
     if (process.env.NODE_ENV === 'production') {
         // Validate JWT secret strength
+        if (/^(.)\1+$/.test(process.env.JWT_SECRET)) { // All same character
+            throw new Error('JWT_SECRET must not be a repeated character');
+        }
         if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
             throw new Error(
                 'PRODUCTION ERROR: JWT_SECRET must be at least 32 characters. ' +
@@ -108,8 +111,10 @@ async function bootstrap() {
         .addApiKey({type: "apiKey", name: 'x-auth-token', in: 'header'}, 'x-auth-token')
         .build();
 
-    const document = SwaggerModule.createDocument(app, config);
-    SwaggerModule.setup('swagger', app, document);
+    if (process.env.NODE_ENV !== 'production') {
+        const document = SwaggerModule.createDocument(app, config);
+        SwaggerModule.setup('swagger', app, document);
+    }
 
     await app.listen(process.env.PORT ?? 3000, "0.0.0.0");
 }

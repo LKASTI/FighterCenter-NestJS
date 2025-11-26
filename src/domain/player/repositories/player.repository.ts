@@ -54,8 +54,12 @@ export class PlayerRepository extends Repository<Player> {
             });
         }
 
-        // Add sorting
+        // Add sorting with whitelist validation (defense in depth)
+        const ALLOWED_SORT_FIELDS = ["playerName", "country", "startggPlayerID", "startggProfileImageURL"];
         if (query.sortBy) {
+            if (!ALLOWED_SORT_FIELDS.includes(query.sortBy)) {
+                throw new Error(`Invalid sort field: ${query.sortBy}`);
+            }
             queryBuilder.orderBy(`player.${query.sortBy}`, query.order);
         }
 

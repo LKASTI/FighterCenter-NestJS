@@ -57,7 +57,6 @@ export class SeriesAuthGuard extends BaseAuthGuard {
             }
         }
 
-        console.log("series auth guard passed");
         return true;
     }
 }

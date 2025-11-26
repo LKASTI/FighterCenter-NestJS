@@ -1,8 +1,10 @@
-import { Injectable, NestMiddleware } from "@nestjs/common";
+import { Injectable, NestMiddleware, Logger } from "@nestjs/common";
 import { Request, Response, NextFunction } from "express";
 
 @Injectable()
 export class BasicAuth implements NestMiddleware {
+    private readonly logger = new Logger(BasicAuth.name);
+
     use(req: Request, res: Response, next: NextFunction) {
         // Only apply in development environment
         if (process.env.NODE_ENV !== "development") {
@@ -10,7 +12,6 @@ export class BasicAuth implements NestMiddleware {
         }
 
         if (this.shouldSkipAuth(req)) {
-            console.log(`Skipping basic auth for OAuth route: ${req.path}`);
             return next();
         }
 
@@ -38,7 +39,7 @@ export class BasicAuth implements NestMiddleware {
             const validPassword = process.env.DEV_PASSWORD;
 
             if (!validPassword) {
-                console.error("DEV_PASSWORD environment variable not set");
+                this.logger.error("DEV_PASSWORD environment variable not set");
                 return res.status(500).json({
                     statusCode: 500,
                     message: "Server configuration error",
@@ -57,7 +58,7 @@ export class BasicAuth implements NestMiddleware {
                 });
             }
         } catch (error) {
-            console.error("Basic auth parsing error:", error);
+            this.logger.error("Basic auth parsing error", error);
 
             res.setHeader('WWW-Authenticate', 'Basic realm="FighterCenter Development"');
             return res.status(401).json({

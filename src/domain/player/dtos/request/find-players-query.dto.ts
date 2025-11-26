@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from "@nestjs/swagger";
 import { Type } from "class-transformer";
-import { IsInt, IsOptional, IsString, Min, IsNumber } from "class-validator";
+import { IsInt, IsOptional, IsString, Min, IsNumber, IsIn } from "class-validator";
 
 export class FindPlayersQueryDto {
     @ApiPropertyOptional({ description: "Filter by player name", example: "Punk" })
@@ -30,9 +30,15 @@ export class FindPlayersQueryDto {
     @Min(1)
     limit?: number = 1000;
 
-    @ApiPropertyOptional({ description: "Field to sort by", example: "playerName", default: "playerName" })
+    @ApiPropertyOptional({
+        description: "Field to sort by",
+        example: "playerName",
+        default: "playerName",
+        enum: ["playerName", "country", "startggPlayerID", "startggProfileImageURL"]
+    })
     @IsOptional()
     @IsString()
+    @IsIn(["playerName", "country", "startggPlayerID", "startggProfileImageURL"])
     sortBy?: string = "playerName";
 
     @ApiPropertyOptional({ description: "Sort order", example: "ASC", default: "ASC", enum: ["ASC", "DESC"] })

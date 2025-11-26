@@ -52,7 +52,6 @@ export class StartGGStrategy extends PassportStrategy(Strategy, "startgg") {
             tournamentSeriesAssigned: [],
         });
 
-        console.log("startgg strategy validated user:", user);
         return user;
     }
 

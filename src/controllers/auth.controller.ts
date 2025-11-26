@@ -14,12 +14,11 @@ export class AuthController {
         private readonly jwtRefreshTokenService: JwtRefreshTokenService,
     ) {
         this.proxyPrefix = process.env.IS_PREVIEW? '/api-preview' : '/api'
-        console.log(process.env.IS_PREVIEW);
-        console.log(this.proxyPrefix)
     }
 
     @Get("startgg")
     @UseGuards(AuthGuard("startgg"))
+    @Throttle({ default: { limit: 10, ttl: 60000 } })
     async startGGAuth() {
         // Guard initiates redirect to StartGG
     }
@@ -79,15 +78,6 @@ export class AuthController {
 
         res.cookie("auth-token", accessToken, accessCookieOptions);
         res.cookie("refresh-token", refreshToken, refreshCookieOptions);
-
-        // Debug logging in non-production environments
-        if (nodeEnv !== "production") {
-            console.log("=== AUTH CALLBACK DEBUG ===");
-            console.log("Environment:", nodeEnv);
-            console.log("User ID:", user.startggUsername);
-            console.log("Access Token Expiry:", accessCookieOptions.maxAge / 1000, "seconds");
-            console.log("Refresh Token Expiry:", refreshCookieOptions.maxAge / 1000, "seconds");
-        }
 
         res.redirect(`${process.env.FRONTEND_URL}/auth/callback`);
     }

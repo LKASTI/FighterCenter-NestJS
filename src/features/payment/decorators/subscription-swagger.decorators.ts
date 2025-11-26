@@ -1,6 +1,6 @@
 import { ApiCookieAuth, ApiQuery } from "@nestjs/swagger";
-import { BasicStartggAuthGuard } from "@authentication/guards/basicStartggAuth.guard";
 import { createApiDecorator, StandardResponses } from "@common/decorators";
+import { JwtAuthGuard } from "@authentication/guards/jwtAuth.guard";
 
 /**
  * Composed decorator for subscription POST endpoints (checkout, cancel, resume)
@@ -9,7 +9,7 @@ import { createApiDecorator, StandardResponses } from "@common/decorators";
 export function ApiSubscriptionPost(summary: string, responseType?: any) {
     return createApiDecorator({
         summary,
-        guard: BasicStartggAuthGuard,
+        guard: JwtAuthGuard,
         responses: [
             StandardResponses.created("Success", responseType),
             { status: 401, description: "User not authenticated" },
@@ -28,7 +28,7 @@ export function ApiSubscriptionPost(summary: string, responseType?: any) {
 export function ApiSubscriptionGet(summary: string, responseType?: any) {
     return createApiDecorator({
         summary,
-        guard: BasicStartggAuthGuard,
+        guard: JwtAuthGuard,
         responses: [
             StandardResponses.success("Success", responseType),
             { status: 401, description: "User not authenticated" },
@@ -55,7 +55,7 @@ export function ApiSubscriptionPostWithQuery(
 ) {
     return createApiDecorator({
         summary,
-        guard: BasicStartggAuthGuard,
+        guard: JwtAuthGuard,
         responses: [
             StandardResponses.success("Success", responseType),
             { status: 401, description: "User not authenticated" },
