@@ -16,12 +16,29 @@ export class EncryptionService {
         const currentKey = this.configService.get<string>('ENCRYPTION_KEY');
         const currentVersion = parseInt(this.configService.get<string>('ENCRYPTION_KEY_VERSION'));
 
-        if (currentKey) {
-            this.keys.set(currentVersion, Buffer.from(currentKey, 'hex'));
-            this.currentKeyVersion = currentVersion;
-        } else if (!currentKey || currentKey.length !== 64) {
-            throw new Error('ENCRYPTION_KEY must be 64 characters (32 bytes in hex)');
+        // Validate current encryption key
+        if (!currentKey) {
+            throw new Error('ENCRYPTION_KEY is required');
         }
+
+        // Validate hex format (must be 64 hexadecimal characters = 32 bytes)
+        if (!/^[0-9a-fA-F]{64}$/.test(currentKey)) {
+            throw new Error('ENCRYPTION_KEY must be 64 hexadecimal characters (32 bytes in hex)');
+        }
+
+        // Check for weak patterns (insufficient entropy)
+        const keyBuffer = Buffer.from(currentKey, 'hex');
+        const uniqueBytes = new Set(keyBuffer);
+        if (uniqueBytes.size < 16) { // At least 16 unique bytes out of 32
+            throw new Error(
+                'ENCRYPTION_KEY has insufficient entropy (' + uniqueBytes.size + ' unique bytes). ' +
+                'Use crypto.randomBytes(32).toString(\'hex\') to generate a strong key'
+            );
+        }
+
+        // Store the validated key
+        this.keys.set(currentVersion, keyBuffer);
+        this.currentKeyVersion = currentVersion;
 
         // Load previous keys (for decryption only)
         const previousKeys = this.configService.get<string>('PREVIOUS_ENCRYPTION_KEYS');
@@ -29,6 +46,15 @@ export class EncryptionService {
             // Format: "version:key,version:key"
             previousKeys.split(',').forEach(entry => {
                 const [version, key] = entry.split(':');
+
+                // Validate previous key format
+                if (!key || !/^[0-9a-fA-F]{64}$/.test(key)) {
+                    throw new Error(
+                        `Invalid format for previous encryption key (version ${version}). ` +
+                        'Must be 64 hexadecimal characters'
+                    );
+                }
+
                 this.keys.set(parseInt(version), Buffer.from(key, 'hex'));
             });
         }

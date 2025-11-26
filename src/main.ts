@@ -12,16 +12,44 @@ async function bootstrap() {
 
     // Production environment validation
     if (process.env.NODE_ENV === 'production') {
+        const jwtSecret = process.env.JWT_SECRET;
+
         // Validate JWT secret strength
-        if (/^(.)\1+$/.test(process.env.JWT_SECRET)) { // All same character
-            throw new Error('JWT_SECRET must not be a repeated character');
-        }
-        if (!process.env.JWT_SECRET || process.env.JWT_SECRET.length < 32) {
+        if (!jwtSecret || jwtSecret.length < 32) {
             throw new Error(
                 'PRODUCTION ERROR: JWT_SECRET must be at least 32 characters. ' +
-                'Current length: ' + (process.env.JWT_SECRET?.length || 0)
+                'Current length: ' + (jwtSecret?.length || 0)
             );
         }
+
+        // Check for weak patterns
+        if (/^(.)\1+$/.test(jwtSecret)) { // All same character (e.g., "aaaaa...")
+            throw new Error('JWT_SECRET must not be a repeated character');
+        }
+
+        if (/^(012|123|234|345|456|567|678|789|abc|bcd|cde|def)/i.test(jwtSecret)) { // Sequential characters
+            throw new Error('JWT_SECRET contains sequential characters - use cryptographically random bytes');
+        }
+
+        if (/^(password|secret|default|test|admin|user|1234)/i.test(jwtSecret)) { // Common weak passwords
+            throw new Error('JWT_SECRET contains common weak patterns - use cryptographically random bytes');
+        }
+
+        // Check character diversity (ensure it's not too uniform)
+        const uniqueChars = new Set(jwtSecret).size;
+        if (uniqueChars < 16) { // Less than 16 unique characters in a 32+ char string
+            throw new Error(
+                'JWT_SECRET has insufficient character diversity (' + uniqueChars + ' unique chars). ' +
+                'Use crypto.randomBytes(32).toString(\'hex\') to generate a strong secret'
+            );
+        }
+
+        // Warn about best practices
+        logger.log('✅ JWT_SECRET validation passed');
+        logger.warn(
+            '⚠️  Security reminder: Ensure JWT_SECRET was generated using crypto.randomBytes(32).toString(\'hex\') ' +
+            'or equivalent cryptographically secure random generator'
+        );
 
         // Ensure HTTPS for frontend URL
         if (process.env.FRONTEND_URL?.startsWith('http://')) {
