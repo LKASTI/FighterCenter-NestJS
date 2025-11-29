@@ -1,5 +1,5 @@
 import { BadRequestException } from '@nestjs/common';
-import { fileTypeFromBuffer } from 'file-type';
+import * as FileType from 'file-type';
 
 /**
  * Validates image file by checking both MIME type and magic bytes
@@ -23,7 +23,7 @@ export async function validateImageFile(file: Express.Multer.File): Promise<void
     }
 
     // Step 2: Validate actual file content via magic bytes
-    const detectedType = await fileTypeFromBuffer(file.buffer);
+    const detectedType = await FileType.fromBuffer(file.buffer);
 
     if (!detectedType) {
         throw new BadRequestException(
