@@ -90,6 +90,16 @@ import { PaymentModule } from "@features/payment/payment.module";
                 logging: process.env.NODE_ENV !== 'production',
                 logger: process.env.NODE_ENV === 'production' ? 'advanced-console' : 'debug',
                 timezone: "UTC",
+                ssl: process.env.NODE_ENV === 'production' ? {
+                    rejectUnauthorized: true,
+                    ca: configService.get('DB_CA_CERT'),
+                } : false,
+                extra: {
+                    max: 20,                    // Maximum pool size
+                    min: 5,                     // Minimum pool size
+                    idleTimeoutMillis: 30000,   // Close idle connections after 30s
+                    connectionTimeoutMillis: 2000, // Connection acquisition timeout
+                },
             }),
             inject: [ConfigService],
         }),
