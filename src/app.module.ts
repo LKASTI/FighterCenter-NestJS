@@ -3,37 +3,37 @@ import { AppController } from "./app.controller";
 import { AppService } from "./app.service";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { ConfigModule, ConfigService } from "@nestjs/config";
-import { PlayerModule } from "./domain/player/player.module";
-import { SFSixRankedProfileModule } from "./domain/sfsixRankedProfile/sfsixRankedProfile.module";
-import { SFSixRankedCharacterModule } from "./domain/sfsixRankedCharacter/sfsixRankedCharacter.module";
-import { SfsixRankedCharacterRankingModule } from "./domain/sfsixRankedCharacterRanking/sfsix-ranked-character-ranking.module";
+import { PlayerModule } from "@domain/player";
+import { SFSixRankedProfileModule } from "@domain/sfsixRankedProfile";
+import { SFSixRankedCharacterModule } from "@domain/sfsixRankedCharacter";
+import { SfsixRankedCharacterRankingModule } from "@domain/sfsixRankedCharacterRanking";
 import { RankedDataParserModule } from "@features/ranked-parser";
-import { EventModule } from "./domain/event/event.module";
-import { TournamentModule } from "./domain/tournament/tournament.module";
-import { PlayerTournamentRunModule } from "./domain/playerTournamentRun/player-tournament-run.module";
-import { TournamentSetModule } from "./domain/tournamentSet/tournamentSet.module";
-import { TournamentMatchModule } from "./domain/tournamentMatch/tournamentMatch.module";
-import { TournamentImportAuditLogModule } from "./domain/tournamentImportAuditLog/tournament-import-audit-log.module";
+import { EventModule } from "@domain/event";
+import { TournamentModule } from "@domain/tournament";
+import { PlayerTournamentRunModule } from "@domain/playerTournamentRun";
+import { TournamentSetModule } from "@domain/tournamentSet";
+import { TournamentMatchModule } from "@domain/tournamentMatch";
+import { TournamentImportAuditLogModule } from "@domain/tournamentImportAuditLog/tournament-import-audit-log.module";
 import { TournamentDataParserModule } from "@features/tournament-importer";
 import { HttpModule } from "@nestjs/axios";
 import { ServeStaticModule } from "@nestjs/serve-static";
 import { join } from "path";
-import { StartggUserModule } from "./domain/startggUser/startgg-user.module";
-import { AuthModule } from "./authentication/auth.module";
+import { StartggUserModule } from "@domain/startggUser";
+import { AuthModule } from "@authentication/auth.module";
 import * as Joi from "joi";
 import { TournamentSeriesModule } from "@features/tournament-series";
-import { EncryptionModule } from "./authentication/encryption/encryption.module";
+import { EncryptionModule } from "@authentication/encryption/encryption.module";
 import { TwitterShareModule } from "@features/twitter-share";
 import { StartggApiModule } from "@features/startgg-api";
 import { Top8MakerModule } from "@features/top8-maker";
 import { SFSixGamePatchModule } from "@domain/sfsixGamePatch";
 import {
     PlayerSeriesPerformanceAggModule
-} from "./domain/playerSeriesPerformanceAgg/playerSeriesPerformanceAgg.module";
+} from "@domain/playerSeriesPerformanceAgg/playerSeriesPerformanceAgg.module";
 import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { ScheduleModule } from "@nestjs/schedule";
-import { CommonModule } from "./common/common.module";
-import { PaymentModule } from "./features/payment/payment.module";
+import { CommonModule } from "@common/common.module";
+import { PaymentModule } from "@features/payment/payment.module";
 
 @Module({
     imports: [
@@ -65,7 +65,7 @@ import { PaymentModule } from "./features/payment/payment.module";
         // Throttling
         ThrottlerModule.forRoot([{
             ttl: 60000, // 1 minute
-            limit: 100, // 75 requests per minute
+            limit: 100, // 100 requests per minute
         }]),
         // Scheduled Tasks (Cron Jobs)
         ScheduleModule.forRoot(),
@@ -86,9 +86,9 @@ import { PaymentModule } from "./features/payment/payment.module";
                 password: configService.get("DB_PASSWORD"),
                 database: configService.get("DB_NAME"),
                 entities: [__dirname + "/**/*.entity{.ts,.js}"],
-                synchronize: false, //TODO: set to false in production
-                logging: true,
-                logger: "debug",
+                synchronize: false,
+                logging: process.env.NODE_ENV !== 'production',
+                logger: process.env.NODE_ENV === 'production' ? 'advanced-console' : 'debug',
                 timezone: "UTC",
             }),
             inject: [ConfigService],
