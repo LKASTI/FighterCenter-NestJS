@@ -101,10 +101,32 @@ async function bootstrap() {
         );
     }
 
-    // Add Vercel preview URLs for development environment
-    if (process.env.NODE_ENV === "development") {
+    // Add Vercel URLs for non-production environments
+    if (process.env.NODE_ENV !== "production") {
         if (process.env.VERCEL_URL) {
-            allowedOrigins.push(process.env.VERCEL_URL);
+            const vercelUrl = process.env.VERCEL_URL;
+
+            // Validate URL format
+            try {
+                const url = new URL(vercelUrl.startsWith('http') ? vercelUrl : `https://${vercelUrl}`);
+                const hostname = url.hostname;
+
+                // Verify it's a Vercel preview domain (.vercel.app)
+                if (hostname.endsWith('.vercel.app')) {
+                    allowedOrigins.push(url.origin);
+                    logger.log(`✅ Added Vercel preview URL to CORS: ${url.origin}`);
+                } else {
+                    logger.warn(
+                        `⚠️  WARNING: VERCEL_URL (${vercelUrl}) is not a Vercel preview domain (.vercel.app). ` +
+                        'Skipping CORS addition for security. Use FRONTEND_URL for custom domains.'
+                    );
+                }
+            } catch (error) {
+                logger.warn(
+                    `⚠️  WARNING: Invalid VERCEL_URL format (${vercelUrl}). ` +
+                    'Must be a valid URL. Skipping CORS addition.'
+                );
+            }
         }
     }
 

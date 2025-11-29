@@ -36,7 +36,7 @@ export class FileNamingService {
   }
 
   parseStartGGUrl(startggUrl: string): ParsedStartGGUrl {
-    let path = startggUrl.replace(/https?:\/\/(www\.)?start\.gg\//i, '');
+    const path = startggUrl.replace(/https?:\/\/(www\.)?start\.gg\//i, '');
 
     const tournamentMatch = path.match(/tournament\/([^\/]+)/);
     const tournamentSlug = tournamentMatch ? tournamentMatch[1] : null;
