@@ -10,7 +10,7 @@ import { GlobalExceptionFilter } from "@common/filters/global-exception.filter";
 
 async function bootstrap() {
     const logger = new Logger('Bootstrap');
-
+    logger.log("proxy: ", process.env.IS_PREVIEW)
     // Production environment validation
     if (process.env.NODE_ENV === 'production') {
         const jwtSecret = process.env.JWT_SECRET;
