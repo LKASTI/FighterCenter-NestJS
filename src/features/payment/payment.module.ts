@@ -28,6 +28,7 @@ import { AuthModule } from "../../authentication/auth.module";
                     stripeSecrets: {
                         account: configService.get<string>("STRIPE_WEBHOOK_SECRET"),
                     },
+                    requestBodyProperty: 'rawBody', // NestJS stores raw body at req.rawBody
                 },
             }),
         }),

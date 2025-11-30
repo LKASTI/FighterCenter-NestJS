@@ -4,9 +4,9 @@ import { ValidationPipe, Logger } from "@nestjs/common";
 import * as cookieParser from "cookie-parser";
 import helmet from "helmet";
 import "reflect-metadata";
-import { BasicAuth } from "./authentication/basicAuth";
+import { BasicAuth } from "@authentication/basicAuth";
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { GlobalExceptionFilter } from "./common/filters/global-exception.filter";
+import { GlobalExceptionFilter } from "@common/filters/global-exception.filter";
 
 async function bootstrap() {
     const logger = new Logger('Bootstrap');
