@@ -1,7 +1,5 @@
-import { Module } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
+import { Module, NestModule, MiddlewareConsumer } from "@nestjs/common";
 import { TypeOrmModule } from "@nestjs/typeorm";
-import { StripeModule } from "@golevelup/nestjs-stripe";
 import { Subscription } from "./entities/subscription.entity";
 import { StripeWebhookEvent } from "./entities/stripeWebhookEvent.entity";
 import { SubscriptionRepository } from "./repositories/subscription.repository";
@@ -10,7 +8,7 @@ import { StripeService } from "./services/stripe.service";
 import { SubscriptionService } from "./services/subscription.service";
 import { WebhookService } from "./services/webhook.service";
 import { SubscriptionController } from "./controllers/subscription.controller";
-import { StripeWebhookHandlers } from "./handlers/stripe-webhook.handler";
+import { WebhookController } from "./controllers/webhook.controller";
 import { StartggUserModule } from "../../domain/startggUser/startgg-user.module";
 import { AuthModule } from "../../authentication/auth.module";
 
@@ -19,19 +17,6 @@ import { AuthModule } from "../../authentication/auth.module";
         TypeOrmModule.forFeature([Subscription, StripeWebhookEvent]),
         StartggUserModule,
         AuthModule,
-        // Configure StripeModule with webhook support
-        StripeModule.forRootAsync({
-            inject: [ConfigService],
-            useFactory: (configService: ConfigService) => ({
-                apiKey: configService.get<string>("STRIPE_SECRET_KEY"),
-                webhookConfig: {
-                    stripeSecrets: {
-                        account: configService.get<string>("STRIPE_WEBHOOK_SECRET"),
-                    },
-                    requestBodyProperty: 'rawBody', // NestJS stores raw body at req.rawBody
-                },
-            }),
-        }),
     ],
     providers: [
         SubscriptionRepository,
@@ -39,9 +24,8 @@ import { AuthModule } from "../../authentication/auth.module";
         StripeService,
         SubscriptionService,
         WebhookService,
-        StripeWebhookHandlers,
     ],
-    controllers: [SubscriptionController],
+    controllers: [SubscriptionController, WebhookController],
     exports: [
         SubscriptionRepository,
         SubscriptionService,
