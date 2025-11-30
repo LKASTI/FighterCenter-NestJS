@@ -75,6 +75,7 @@ async function bootstrap() {
 
     const app = await NestFactory.create(AppModule, {
         rawBody: true, // Enable raw body for Stripe webhook signature verification
+        bodyParser: true, // Enable body parser (required for rawBody to work)
     });
 
     // Global exception filter for error message sanitization
