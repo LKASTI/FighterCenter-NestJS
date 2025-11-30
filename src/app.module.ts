@@ -91,8 +91,7 @@ import { PaymentModule } from "@features/payment/payment.module";
                 logger: process.env.NODE_ENV === 'production' ? 'advanced-console' : 'debug',
                 timezone: "UTC",
                 ssl: process.env.NODE_ENV === 'production' ? {
-                    rejectUnauthorized: true,
-                    ca: configService.get('DB_CA_CERT'),
+                    rejectUnauthorized: false,
                 } : false,
                 extra: {
                     max: 20,                    // Maximum pool size
