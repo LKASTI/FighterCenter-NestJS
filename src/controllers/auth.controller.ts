@@ -31,6 +31,7 @@ export class AuthController {
 
         const payload = {
             sub: user.startggId,
+            startggUserID: user.startggUserID, // Add UUID for database foreign keys
             username: user.startggUsername,
             gamerTag: user.startggGamerTag,
             roles: user.roles,

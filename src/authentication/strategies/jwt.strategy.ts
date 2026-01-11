@@ -20,6 +20,7 @@ export class JwtStrategy extends PassportStrategy(Strategy, "jwt") {
     async validate(payload: any) {
         return {
             id: payload.sub,
+            startggUserID: payload.startggUserID, // UUID for database foreign keys
             username: payload.username,
             gamerTag: payload.gamerTag,
             roles: payload.roles,
