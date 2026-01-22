@@ -20,6 +20,8 @@ import { ServeStaticModule } from "@nestjs/serve-static";
 import { join } from "path";
 import { StartggUserModule } from "@domain/startggUser";
 import { AuthModule } from "@authentication/auth.module";
+import { NoteBookModule } from "./domain/noteBook/noteBook.module";
+import { TechLibraryModule } from "./domain/techLibrary/techLibrary.module";
 import * as Joi from "joi";
 import { TournamentSeriesModule } from "@features/tournament-series";
 import { EncryptionModule } from "@authentication/encryption/encryption.module";
@@ -121,6 +123,9 @@ import { PaymentModule } from "@features/payment/payment.module";
         TournamentSeriesModule,
         SFSixGamePatchModule,
         PlayerSeriesPerformanceAggModule,
+        // user data modules
+        NoteBookModule,
+        TechLibraryModule,
         // data parsing modules
         TournamentDataParserModule,
         RankedDataParserModule,
