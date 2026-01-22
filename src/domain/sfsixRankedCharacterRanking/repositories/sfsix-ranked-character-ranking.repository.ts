@@ -52,6 +52,45 @@ export class SfsixRankedCharacterRankingRepository extends Repository<SFSixRanke
         return await this.save(rankedCharacterRanking);
     }
 
+    /**
+     * Batch upsert rankings - inserts new rankings or ignores existing ones
+     * Uses ON CONFLICT DO NOTHING on (sf6_ranked_character_id, date) unique constraint
+     * @param rankings - Array of ranking data to upsert
+     * @returns Number of rankings inserted
+     */
+    public async batchUpsert(
+        rankings: {
+            sfsixRankedCharacterID: number;
+            date: Date;
+            rank: number;
+            masterRating: number;
+            league: string;
+            phase: number;
+            season: number;
+        }[],
+    ): Promise<number> {
+        if (rankings.length === 0) return 0;
+
+        const result = await this.createQueryBuilder()
+            .insert()
+            .into(SFSixRankedCharacterRanking)
+            .values(
+                rankings.map((r) => ({
+                    sfsixRankedCharacterID: r.sfsixRankedCharacterID,
+                    date: r.date,
+                    rank: r.rank,
+                    masterRating: r.masterRating,
+                    league: r.league,
+                    phase: r.phase,
+                    season: r.season,
+                })),
+            )
+            .orIgnore() // ON CONFLICT DO NOTHING
+            .execute();
+
+        return result.identifiers.length;
+    }
+
     public async findAll(query: FindSfsixRankedCharacterRankingsQueryDto) {
         const queryBuilder = this.createQueryBuilder("rankedCharacterRanking");
 

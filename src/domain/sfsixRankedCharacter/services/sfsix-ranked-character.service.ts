@@ -58,4 +58,26 @@ export class SFSixRankedCharacterService {
         });
         return result.affected > 0;
     }
+
+    /**
+     * Batch upsert characters - inserts new characters or ignores existing ones
+     * @param characters - Array of character DTOs to upsert
+     * @returns Number of characters inserted
+     */
+    public async batchUpsert(
+        characters: CreateSFSixRankedCharacterDto[],
+    ): Promise<number> {
+        return await this.repository.batchUpsert(characters);
+    }
+
+    /**
+     * Find all characters by usercode and character names (batch lookup)
+     * @param lookups - Array of { usercode, characterName } to find
+     * @returns Map of "usercode-characterName" to SFSixRankedCharacter
+     */
+    public async findByUsercodeAndCharacterBatch(
+        lookups: { usercode: number; characterName: string }[],
+    ): Promise<Map<string, SFSixRankedCharacter>> {
+        return await this.repository.findByUsercodeAndCharacterBatch(lookups);
+    }
 }

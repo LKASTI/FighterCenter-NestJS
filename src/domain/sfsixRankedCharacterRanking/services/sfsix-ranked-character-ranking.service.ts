@@ -193,4 +193,23 @@ export class SfsixRankedCharacterRankingService {
         });
         return result.affected > 0;
     }
+
+    /**
+     * Batch upsert rankings - inserts new rankings or ignores existing ones
+     * @param rankings - Array of ranking data to upsert
+     * @returns Number of rankings inserted
+     */
+    public async batchUpsert(
+        rankings: {
+            sfsixRankedCharacterID: number;
+            date: Date;
+            rank: number;
+            masterRating: number;
+            league: string;
+            phase: number;
+            season: number;
+        }[],
+    ): Promise<number> {
+        return await this.repository.batchUpsert(rankings);
+    }
 }

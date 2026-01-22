@@ -48,4 +48,15 @@ export class SFSixRankedProfileService {
         const result = await this.repository.delete({ usercode: id });
         return result.affected > 0;
     }
+
+    /**
+     * Batch upsert profiles - inserts new profiles or ignores existing ones
+     * @param profiles - Array of profile DTOs to upsert
+     * @returns Number of profiles inserted
+     */
+    public async batchUpsert(
+        profiles: CreateSFSixRankedProfileDto[],
+    ): Promise<number> {
+        return await this.repository.batchUpsert(profiles);
+    }
 }
