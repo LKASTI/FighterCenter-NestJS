@@ -1,5 +1,6 @@
 import { Body, Controller, Get, Param, Post, Res, UploadedFile, UseInterceptors, Logger } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
+import { ConfigService } from "@nestjs/config";
 import { TwitterShareService } from "../services/twitter-share.service";
 import { CreateTwitterShareDto } from "../dtos/request/create-twitter-share.dto";
 import { Response } from "express";
@@ -16,7 +17,8 @@ export class TwitterShareController {
 
     constructor(
         private readonly twitterShareService: TwitterShareService,
-        private readonly r2UploadService: R2UploadService
+        private readonly r2UploadService: R2UploadService,
+        private readonly configService: ConfigService,
     ) {}
 
     @Get('health')
@@ -50,7 +52,8 @@ export class TwitterShareController {
         if(!request || !request.pageUrl || !request.imageUrl) {
             throw new Error('Invalid request: pageUrl and imageUrl are required');
         }
-        const proxyPrefix = process.env.IS_PREVIEW? '/api-preview' : '/api';
+        const isPreview = this.configService.get<boolean>('IS_PREVIEW');
+        const proxyPrefix = isPreview ? '/api-preview' : '/api';
         request.createDate = new Date();
         const twitterShareData = await this.twitterShareService.createAndSave(request);
         const publicUrl = process.env.NODE_ENV !== 'production'? process.env.BACKEND_URL : process.env.FRONTEND_URL + proxyPrefix;
