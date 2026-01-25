@@ -82,11 +82,12 @@ export class TechLibraryService {
 
   /**
    * Get tech library for a specific character
+   * Returns null if no library exists
    */
   public async getTechLibrary(
     startggUserID: string,
     characterCode: string,
-  ): Promise<any> {
+  ): Promise<any | null> {
     const techLibrary = await this.techLibraryRepository.findByUserAndCharacter(
       startggUserID,
       characterCode,
@@ -94,9 +95,7 @@ export class TechLibraryService {
     );
 
     if (!techLibrary) {
-      throw new NotFoundException(
-        `No tech library found for character: ${characterCode}`,
-      );
+      return null;
     }
 
     return techLibrary.content;

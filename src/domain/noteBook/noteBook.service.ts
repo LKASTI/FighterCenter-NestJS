@@ -49,10 +49,15 @@ export class NoteBookService {
 
   /**
    * Get notes for a user
+   * Returns content with updatedAt timestamp for sync comparison
    */
   public async getNotes(
     startggUserID: string,
-  ): Promise<{ books: any[]; notes: { [key: string]: string } }> {
+  ): Promise<{
+    books: any[];
+    notes: { [key: string]: string };
+    updatedAt: Date;
+  } | null> {
     const noteBook = await this.noteBookRepository.findByUserAndTitle(
       startggUserID,
       'My Notes',
@@ -60,10 +65,14 @@ export class NoteBookService {
     );
 
     if (!noteBook) {
-      throw new NotFoundException('No notes found for this user');
+      return null;
     }
 
-    return noteBook.content;
+    const content = noteBook.content as { books: any[]; notes: { [key: string]: string } };
+    return {
+      ...content,
+      updatedAt: noteBook.updatedAt,
+    };
   }
 
   /**

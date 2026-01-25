@@ -13,7 +13,7 @@ import { JwtAuthGuard } from '../authentication/guards/jwtAuth.guard';
 import { NoteBookService } from 'src/domain/noteBook/noteBook.service';
 import { SyncNotesDTO } from 'src/dtos/noteBook.dto';
 
-@Controller('api/notes')
+@Controller('notes')
 @UseGuards(JwtAuthGuard)
 export class NoteBookController {
   constructor(private readonly noteBookService: NoteBookService) {}

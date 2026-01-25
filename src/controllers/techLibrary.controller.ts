@@ -14,13 +14,72 @@ import { JwtAuthGuard } from '../authentication/guards/jwtAuth.guard';
 import { TechLibraryService } from 'src/domain/techLibrary/techLibrary.service';
 import { SyncTechLibraryDTO, ShareTechEntryDTO } from 'src/dtos/techLibrary.dto';
 
-@Controller('api/tech')
+@Controller('tech')
 export class TechLibraryController {
   constructor(private readonly techLibraryService: TechLibraryService) {}
 
   // ==========================================
+  // SHARING ENDPOINTS (Must be defined before dynamic :character routes)
+  // ==========================================
+
+  /**
+   * POST /api/tech/share
+   * Share an individual tech entry (Auth Required)
+   */
+  @Post('share')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.CREATED)
+  async shareEntry(@Req() req, @Body() shareEntryDto: ShareTechEntryDTO) {
+    const startggUserID = req.user.startggUserID;
+    return await this.techLibraryService.shareEntry(startggUserID, shareEntryDto);
+  }
+
+  /**
+   * GET /api/tech/shared
+   * List user's shared entries (Auth Required)
+   */
+  @Get('shared')
+  @UseGuards(JwtAuthGuard)
+  async listSharedEntries(@Req() req) {
+    const startggUserID = req.user.startggUserID;
+    return await this.techLibraryService.listSharedEntries(startggUserID);
+  }
+
+  /**
+   * GET /api/tech/shared/:shareCode
+   * View shared entry (Public - No Auth Required)
+   */
+  @Get('shared/:shareCode')
+  async getSharedEntry(@Param('shareCode') shareCode: string) {
+    return await this.techLibraryService.getSharedEntry(shareCode);
+  }
+
+  /**
+   * DELETE /api/tech/shared/:id
+   * Delete shared entry (Auth Required)
+   */
+  @Delete('shared/:id')
+  @UseGuards(JwtAuthGuard)
+  async deleteSharedEntry(@Req() req, @Param('id') id: string) {
+    const startggUserID = req.user.startggUserID;
+    return await this.techLibraryService.deleteSharedEntry(startggUserID, id);
+  }
+
+  // ==========================================
   // TECH LIBRARY SYNC ENDPOINTS (Auth Required)
   // ==========================================
+
+  /**
+   * GET /api/tech
+   * List all characters user has tech data for
+   */
+  @Get()
+  @UseGuards(JwtAuthGuard)
+  async listCharacters(@Req() req) {
+    const startggUserID = req.user.startggUserID;
+    const characters = await this.techLibraryService.listCharacters(startggUserID);
+    return { characters };
+  }
 
   /**
    * POST /api/tech/:character
@@ -54,18 +113,6 @@ export class TechLibraryController {
   }
 
   /**
-   * GET /api/tech
-   * List all characters user has tech data for
-   */
-  @Get()
-  @UseGuards(JwtAuthGuard)
-  async listCharacters(@Req() req) {
-    const startggUserID = req.user.startggUserID;
-    const characters = await this.techLibraryService.listCharacters(startggUserID);
-    return { characters };
-  }
-
-  /**
    * DELETE /api/tech/:character
    * Delete tech library for character
    */
@@ -74,52 +121,5 @@ export class TechLibraryController {
   async deleteTechLibrary(@Req() req, @Param('character') character: string) {
     const startggUserID = req.user.startggUserID;
     return await this.techLibraryService.deleteTechLibrary(startggUserID, character);
-  }
-
-  // ==========================================
-  // SHARING ENDPOINTS
-  // ==========================================
-
-  /**
-   * POST /api/tech/share
-   * Share an individual tech entry (Auth Required)
-   */
-  @Post('share')
-  @UseGuards(JwtAuthGuard)
-  @HttpCode(HttpStatus.CREATED)
-  async shareEntry(@Req() req, @Body() shareEntryDto: ShareTechEntryDTO) {
-    const startggUserID = req.user.startggUserID;
-    return await this.techLibraryService.shareEntry(startggUserID, shareEntryDto);
-  }
-
-  /**
-   * GET /api/tech/shared/:shareCode
-   * View shared entry (Public - No Auth Required)
-   */
-  @Get('shared/:shareCode')
-  async getSharedEntry(@Param('shareCode') shareCode: string) {
-    return await this.techLibraryService.getSharedEntry(shareCode);
-  }
-
-  /**
-   * GET /api/tech/shared
-   * List user's shared entries (Auth Required)
-   */
-  @Get('shared')
-  @UseGuards(JwtAuthGuard)
-  async listSharedEntries(@Req() req) {
-    const startggUserID = req.user.startggUserID;
-    return await this.techLibraryService.listSharedEntries(startggUserID);
-  }
-
-  /**
-   * DELETE /api/tech/shared/:id
-   * Delete shared entry (Auth Required)
-   */
-  @Delete('shared/:id')
-  @UseGuards(JwtAuthGuard)
-  async deleteSharedEntry(@Req() req, @Param('id') id: string) {
-    const startggUserID = req.user.startggUserID;
-    return await this.techLibraryService.deleteSharedEntry(startggUserID, id);
   }
 }
