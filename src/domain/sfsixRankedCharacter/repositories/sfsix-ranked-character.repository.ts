@@ -42,6 +42,59 @@ export class SFSixRankedCharacterRepository extends Repository<SFSixRankedCharac
         return await this.save(rankedCharacter);
     }
 
+    /**
+     * Batch upsert characters - inserts new characters or ignores existing ones
+     * Uses ON CONFLICT DO NOTHING on (usercode, character_name) unique constraint
+     * @param characters - Array of character DTOs to upsert
+     * @returns Number of characters inserted
+     */
+    public async batchUpsert(
+        characters: CreateSFSixRankedCharacterDto[],
+    ): Promise<number> {
+        if (characters.length === 0) return 0;
+
+        const result = await this.createQueryBuilder()
+            .insert()
+            .into(SFSixRankedCharacter)
+            .values(
+                characters.map((c) => ({
+                    usercode: c.usercode,
+                    characterName: c.characterName,
+                })),
+            )
+            .orIgnore() // ON CONFLICT DO NOTHING
+            .execute();
+
+        return result.identifiers.length;
+    }
+
+    /**
+     * Find all characters by usercode and character names (batch lookup)
+     * @param lookups - Array of { usercode, characterName } to find
+     * @returns Map of "usercode-characterName" to SFSixRankedCharacter
+     */
+    public async findByUsercodeAndCharacterBatch(
+        lookups: { usercode: number; characterName: string }[],
+    ): Promise<Map<string, SFSixRankedCharacter>> {
+        if (lookups.length === 0) return new Map();
+
+        // Get unique usercodes for efficient query
+        const usercodes = [...new Set(lookups.map((l) => l.usercode))];
+
+        const characters = await this.createQueryBuilder("char")
+            .where("char.usercode IN (:...usercodes)", { usercodes })
+            .getMany();
+
+        // Create lookup map with "usercode-characterName" as key
+        const resultMap = new Map<string, SFSixRankedCharacter>();
+        for (const char of characters) {
+            const key = `${char.usercode}-${char.characterName}`;
+            resultMap.set(key, char);
+        }
+
+        return resultMap;
+    }
+
     public async findAll(query: FindSFSixRankedCharactersQueryDto) {
         const queryBuilder = this.createQueryBuilder("rankedCharacter");
 

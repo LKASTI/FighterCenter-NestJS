@@ -1,17 +1,19 @@
 import {
     Column,
     Entity,
+    Index,
     JoinColumn,
     ManyToOne,
-    OneToMany,
-    PrimaryColumn,
     PrimaryGeneratedColumn,
+    Unique,
 } from "typeorm";
-import { Player } from "./player.entity";
-import { Tournament } from "./tournament.entity";
 import { SFSixRankedCharacter } from "./sfsixRankedCharacter.entity";
 
 @Entity("sf6_ranked_character_ranking")
+@Unique("UQ_ranking_character_date", ["sfsixRankedCharacterID", "date"])
+@Index("IDX_ranking_character_date", ["sfsixRankedCharacterID", "date"])
+@Index("IDX_ranking_phase_season", ["phase", "season"])
+@Index("IDX_ranking_date", ["date"])
 export class SFSixRankedCharacterRanking {
     /* Attributes */
     @PrimaryGeneratedColumn({

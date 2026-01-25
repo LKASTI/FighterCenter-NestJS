@@ -40,6 +40,33 @@ export class SFSixRankedProfileRepository extends Repository<SFSixRankedProfile>
         return await this.save(profile);
     }
 
+    /**
+     * Batch upsert profiles - inserts new profiles or ignores existing ones
+     * Uses ON CONFLICT DO NOTHING since usercode is the primary key
+     * @param profiles - Array of profile DTOs to upsert
+     * @returns Number of profiles inserted
+     */
+    public async batchUpsert(
+        profiles: CreateSFSixRankedProfileDto[],
+    ): Promise<number> {
+        if (profiles.length === 0) return 0;
+
+        const result = await this.createQueryBuilder()
+            .insert()
+            .into(SFSixRankedProfile)
+            .values(
+                profiles.map((p) => ({
+                    usercode: p.usercode,
+                    cfn: p.cfn,
+                    flag: p.flag,
+                })),
+            )
+            .orIgnore() // ON CONFLICT DO NOTHING
+            .execute();
+
+        return result.identifiers.length;
+    }
+
     public async findAll(query: FindSFSixRankedProfilesQueryDto) {
         const queryBuilder = this.createQueryBuilder("profile");
 
