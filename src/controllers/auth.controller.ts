@@ -1,5 +1,6 @@
 import { Controller, Get, Post, Req, Res, UseGuards, UnauthorizedException } from "@nestjs/common";
 import { AuthGuard } from "@nestjs/passport";
+import { ConfigService } from "@nestjs/config";
 import { JwtService } from "@nestjs/jwt";
 import { Throttle } from "@nestjs/throttler";
 import { JwtAuthGuard } from "../authentication/guards/jwtAuth.guard";
@@ -12,8 +13,10 @@ export class AuthController {
     constructor(
         private readonly jwtService: JwtService,
         private readonly jwtRefreshTokenService: JwtRefreshTokenService,
+        private readonly configService: ConfigService,
     ) {
-        this.proxyPrefix = process.env.IS_PREVIEW? '/api-preview' : '/api'
+        const isPreview = this.configService.get<boolean>('IS_PREVIEW');
+        this.proxyPrefix = isPreview ? '/api-preview' : '/api';
     }
 
     @Get("startgg")
@@ -31,6 +34,7 @@ export class AuthController {
 
         const payload = {
             sub: user.startggId,
+            startggUserID: user.startggUserID, // Add UUID for database foreign keys
             username: user.startggUsername,
             gamerTag: user.startggGamerTag,
             roles: user.roles,
@@ -60,13 +64,14 @@ export class AuthController {
         };
 
         // Refresh token cookie configuration
-        // Note: Path includes /api prefix for local dev (Vite proxy) and production (Vercel rewrite)
+        // Local dev uses "/" due to Vite proxy cookie path issues
+        // Production uses restricted path for security (only sent to refresh endpoint)
         const refreshCookieOptions: any = {
             httpOnly: true,
             secure: !isLocal,
             sameSite: "lax",
             maxAge: parseInt(process.env.REFRESH_TOKEN_EXPIRATION || "604800") * 1000, // 7 days
-            path: this.proxyPrefix + "/auth/refresh", // Only sent to refresh endpoint
+            path: isLocal ? "/" : this.proxyPrefix + "/auth/refresh",
         };
 
         // Add domain for local development
@@ -161,9 +166,9 @@ export class AuthController {
             path: "/",
         };
 
-        // Clear refresh token cookie
+        // Clear refresh token cookie (must match the path used when setting)
         const clearRefreshOptions: any = {
-            path: this.proxyPrefix + "/auth/refresh",
+            path: isLocal ? "/" : this.proxyPrefix + "/auth/refresh",
         };
 
         if (isLocal) {
