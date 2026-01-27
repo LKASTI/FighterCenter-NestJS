@@ -8,10 +8,19 @@ import {
   Req,
   HttpCode,
   HttpStatus,
-  UnauthorizedException,
 } from '@nestjs/common';
-import { TechLibraryService } from 'src/domain/techLibrary/techLibrary.service';
-import { SyncTechLibraryDTO, ShareTechEntryDTO } from 'src/dtos/techLibrary.dto';
+import { TechLibraryService } from './techLibrary.service';
+import { SyncTechLibraryDTO, ShareTechEntryDTO } from '@dtos/techLibrary.dto';
+import {
+  SyncTechLibraryResponseDTO,
+  ShareTechEntryResponseDTO,
+  ListCharactersResponseDTO,
+  GetTechLibraryResponseDTO,
+  GetSharedEntryResponseDTO,
+  SharedTechEntryListItemDTO,
+  DeleteTechLibraryResponseDTO,
+  DeleteSharedEntryResponseDTO,
+} from '@dtos/techLibrary.response.dto';
 import {
   ApiTechLibraryPost,
   ApiTechLibraryGet,
@@ -20,24 +29,12 @@ import {
   ApiSharedTechGet,
   ApiSharedTechPublicGet,
   ApiSharedTechDelete,
-} from 'src/features/techLibrary/decorators/tech-library-swagger.decorators';
+} from './decorators/tech-library-swagger.decorators';
+import { validateUserSession } from '@authentication/utils';
 
 @Controller('tech')
 export class TechLibraryController {
   constructor(private readonly techLibraryService: TechLibraryService) {}
-
-  /**
-   * Helper to validate user has startggUserID in their token
-   */
-  private validateUserSession(req: any): string {
-    const startggUserID = req.user?.startggUserID;
-    if (!startggUserID) {
-      throw new UnauthorizedException(
-        'Your session is missing required user information. Please log out and log back in to refresh your session.',
-      );
-    }
-    return startggUserID;
-  }
 
   // ==========================================
   // SHARING ENDPOINTS (Must be defined before dynamic :character routes)
@@ -48,10 +45,10 @@ export class TechLibraryController {
    * Share an individual tech entry (Auth Required)
    */
   @Post('share')
-  @ApiSharedTechPost('Share an individual tech entry')
+  @ApiSharedTechPost('Share an individual tech entry', ShareTechEntryResponseDTO)
   @HttpCode(HttpStatus.CREATED)
   async shareEntry(@Req() req, @Body() shareEntryDto: ShareTechEntryDTO) {
-    const startggUserID = this.validateUserSession(req);
+    const startggUserID = validateUserSession(req);
     return await this.techLibraryService.shareEntry(startggUserID, shareEntryDto);
   }
 
@@ -60,9 +57,9 @@ export class TechLibraryController {
    * List user's shared entries (Auth Required)
    */
   @Get('shared')
-  @ApiSharedTechGet("List user's shared tech entries")
+  @ApiSharedTechGet("List user's shared tech entries", [SharedTechEntryListItemDTO])
   async listSharedEntries(@Req() req) {
-    const startggUserID = this.validateUserSession(req);
+    const startggUserID = validateUserSession(req);
     return await this.techLibraryService.listSharedEntries(startggUserID);
   }
 
@@ -71,7 +68,7 @@ export class TechLibraryController {
    * View shared entry (Public - No Auth Required)
    */
   @Get('shared/:shareCode')
-  @ApiSharedTechPublicGet('View a shared tech entry (public)')
+  @ApiSharedTechPublicGet('View a shared tech entry (public)', GetSharedEntryResponseDTO)
   async getSharedEntry(@Param('shareCode') shareCode: string) {
     return await this.techLibraryService.getSharedEntry(shareCode);
   }
@@ -81,9 +78,9 @@ export class TechLibraryController {
    * Delete shared entry (Auth Required)
    */
   @Delete('shared/:id')
-  @ApiSharedTechDelete('Delete a shared tech entry')
+  @ApiSharedTechDelete('Delete a shared tech entry', DeleteSharedEntryResponseDTO)
   async deleteSharedEntry(@Req() req, @Param('id') id: string) {
-    const startggUserID = this.validateUserSession(req);
+    const startggUserID = validateUserSession(req);
     return await this.techLibraryService.deleteSharedEntry(startggUserID, id);
   }
 
@@ -96,9 +93,9 @@ export class TechLibraryController {
    * List all characters user has tech data for
    */
   @Get()
-  @ApiTechLibraryGet('List all characters with tech data')
+  @ApiTechLibraryGet('List all characters with tech data', ListCharactersResponseDTO)
   async listCharacters(@Req() req) {
-    const startggUserID = this.validateUserSession(req);
+    const startggUserID = validateUserSession(req);
     const characters = await this.techLibraryService.listCharacters(startggUserID);
     return { characters };
   }
@@ -108,14 +105,14 @@ export class TechLibraryController {
    * Upload/sync tech library for specific character
    */
   @Post(':character')
-  @ApiTechLibraryPost('Sync tech library for a character')
+  @ApiTechLibraryPost('Sync tech library for a character', SyncTechLibraryResponseDTO)
   @HttpCode(HttpStatus.CREATED)
   async syncTechLibrary(
     @Req() req,
     @Param('character') character: string,
     @Body() syncTechDto: SyncTechLibraryDTO,
   ) {
-    const startggUserID = this.validateUserSession(req);
+    const startggUserID = validateUserSession(req);
     return await this.techLibraryService.syncTechLibrary(
       startggUserID,
       character,
@@ -128,9 +125,9 @@ export class TechLibraryController {
    * Download tech library for specific character
    */
   @Get(':character')
-  @ApiTechLibraryGet('Get tech library for a character')
+  @ApiTechLibraryGet('Get tech library for a character', GetTechLibraryResponseDTO)
   async getTechLibrary(@Req() req, @Param('character') character: string) {
-    const startggUserID = this.validateUserSession(req);
+    const startggUserID = validateUserSession(req);
     return await this.techLibraryService.getTechLibrary(startggUserID, character);
   }
 
@@ -139,9 +136,9 @@ export class TechLibraryController {
    * Delete tech library for character
    */
   @Delete(':character')
-  @ApiTechLibraryDelete('Delete tech library for a character')
+  @ApiTechLibraryDelete('Delete tech library for a character', DeleteTechLibraryResponseDTO)
   async deleteTechLibrary(@Req() req, @Param('character') character: string) {
-    const startggUserID = this.validateUserSession(req);
+    const startggUserID = validateUserSession(req);
     return await this.techLibraryService.deleteTechLibrary(startggUserID, character);
   }
 }

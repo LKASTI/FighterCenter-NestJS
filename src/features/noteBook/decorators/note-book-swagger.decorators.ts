@@ -45,12 +45,12 @@ export function ApiNoteBookGet(summary: string, responseType?: any) {
  * Composed decorator for note book DELETE endpoints
  * Includes authentication and standard responses
  */
-export function ApiNoteBookDelete(summary: string) {
+export function ApiNoteBookDelete(summary: string, responseType?: any) {
     return createApiDecorator({
         summary,
         guard: JwtAuthGuard,
         responses: [
-            StandardResponses.deleted("Notes deleted successfully"),
+            StandardResponses.success("Notes deleted successfully", responseType),
             StandardResponses.unauthorized(),
             StandardResponses.notFound("Notes"),
             StandardResponses.serverError(),

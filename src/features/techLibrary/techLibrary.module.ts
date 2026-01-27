@@ -1,9 +1,9 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { TechLibrary } from 'src/domain/entities/techLibrary.entity';
-import { TechLibraryRepository } from 'src/domain/techLibrary/techLibrary.repository';
-import { TechLibraryService } from 'src/domain/techLibrary/techLibrary.service';
-import { TechLibraryController } from 'src/controllers/techLibrary.controller';
+import { TechLibraryRepository } from './techLibrary.repository';
+import { TechLibraryService } from './techLibrary.service';
+import { TechLibraryController } from './techLibrary.controller';
 import { SharedTechEntry } from 'src/domain/entities/sharedTechEntry.entity';
 import { SharedTechEntryRepository } from 'src/domain/sharedTechEntry/sharedTechEntry.repository';
 

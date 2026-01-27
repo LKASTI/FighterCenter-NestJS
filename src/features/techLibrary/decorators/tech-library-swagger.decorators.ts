@@ -45,12 +45,12 @@ export function ApiTechLibraryGet(summary: string, responseType?: any) {
  * Composed decorator for tech library DELETE endpoints
  * Includes authentication and standard responses
  */
-export function ApiTechLibraryDelete(summary: string) {
+export function ApiTechLibraryDelete(summary: string, responseType?: any) {
     return createApiDecorator({
         summary,
         guard: JwtAuthGuard,
         responses: [
-            StandardResponses.deleted("Tech library deleted successfully"),
+            StandardResponses.success("Tech library deleted successfully", responseType),
             StandardResponses.unauthorized(),
             StandardResponses.notFound("Tech library"),
             StandardResponses.serverError(),
@@ -68,6 +68,7 @@ export function ApiTechLibraryDelete(summary: string) {
 export function ApiSharedTechPost(summary: string, responseType?: any) {
     return createApiDecorator({
         isDisabled: true,
+        excludeFromSwagger: true,
         summary,
         guard: JwtAuthGuard,
         responses: [
@@ -89,6 +90,7 @@ export function ApiSharedTechPost(summary: string, responseType?: any) {
 export function ApiSharedTechPublicGet(summary: string, responseType?: any) {
     return createApiDecorator({
         isDisabled: true,
+        excludeFromSwagger: true,
         summary,
         responses: [
             StandardResponses.success("Success", responseType),
@@ -112,6 +114,7 @@ export function ApiSharedTechPublicGet(summary: string, responseType?: any) {
 export function ApiSharedTechGet(summary: string, responseType?: any) {
     return createApiDecorator({
         isDisabled: true,
+        excludeFromSwagger: true,
         summary,
         guard: JwtAuthGuard,
         responses: [
@@ -129,13 +132,14 @@ export function ApiSharedTechGet(summary: string, responseType?: any) {
  * Composed decorator for shared tech entry DELETE endpoints
  * Includes authentication
  */
-export function ApiSharedTechDelete(summary: string) {
+export function ApiSharedTechDelete(summary: string, responseType?: any) {
     return createApiDecorator({
         isDisabled: true,
+        excludeFromSwagger: true,
         summary,
         guard: JwtAuthGuard,
         responses: [
-            StandardResponses.deleted("Shared entry deleted successfully"),
+            StandardResponses.success("Shared entry deleted successfully", responseType),
             StandardResponses.unauthorized(),
             StandardResponses.notFound("Shared entry"),
             StandardResponses.serverError(),

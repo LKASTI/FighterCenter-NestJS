@@ -7,42 +7,35 @@ import {
   Req,
   HttpCode,
   HttpStatus,
-  UnauthorizedException,
 } from '@nestjs/common';
-import { NoteBookService } from 'src/domain/noteBook/noteBook.service';
-import { SyncNotesDTO } from 'src/dtos/noteBook.dto';
+import { NoteBookService } from './noteBook.service';
+import { SyncNotesDTO } from '@dtos/noteBook.dto';
+import {
+  SyncNotesResponseDTO,
+  GetNotesResponseDTO,
+  ListNoteBooksResponseDTO,
+  DeleteNotesResponseDTO,
+} from '@dtos/noteBook.response.dto';
 import {
   ApiNoteBookPost,
   ApiNoteBookGet,
   ApiNoteBookDelete,
-} from 'src/features/noteBook/decorators/note-book-swagger.decorators';
+} from './decorators/note-book-swagger.decorators';
+import { validateUserSession } from '@authentication/utils';
 
 @Controller('notes')
 export class NoteBookController {
   constructor(private readonly noteBookService: NoteBookService) {}
 
   /**
-   * Helper to validate user has startggUserID in their token
-   */
-  private validateUserSession(req: any): string {
-    const startggUserID = req.user?.startggUserID;
-    if (!startggUserID) {
-      throw new UnauthorizedException(
-        'Your session is missing required user information. Please log out and log back in to refresh your session.',
-      );
-    }
-    return startggUserID;
-  }
-
-  /**
    * POST /api/notes/sync
    * Upload/sync complete notes backup
    */
   @Post('sync')
-  @ApiNoteBookPost('Sync notes to cloud')
+  @ApiNoteBookPost('Sync notes to cloud', SyncNotesResponseDTO)
   @HttpCode(HttpStatus.CREATED)
   async syncNotes(@Req() req, @Body() syncNotesDto: SyncNotesDTO) {
-    const startggUserID = this.validateUserSession(req);
+    const startggUserID = validateUserSession(req);
     return await this.noteBookService.syncNotes(startggUserID, syncNotesDto);
   }
 
@@ -51,9 +44,9 @@ export class NoteBookController {
    * Download complete notes backup
    */
   @Get('sync')
-  @ApiNoteBookGet('Get notes from cloud')
+  @ApiNoteBookGet('Get notes from cloud', GetNotesResponseDTO)
   async getNotes(@Req() req) {
-    const startggUserID = this.validateUserSession(req);
+    const startggUserID = validateUserSession(req);
     return await this.noteBookService.getNotes(startggUserID);
   }
 
@@ -62,9 +55,9 @@ export class NoteBookController {
    * List user's books (metadata only)
    */
   @Get('books')
-  @ApiNoteBookGet('List all notebooks')
+  @ApiNoteBookGet('List all notebooks', ListNoteBooksResponseDTO)
   async listNoteBooks(@Req() req) {
-    const startggUserID = this.validateUserSession(req);
+    const startggUserID = validateUserSession(req);
     const books = await this.noteBookService.listNoteBooks(startggUserID);
     return { books };
   }
@@ -74,9 +67,9 @@ export class NoteBookController {
    * Delete cloud backup
    */
   @Delete('sync')
-  @ApiNoteBookDelete('Delete notes from cloud')
+  @ApiNoteBookDelete('Delete notes from cloud', DeleteNotesResponseDTO)
   async deleteNotes(@Req() req) {
-    const startggUserID = this.validateUserSession(req);
+    const startggUserID = validateUserSession(req);
     return await this.noteBookService.deleteNotes(startggUserID);
   }
 }

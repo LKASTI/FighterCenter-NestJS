@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { TechLibrary } from 'src/domain/entities/techLibrary.entity';
-import { TechLibraryRepository } from 'src/domain/techLibrary/techLibrary.repository';
+import { TechLibraryRepository } from './techLibrary.repository';
 import { SharedTechEntry } from 'src/domain/entities/sharedTechEntry.entity';
 import { SharedTechEntryRepository } from 'src/domain/sharedTechEntry/sharedTechEntry.repository';
 
