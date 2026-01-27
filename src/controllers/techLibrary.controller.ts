@@ -6,14 +6,21 @@ import {
   Body,
   Param,
   Req,
-  UseGuards,
   HttpCode,
   HttpStatus,
   UnauthorizedException,
 } from '@nestjs/common';
-import { JwtAuthGuard } from '../authentication/guards/jwtAuth.guard';
 import { TechLibraryService } from 'src/domain/techLibrary/techLibrary.service';
 import { SyncTechLibraryDTO, ShareTechEntryDTO } from 'src/dtos/techLibrary.dto';
+import {
+  ApiTechLibraryPost,
+  ApiTechLibraryGet,
+  ApiTechLibraryDelete,
+  ApiSharedTechPost,
+  ApiSharedTechGet,
+  ApiSharedTechPublicGet,
+  ApiSharedTechDelete,
+} from 'src/features/techLibrary/decorators/tech-library-swagger.decorators';
 
 @Controller('tech')
 export class TechLibraryController {
@@ -41,7 +48,7 @@ export class TechLibraryController {
    * Share an individual tech entry (Auth Required)
    */
   @Post('share')
-  @UseGuards(JwtAuthGuard)
+  @ApiSharedTechPost('Share an individual tech entry')
   @HttpCode(HttpStatus.CREATED)
   async shareEntry(@Req() req, @Body() shareEntryDto: ShareTechEntryDTO) {
     const startggUserID = this.validateUserSession(req);
@@ -53,7 +60,7 @@ export class TechLibraryController {
    * List user's shared entries (Auth Required)
    */
   @Get('shared')
-  @UseGuards(JwtAuthGuard)
+  @ApiSharedTechGet("List user's shared tech entries")
   async listSharedEntries(@Req() req) {
     const startggUserID = this.validateUserSession(req);
     return await this.techLibraryService.listSharedEntries(startggUserID);
@@ -64,6 +71,7 @@ export class TechLibraryController {
    * View shared entry (Public - No Auth Required)
    */
   @Get('shared/:shareCode')
+  @ApiSharedTechPublicGet('View a shared tech entry (public)')
   async getSharedEntry(@Param('shareCode') shareCode: string) {
     return await this.techLibraryService.getSharedEntry(shareCode);
   }
@@ -73,7 +81,7 @@ export class TechLibraryController {
    * Delete shared entry (Auth Required)
    */
   @Delete('shared/:id')
-  @UseGuards(JwtAuthGuard)
+  @ApiSharedTechDelete('Delete a shared tech entry')
   async deleteSharedEntry(@Req() req, @Param('id') id: string) {
     const startggUserID = this.validateUserSession(req);
     return await this.techLibraryService.deleteSharedEntry(startggUserID, id);
@@ -88,7 +96,7 @@ export class TechLibraryController {
    * List all characters user has tech data for
    */
   @Get()
-  @UseGuards(JwtAuthGuard)
+  @ApiTechLibraryGet('List all characters with tech data')
   async listCharacters(@Req() req) {
     const startggUserID = this.validateUserSession(req);
     const characters = await this.techLibraryService.listCharacters(startggUserID);
@@ -100,7 +108,7 @@ export class TechLibraryController {
    * Upload/sync tech library for specific character
    */
   @Post(':character')
-  @UseGuards(JwtAuthGuard)
+  @ApiTechLibraryPost('Sync tech library for a character')
   @HttpCode(HttpStatus.CREATED)
   async syncTechLibrary(
     @Req() req,
@@ -120,7 +128,7 @@ export class TechLibraryController {
    * Download tech library for specific character
    */
   @Get(':character')
-  @UseGuards(JwtAuthGuard)
+  @ApiTechLibraryGet('Get tech library for a character')
   async getTechLibrary(@Req() req, @Param('character') character: string) {
     const startggUserID = this.validateUserSession(req);
     return await this.techLibraryService.getTechLibrary(startggUserID, character);
@@ -131,7 +139,7 @@ export class TechLibraryController {
    * Delete tech library for character
    */
   @Delete(':character')
-  @UseGuards(JwtAuthGuard)
+  @ApiTechLibraryDelete('Delete tech library for a character')
   async deleteTechLibrary(@Req() req, @Param('character') character: string) {
     const startggUserID = this.validateUserSession(req);
     return await this.techLibraryService.deleteTechLibrary(startggUserID, character);

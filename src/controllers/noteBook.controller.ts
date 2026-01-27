@@ -5,17 +5,19 @@ import {
   Delete,
   Body,
   Req,
-  UseGuards,
   HttpCode,
   HttpStatus,
   UnauthorizedException,
 } from '@nestjs/common';
-import { JwtAuthGuard } from '../authentication/guards/jwtAuth.guard';
 import { NoteBookService } from 'src/domain/noteBook/noteBook.service';
 import { SyncNotesDTO } from 'src/dtos/noteBook.dto';
+import {
+  ApiNoteBookPost,
+  ApiNoteBookGet,
+  ApiNoteBookDelete,
+} from 'src/features/noteBook/decorators/note-book-swagger.decorators';
 
 @Controller('notes')
-@UseGuards(JwtAuthGuard)
 export class NoteBookController {
   constructor(private readonly noteBookService: NoteBookService) {}
 
@@ -37,6 +39,7 @@ export class NoteBookController {
    * Upload/sync complete notes backup
    */
   @Post('sync')
+  @ApiNoteBookPost('Sync notes to cloud')
   @HttpCode(HttpStatus.CREATED)
   async syncNotes(@Req() req, @Body() syncNotesDto: SyncNotesDTO) {
     const startggUserID = this.validateUserSession(req);
@@ -48,6 +51,7 @@ export class NoteBookController {
    * Download complete notes backup
    */
   @Get('sync')
+  @ApiNoteBookGet('Get notes from cloud')
   async getNotes(@Req() req) {
     const startggUserID = this.validateUserSession(req);
     return await this.noteBookService.getNotes(startggUserID);
@@ -58,6 +62,7 @@ export class NoteBookController {
    * List user's books (metadata only)
    */
   @Get('books')
+  @ApiNoteBookGet('List all notebooks')
   async listNoteBooks(@Req() req) {
     const startggUserID = this.validateUserSession(req);
     const books = await this.noteBookService.listNoteBooks(startggUserID);
@@ -69,6 +74,7 @@ export class NoteBookController {
    * Delete cloud backup
    */
   @Delete('sync')
+  @ApiNoteBookDelete('Delete notes from cloud')
   async deleteNotes(@Req() req) {
     const startggUserID = this.validateUserSession(req);
     return await this.noteBookService.deleteNotes(startggUserID);
