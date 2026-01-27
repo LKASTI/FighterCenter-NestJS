@@ -9,6 +9,7 @@ import {
   UseGuards,
   HttpCode,
   HttpStatus,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { JwtAuthGuard } from '../authentication/guards/jwtAuth.guard';
 import { TechLibraryService } from 'src/domain/techLibrary/techLibrary.service';
@@ -17,6 +18,19 @@ import { SyncTechLibraryDTO, ShareTechEntryDTO } from 'src/dtos/techLibrary.dto'
 @Controller('tech')
 export class TechLibraryController {
   constructor(private readonly techLibraryService: TechLibraryService) {}
+
+  /**
+   * Helper to validate user has startggUserID in their token
+   */
+  private validateUserSession(req: any): string {
+    const startggUserID = req.user?.startggUserID;
+    if (!startggUserID) {
+      throw new UnauthorizedException(
+        'Your session is missing required user information. Please log out and log back in to refresh your session.',
+      );
+    }
+    return startggUserID;
+  }
 
   // ==========================================
   // SHARING ENDPOINTS (Must be defined before dynamic :character routes)
@@ -30,7 +44,7 @@ export class TechLibraryController {
   @UseGuards(JwtAuthGuard)
   @HttpCode(HttpStatus.CREATED)
   async shareEntry(@Req() req, @Body() shareEntryDto: ShareTechEntryDTO) {
-    const startggUserID = req.user.startggUserID;
+    const startggUserID = this.validateUserSession(req);
     return await this.techLibraryService.shareEntry(startggUserID, shareEntryDto);
   }
 
@@ -41,7 +55,7 @@ export class TechLibraryController {
   @Get('shared')
   @UseGuards(JwtAuthGuard)
   async listSharedEntries(@Req() req) {
-    const startggUserID = req.user.startggUserID;
+    const startggUserID = this.validateUserSession(req);
     return await this.techLibraryService.listSharedEntries(startggUserID);
   }
 
@@ -61,7 +75,7 @@ export class TechLibraryController {
   @Delete('shared/:id')
   @UseGuards(JwtAuthGuard)
   async deleteSharedEntry(@Req() req, @Param('id') id: string) {
-    const startggUserID = req.user.startggUserID;
+    const startggUserID = this.validateUserSession(req);
     return await this.techLibraryService.deleteSharedEntry(startggUserID, id);
   }
 
@@ -76,7 +90,7 @@ export class TechLibraryController {
   @Get()
   @UseGuards(JwtAuthGuard)
   async listCharacters(@Req() req) {
-    const startggUserID = req.user.startggUserID;
+    const startggUserID = this.validateUserSession(req);
     const characters = await this.techLibraryService.listCharacters(startggUserID);
     return { characters };
   }
@@ -93,7 +107,7 @@ export class TechLibraryController {
     @Param('character') character: string,
     @Body() syncTechDto: SyncTechLibraryDTO,
   ) {
-    const startggUserID = req.user.startggUserID;
+    const startggUserID = this.validateUserSession(req);
     return await this.techLibraryService.syncTechLibrary(
       startggUserID,
       character,
@@ -108,7 +122,7 @@ export class TechLibraryController {
   @Get(':character')
   @UseGuards(JwtAuthGuard)
   async getTechLibrary(@Req() req, @Param('character') character: string) {
-    const startggUserID = req.user.startggUserID;
+    const startggUserID = this.validateUserSession(req);
     return await this.techLibraryService.getTechLibrary(startggUserID, character);
   }
 
@@ -119,7 +133,7 @@ export class TechLibraryController {
   @Delete(':character')
   @UseGuards(JwtAuthGuard)
   async deleteTechLibrary(@Req() req, @Param('character') character: string) {
-    const startggUserID = req.user.startggUserID;
+    const startggUserID = this.validateUserSession(req);
     return await this.techLibraryService.deleteTechLibrary(startggUserID, character);
   }
 }

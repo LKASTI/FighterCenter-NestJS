@@ -115,6 +115,7 @@ export class AuthController {
         const user = dbToken.user;
         const payload = {
             sub: user.startggId,
+            startggUserID: user.startggUserID, // UUID for database foreign keys
             username: user.startggUsername,
             gamerTag: user.startggGamerTag,
             roles: user.roles,

@@ -4,6 +4,7 @@ import {
   IsArray,
   IsOptional,
   IsObject,
+  IsNumber,
 } from 'class-validator';
 
 export class SyncTechLibraryDTO {
@@ -22,6 +23,18 @@ export class SyncTechLibraryDTO {
   @IsOptional()
   @IsArray()
   readonly savedMeatySetups?: any[];
+
+  @IsOptional()
+  @IsString()
+  readonly exportDate?: string;
+
+  @IsOptional()
+  @IsString()
+  readonly version?: string;
+
+  @IsOptional()
+  @IsNumber()
+  readonly totalItems?: number;
 }
 
 export class ShareTechEntryDTO {
