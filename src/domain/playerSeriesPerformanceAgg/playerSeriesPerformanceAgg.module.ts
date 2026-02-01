@@ -8,6 +8,7 @@ import { PlayerSeriesPerformanceAggRepository } from "./playerSeriesPerformanceA
 import { PlayerSeriesPerformanceAggController } from "../../controllers/playerSeriesPerformanceAgg.controller";
 import { EventModule } from "../event/event.module";
 import { EncryptionModule } from "../../authentication/encryption/encryption.module";
+import { AuthModule } from "../../authentication/auth.module";
 import { PassportModule } from "@nestjs/passport";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import { JwtModule } from "@nestjs/jwt";
@@ -25,6 +26,7 @@ import { CommonModule } from "../../common/common.module";
 
         EncryptionModule,
         CommonModule,
+        AuthModule,
         StartggApiModule,
         PassportModule.register({ defaultStrategy: "jwt" }),
         ConfigModule.forRoot(), // Make sure this is included to load environment variables

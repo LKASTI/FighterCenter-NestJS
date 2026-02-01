@@ -1,6 +1,5 @@
 import { Module } from "@nestjs/common";
 import { HttpModule } from "@nestjs/axios";
-import { TournamentDataParserModule } from "@features/tournament-importer";
 import { PassportModule } from "@nestjs/passport";
 import { JwtModule } from "@nestjs/jwt";
 import { JwtStrategy } from "./strategies/jwt.strategy";
@@ -10,7 +9,6 @@ import { AuthClientService } from "./services/auth-client.service";
 
 @Module({
     imports: [
-        TournamentDataParserModule,
         PassportModule.register({ defaultStrategy: "jwt" }),
         ConfigModule.forRoot(), // loads environment variables
         JwtModule.registerAsync({
