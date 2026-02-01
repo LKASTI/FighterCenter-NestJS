@@ -9,13 +9,11 @@ import { SubscriptionService } from "./services/subscription.service";
 import { WebhookService } from "./services/webhook.service";
 import { SubscriptionController } from "./controllers/subscription.controller";
 import { WebhookController } from "./controllers/webhook.controller";
-import { StartggUserModule } from "../../domain/startggUser/startgg-user.module";
 import { AuthModule } from "../../authentication/auth.module";
 
 @Module({
     imports: [
         TypeOrmModule.forFeature([Subscription, StripeWebhookEvent]),
-        StartggUserModule,
         AuthModule,
     ],
     providers: [

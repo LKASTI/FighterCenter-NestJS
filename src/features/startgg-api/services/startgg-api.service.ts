@@ -1,11 +1,11 @@
-import { BadRequestException, Inject, Injectable, Scope } from "@nestjs/common";
+import { BadRequestException, Inject, Injectable, Scope, UnauthorizedException } from "@nestjs/common";
 import { GraphQLClient } from "graphql-request";
 import { Event, QueryEventArgs, SetConnection, Tournament } from "../graphql/startgg-api.graphql";
 import { GetEventQuery, GetEventTop8PlayerDataQuery, GetTournamentSetsQuery } from "../graphql/startgg-api.queries";
 import { REQUEST } from "@nestjs/core";
 import { Request } from "express";
-import { StartggUser } from "@domain/entities";
 import { EncryptionService } from "@authentication/encryption/encryption.service";
+import { AuthUser } from "@authentication/services/auth-client.service";
 
 @Injectable({ scope: Scope.REQUEST })
 export class StartggApiService {
@@ -16,24 +16,33 @@ export class StartggApiService {
     }
 
     /**
-     * Get Start.gg API token from request user or fallback to environment variable
+     * Get Start.gg API token from request user
+     *
+     * IMPORTANT: This requires the endpoint to use BaseAuthGuard or SeriesAuthGuard,
+     * which fetch the full user object (including encrypted token) from the auth service.
+     * JwtAuthGuard alone is NOT sufficient.
      *
      * SECURITY NOTE (Finding 20):
-     * - Primary: Uses user's OAuth token (preferred, user-specific)
-     *
-     * Environment variable concerns:
-     * - Shared key across all requests
-     * - Visible in process environment
-     * - Rotation requires redeployment
-     * - No per-user audit trail
-     *
+     * - Uses user's OAuth token (preferred, user-specific)
+     * - Per-user audit trail
+     * - Tokens auto-refresh via auth service
      */
     private getTokenFromRequest(): string {
-        if(this.request.user && (this.request.user as StartggUser).startggEncryptedToken) {
-            return this.encryptionService.decrypt((this.request.user as StartggUser).startggEncryptedToken);
-        } else {
-            throw new BadRequestException();
+        const user = this.request.user as AuthUser;
+
+        if (!user) {
+            throw new UnauthorizedException(
+                "Authentication required. Endpoint must use BaseAuthGuard or SeriesAuthGuard."
+            );
         }
+
+        if (!user.startggEncryptedToken) {
+            throw new UnauthorizedException(
+                "Start.gg account not linked. Please link your Start.gg account."
+            );
+        }
+
+        return this.encryptionService.decrypt(user.startggEncryptedToken);
     }
 
     private initializeGqlClient(): GraphQLClient {

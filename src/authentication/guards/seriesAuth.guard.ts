@@ -1,18 +1,21 @@
-import { ExecutionContext, ForbiddenException, Injectable } from "@nestjs/common";
+import {
+    ExecutionContext,
+    ForbiddenException,
+    Injectable,
+} from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { Reflector } from "@nestjs/core";
-import { StartggUserService } from "../../domain/startggUser/services/startgg-user.service";
+import { AuthClientService, AuthUser } from "../services/auth-client.service";
 import { BaseAuthGuard } from "./baseAuth.guard";
-import { StartggUser } from "../../domain/entities";
 
 @Injectable()
 export class SeriesAuthGuard extends BaseAuthGuard {
     constructor(
         protected readonly jwtService: JwtService,
         private readonly reflector: Reflector,
-        protected readonly startggUserService: StartggUserService,
+        protected readonly authClientService: AuthClientService,
     ) {
-        super(jwtService, startggUserService);
+        super(jwtService, authClientService);
     }
 
     /**
@@ -20,8 +23,8 @@ export class SeriesAuthGuard extends BaseAuthGuard {
      */
     protected async additionalValidation(
         request: any,
-        user: StartggUser,
-        context: ExecutionContext
+        user: AuthUser,
+        context: ExecutionContext,
     ): Promise<boolean> {
         // Get the required roles from controller decorator Roles()
         const requiredRoles = this.reflector.get<string[]>(

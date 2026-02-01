@@ -1,14 +1,17 @@
-import { CanActivate, ExecutionContext, Injectable, UnauthorizedException } from "@nestjs/common";
+import {
+    CanActivate,
+    ExecutionContext,
+    Injectable,
+    UnauthorizedException,
+} from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
-import { StartggUserService } from "../../domain/startggUser/services/startgg-user.service";
-import { StartggRefreshTokenResponse } from "../../domain/startggUser/types/startgg-user.types";
-import { StartggUser } from "../../domain/entities";
+import { AuthClientService, AuthUser } from "../services/auth-client.service";
 
 @Injectable()
 export abstract class BaseAuthGuard implements CanActivate {
     constructor(
         protected readonly jwtService: JwtService,
-        protected readonly startggUserService: StartggUserService,
+        protected readonly authClientService: AuthClientService,
     ) {}
 
     async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -25,24 +28,13 @@ export abstract class BaseAuthGuard implements CanActivate {
             // Verify token
             const payload = this.jwtService.verify(token);
 
-            // Get user from service
-            const user = await this.startggUserService.findByStartggId(
-                payload.sub,
+            // Get fresh user data from auth service
+            const user = await this.authClientService.getUserById(
+                payload.userId,
             );
 
             if (!user) {
                 throw new UnauthorizedException("User not found");
-            }
-
-            // Check if token expired and refresh if needed
-            if (Date.now() >= user.startggTokenExpiresIn) {
-                const res: StartggRefreshTokenResponse = await this.startggUserService.refreshStartggToken(
-                    user.startggEncryptedRefreshToken,
-                    user.startggUserID
-                );
-                user.startggEncryptedRefreshToken = res.encryptedRefreshToken;
-                user.startggTokenExpiresIn = res.expiresIn;
-                user.startggEncryptedToken = res.encryptedAccessToken;
             }
 
             // Attach user to request
@@ -54,7 +46,9 @@ export abstract class BaseAuthGuard implements CanActivate {
             if (error.name === "TokenExpiredError") {
                 throw new UnauthorizedException("Token expired");
             }
-            throw new UnauthorizedException("Error encountered: " + error.message);
+            throw new UnauthorizedException(
+                "Error encountered: " + error.message,
+            );
         }
     }
 
@@ -68,16 +62,17 @@ export abstract class BaseAuthGuard implements CanActivate {
     /**
      * Override this method in subclasses to add additional validation logic
      * @param request The HTTP request object
-     * @param user The authenticated StartGG user
+     * @param user The authenticated user
      * @param context The execution context
      * @returns true if validation passes, false otherwise
      */
     protected async additionalValidation(
         request: any,
-        user: StartggUser,
-        context: ExecutionContext
+        user: AuthUser,
+        context: ExecutionContext,
     ): Promise<boolean> {
         // Default implementation: no additional validation
         return true;
     }
 }
+

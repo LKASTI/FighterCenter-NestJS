@@ -1,5 +1,4 @@
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, BeforeUpdate } from 'typeorm';
-import { StartggUser } from './startggUser.entity';
+import { Column, Entity, PrimaryGeneratedColumn, BeforeUpdate } from 'typeorm';
 
 @Entity('note_book')
 export class NoteBook {
@@ -8,7 +7,7 @@ export class NoteBook {
   noteBookID: string;
 
   @Column('uuid', { name: 'startgg_user_id' })
-  startggUserID: string;
+  startggUserID: string;  // Foreign key to user table (managed by auth service)
 
   @Column('text', { name: 'title', nullable: false })
   title: string;
@@ -56,9 +55,4 @@ export class NoteBook {
   updateTimestamp() {
     this.updatedAt = new Date();
   }
-
-  /* Relationships */
-  @ManyToOne(() => StartggUser, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'startgg_user_id' })
-  user: StartggUser;
 }

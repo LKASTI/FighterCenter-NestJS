@@ -18,7 +18,6 @@ import { TournamentDataParserModule } from "@features/tournament-importer";
 import { HttpModule } from "@nestjs/axios";
 import { ServeStaticModule } from "@nestjs/serve-static";
 import { join } from "path";
-import { StartggUserModule } from "@domain/startggUser";
 import { AuthModule } from "@authentication/auth.module";
 import { NoteBookModule } from "@features/noteBook/noteBook.module";
 import { TechLibraryModule } from "@features/techLibrary/techLibrary.module";
@@ -52,6 +51,9 @@ import { PaymentModule } from "@features/payment/payment.module";
                     .valid("development", "production", "local")
                     .default("development"),
                 IS_PREVIEW: Joi.boolean().required(),
+                // Auth Service
+                AUTH_SERVICE_URL: Joi.string().uri().required(),
+                AUTH_SERVICE_API_KEY: Joi.string().min(32).required(),
                 // R2 configuration
                 CLOUDFLARE_ACCOUNT_ID: Joi.string().required(),
                 R2_ACCESS_KEY_ID: Joi.string().required(),
@@ -119,7 +121,6 @@ import { PaymentModule } from "@features/payment/payment.module";
         TournamentSetModule,
         TournamentMatchModule,
         TournamentImportAuditLogModule,
-        StartggUserModule,
         TournamentSeriesModule,
         SFSixGamePatchModule,
         PlayerSeriesPerformanceAggModule,

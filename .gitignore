@@ -60,3 +60,15 @@ report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json
 # GraphQL config
 .graphql.yml
 codegen.yml
+/.claude/markdown/SF6-Profile-Characters-Implementation.md
+/.claude/settings.local.json
+/.claude/markdown/STRIPE_SETUP.md
+/.claude/markdown/PAYMENT_IMPLEMENTATION_PLAN.md
+/CLAUDE.md
+/.claude/agents/code-reviewer.md
+/.claude/agents/systems-design-reviewer.md
+/docs/mapper-approaches.md
+/docs/refactoring-checklist.md
+/.claude/markdown/FUTURE_IMPROVEMENTS.md
+/.claude/*
+/SECURITY_OPERATIONS.md

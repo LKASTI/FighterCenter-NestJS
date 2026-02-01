@@ -35,7 +35,6 @@ import {
 
 import { firstValueFrom } from "rxjs";
 import { EncryptionService } from "@authentication/encryption/encryption.service";
-import { StartggUser } from "@domain/entities";
 import { SFSixGamePatchService } from "@domain/sfsixGamePatch";
 import { FindSFSixGamePatchDTO } from "@domain/../dtos/sfsixGamePatch.dto";
 import { SFSixGamePatch } from "@domain/entities/sfsixGamePatch.entity";
@@ -47,7 +46,10 @@ import { Set as StartGGSet, SetConnection } from "@features/startgg-api"
 import {
     PlayerSeriesPerformanceAggService
 } from "@domain/playerSeriesPerformanceAgg/playerSeriesPerformanceAgg.service";
-import { StartggUserService } from "@domain/startggUser/services/startgg-user.service";
+import {
+    AuthClientService,
+    AuthUser,
+} from "@authentication/services/auth-client.service";
 import { TaggedCacheService } from "@common/cache/tagged-cache.service";
 import { CacheTags } from "@common/cache/cache-keys.util";
 import { TournamentImportContext } from "../types/tournament-import-context";
@@ -74,7 +76,7 @@ export class TournamentDataParserService {
         @InjectDataSource() private dataSource: DataSource,
 
         private readonly encryptionService: EncryptionService,
-        private readonly startggUserService: StartggUserService,
+        private readonly authClientService: AuthClientService,
         private readonly taggedCacheService: TaggedCacheService,
         private readonly tournamentRollbackService: TournamentRollbackService,
         private readonly tournamentImportAuditLogService: TournamentImportAuditLogService,
@@ -274,9 +276,11 @@ export class TournamentDataParserService {
     private initializeVariables(params: StartGGTournamentDataV2ParserDTO, req: any): void {
         this.req = req;
         this.startggApiToken = ""
-        if(this.req && this.req.user && this.req.user.startggEncryptedToken) {
-            this.startggApiToken = this.encryptionService.decrypt((req.user as StartggUser).startggEncryptedToken);
-            if(!this.startggApiToken) {
+
+        const user = req?.user as AuthUser;
+        if (user && user.startggEncryptedToken) {
+            this.startggApiToken = this.encryptionService.decrypt(user.startggEncryptedToken);
+            if (!this.startggApiToken) {
                 throw new BadRequestException(
                     "StartGG API token is not set or invalid.",
                 );
@@ -821,7 +825,7 @@ export class TournamentDataParserService {
      */
     private async getProfileCharactersForPlayer(startggId: number): Promise<string[]> {
         try {
-            const startggUser = await this.startggUserService.findByStartggId(String(startggId));
+            const startggUser: AuthUser | null = await this.authClientService.getUserByStartggId(String(startggId));
             if (startggUser && startggUser.sf6ProfileCharacters && startggUser.sf6ProfileCharacters.length > 0) {
                 return startggUser.sf6ProfileCharacters;
             }

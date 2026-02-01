@@ -12,7 +12,6 @@ import { ApiTags } from "@nestjs/swagger";
 import { SubscriptionService } from "../services/subscription.service";
 import { CreateCheckoutSessionDTO } from "../dtos/createCheckoutSession.dto";
 import { SubscriptionStatusDTO } from "../dtos/subscriptionStatus.dto";
-import { StartggUser } from "../../../domain/entities/startggUser.entity";
 import { ProductType } from "../interfaces/productTypes.enum";
 import {
     ApiSubscriptionPost,
@@ -36,7 +35,7 @@ export class SubscriptionController {
         @Body(new ValidationPipe()) dto: CreateCheckoutSessionDTO,
         @Req() req: any,
     ): Promise<{ sessionUrl: string; sessionId: string }> {
-        const user = req.user as StartggUser;
+        const user = req.user as any;
 
         if (!user) {
             throw new UnauthorizedException("User not authenticated");
@@ -59,7 +58,7 @@ export class SubscriptionController {
         @Req() req: any,
         @Query("productType") productType?: ProductType,
     ): Promise<SubscriptionStatusDTO | { hasAccess: false }> {
-        const user = req.user as StartggUser;
+        const user = req.user as any;
 
         if (!user) {
             throw new UnauthorizedException("User not authenticated");
@@ -99,7 +98,7 @@ export class SubscriptionController {
         @Req() req: any,
         @Query("productType") productType?: ProductType,
     ): Promise<{ hasAccess: boolean }> {
-        const user = req.user as StartggUser;
+        const user = req.user as any;
 
         if (!user) {
             throw new UnauthorizedException("User not authenticated");
@@ -122,7 +121,7 @@ export class SubscriptionController {
         @Req() req: any,
         @Query("productType") productType?: ProductType,
     ): Promise<SubscriptionStatusDTO> {
-        const user = req.user as StartggUser;
+        const user = req.user as any;
 
         if (!user) {
             throw new UnauthorizedException("User not authenticated");
@@ -158,7 +157,7 @@ export class SubscriptionController {
         @Req() req: any,
         @Query("productType") productType?: ProductType,
     ): Promise<SubscriptionStatusDTO> {
-        const user = req.user as StartggUser;
+        const user = req.user as any;
 
         if (!user) {
             throw new UnauthorizedException("User not authenticated");

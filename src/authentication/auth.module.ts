@@ -1,24 +1,16 @@
 import { Module } from "@nestjs/common";
 import { HttpModule } from "@nestjs/axios";
 import { TournamentDataParserModule } from "@features/tournament-importer";
-import { StartggUserModule } from "../domain/startggUser/startgg-user.module";
 import { PassportModule } from "@nestjs/passport";
 import { JwtModule } from "@nestjs/jwt";
-import { AuthController } from "../controllers/auth.controller";
-import { StartGGStrategy } from "./strategies/startgg.strategy";
 import { JwtStrategy } from "./strategies/jwt.strategy";
 import { ConfigModule, ConfigService } from "@nestjs/config";
-import { EncryptionModule } from "./encryption/encryption.module";
 import { SeriesAuthGuard } from "./guards/seriesAuth.guard";
-import { JwtRefreshTokenModule } from "@domain/jwtRefreshToken";
+import { AuthClientService } from "./services/auth-client.service";
 
 @Module({
     imports: [
-        StartggUserModule,
         TournamentDataParserModule,
-        EncryptionModule,
-        JwtRefreshTokenModule,
-
         PassportModule.register({ defaultStrategy: "jwt" }),
         ConfigModule.forRoot(), // loads environment variables
         JwtModule.registerAsync({
@@ -34,17 +26,17 @@ import { JwtRefreshTokenModule } from "@domain/jwtRefreshToken";
                 };
             },
         }),
-
         HttpModule,
     ],
     providers: [
+        // Services
+        AuthClientService,
         // Strategies
-        StartGGStrategy,
         JwtStrategy,
         // Guards
         SeriesAuthGuard
     ],
-    controllers: [AuthController],
-    exports: [JwtModule, SeriesAuthGuard, StartggUserModule],
+    controllers: [],
+    exports: [JwtModule, SeriesAuthGuard, AuthClientService],
 })
 export class AuthModule {}

@@ -1,5 +1,4 @@
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn, BeforeUpdate } from 'typeorm';
-import { StartggUser } from './startggUser.entity';
+import { Column, Entity, PrimaryGeneratedColumn, BeforeUpdate } from 'typeorm';
 
 @Entity('tech_library')
 export class TechLibrary {
@@ -8,7 +7,7 @@ export class TechLibrary {
   techLibraryID: string;
 
   @Column('uuid', { name: 'startgg_user_id' })
-  startggUserID: string;
+  startggUserID: string;  // Foreign key to user table (managed by auth service)
 
   @Column('text', { name: 'character_code', nullable: false })
   characterCode: string;
@@ -70,9 +69,4 @@ export class TechLibrary {
     this.updatedAt = new Date();
     this.lastSyncedAt = new Date();
   }
-
-  /* Relationships */
-  @ManyToOne(() => StartggUser, { onDelete: 'CASCADE' })
-  @JoinColumn({ name: 'startgg_user_id' })
-  user: StartggUser;
 }

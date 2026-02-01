@@ -5,7 +5,10 @@ import { SubscriptionRepository } from "../repositories/subscription.repository"
 import { StripeService } from "./stripe.service";
 import { Subscription } from "../entities/subscription.entity";
 import { ProductType } from "../interfaces/productTypes.enum";
-import { StartggUserService } from "../../../domain/startggUser/services/startgg-user.service";
+import {
+    AuthClientService,
+    AuthUser,
+} from "../../../authentication/services/auth-client.service";
 import Stripe from "stripe";
 
 @Injectable()
@@ -15,7 +18,7 @@ export class SubscriptionService {
         private readonly subscriptionRepository: SubscriptionRepository,
         private readonly stripeService: StripeService,
         private readonly configService: ConfigService,
-        private readonly startggUserService: StartggUserService,
+        private readonly authClientService: AuthClientService,
     ) {}
 
     /**
@@ -35,7 +38,7 @@ export class SubscriptionService {
         } = params;
 
         // Fetch user to get email (if available)
-        const user = await this.startggUserService.findById(startggUserId);
+        const user: AuthUser | null = await this.authClientService.getUserById(startggUserId);
 
         // Check if user already has this subscription
         let subscription = await this.subscriptionRepository.findByStartggUserIdAndProductType(

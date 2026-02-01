@@ -1,5 +1,4 @@
-import { Entity, Column, PrimaryGeneratedColumn, ManyToOne, CreateDateColumn, JoinColumn } from 'typeorm';
-import { StartggUser } from './startggUser.entity';
+import { Entity, Column, PrimaryGeneratedColumn, CreateDateColumn } from 'typeorm';
 
 @Entity("jwt_refresh_token")
 export class JwtRefreshToken {
@@ -12,12 +11,8 @@ export class JwtRefreshToken {
     @Column("text", { name: "encrypted_token" })
     encryptedToken: string;  // Encrypted using EncryptionService
 
-    @ManyToOne(() => StartggUser, user => user.refreshTokens, { onDelete: 'CASCADE' })
-    @JoinColumn({ name: "startgg_user_id" })
-    user: StartggUser;
-
     @Column("uuid", { name: "startgg_user_id" })
-    startggUserID: string;  // Foreign key
+    startggUserID: string;  // Foreign key to user table (managed by auth service)
 
     @Column("bigint", {
         name: "expires_at",

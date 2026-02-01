@@ -4,7 +4,6 @@ export * from "./playerTournamentRun.entity";
 export * from "./sfsixRankedCharacter.entity";
 export * from "./sfsixRankedProfile.entity";
 export * from "./sfsixRankedCharacterRanking.entity";
-export * from "./startggUser.entity";
 export * from "./tournament.entity";
 export * from "./tournamentMatch.entity";
 export * from "./tournamentSet.entity";

@@ -4,6 +4,10 @@ import { TechLibrary } from 'src/domain/entities/techLibrary.entity';
 import { TechLibraryRepository } from './techLibrary.repository';
 import { SharedTechEntry } from 'src/domain/entities/sharedTechEntry.entity';
 import { SharedTechEntryRepository } from 'src/domain/sharedTechEntry/sharedTechEntry.repository';
+import {
+  AuthClientService,
+  AuthUser,
+} from '@authentication/services/auth-client.service';
 
 @Injectable()
 export class TechLibraryService {
@@ -12,6 +16,7 @@ export class TechLibraryService {
     private readonly techLibraryRepository: TechLibraryRepository,
     @InjectRepository(SharedTechEntryRepository)
     private readonly sharedTechEntryRepository: SharedTechEntryRepository,
+    private readonly authClientService: AuthClientService,
   ) {}
 
   /**
@@ -178,6 +183,9 @@ export class TechLibraryService {
       throw new NotFoundException('Shared entry not found');
     }
 
+    // Fetch user data from auth service
+    const user: AuthUser | null = await this.authClientService.getUserById(entry.startggUserID);
+
     // Increment view count
     await this.sharedTechEntryRepository.incrementViewCount(shareCode);
 
@@ -190,9 +198,9 @@ export class TechLibraryService {
       viewCount: entry.viewCount + 1, // Return incremented count
       createdAt: entry.createdAt,
       author: {
-        startggUserId: entry.user.startggUserID,
-        username: entry.user.startggUsername,
-        gamertag: entry.user.startggGamerTag,
+        startggUserId: entry.startggUserID,
+        username: user?.startggUsername,
+        gamertag: user?.startggGamerTag,
       },
     };
   }

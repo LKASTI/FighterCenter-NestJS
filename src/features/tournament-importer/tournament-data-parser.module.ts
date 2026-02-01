@@ -11,7 +11,7 @@ import { HttpModule } from "@nestjs/axios";
 import { PassportModule } from "@nestjs/passport";
 import { JwtModule } from "@nestjs/jwt";
 import { ConfigModule, ConfigService } from "@nestjs/config";
-import { StartggUserModule } from "@domain/startggUser/startgg-user.module";
+import { AuthModule } from "@authentication/auth.module";
 import { EncryptionModule } from "@authentication/encryption/encryption.module";
 import { SFSixGamePatchModule } from "@domain/sfsixGamePatch";
 import { TournamentManagerService } from "./services/tournament-manager.service";
@@ -36,7 +36,7 @@ import { TournamentRollbackService } from "./services/tournament-rollback.servic
         PlayerSeriesPerformanceAggModule,
         TournamentImportAuditLogModule,
         SFSixGamePatchModule,
-        StartggUserModule,
+        AuthModule,
         StartggApiModule,
         EncryptionModule,
 

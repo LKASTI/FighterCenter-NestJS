@@ -4,13 +4,10 @@ import {
     Column,
     CreateDateColumn,
     UpdateDateColumn,
-    ManyToOne,
-    JoinColumn,
     BeforeInsert,
     Index,
 } from "typeorm";
 import { v4 as uuid } from "uuid";
-import { StartggUser } from "../../../domain/entities/startggUser.entity";
 import { ProductType } from "../interfaces/productTypes.enum";
 
 @Entity("subscription")
@@ -25,7 +22,7 @@ export class Subscription {
     }
 
     @Column("uuid", { name: "startgg_user_id" })
-    startggUserId: string;
+    startggUserId: string;  // Foreign key to user table (managed by auth service)
 
     @Column("varchar", { name: "product_type", default: ProductType.AD_FREE })
     productType: ProductType;
@@ -62,8 +59,4 @@ export class Subscription {
 
     @UpdateDateColumn({ name: "updated_at" })
     updatedAt: Date;
-
-    @ManyToOne(() => StartggUser)
-    @JoinColumn({ name: "startgg_user_id" })
-    user: StartggUser;
 }
