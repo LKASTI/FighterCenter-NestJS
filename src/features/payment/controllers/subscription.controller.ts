@@ -13,6 +13,7 @@ import { SubscriptionService } from "../services/subscription.service";
 import { CreateCheckoutSessionDTO } from "../dtos/createCheckoutSession.dto";
 import { SubscriptionStatusDTO } from "../dtos/subscriptionStatus.dto";
 import { ProductType } from "../interfaces/productTypes.enum";
+import { AuthUser } from "../../../authentication/services/auth-client.service";
 import {
     ApiSubscriptionPost,
     ApiSubscriptionGet,
@@ -35,14 +36,14 @@ export class SubscriptionController {
         @Body(new ValidationPipe()) dto: CreateCheckoutSessionDTO,
         @Req() req: any,
     ): Promise<{ sessionUrl: string; sessionId: string }> {
-        const user = req.user as any;
+        const user = req.user as AuthUser;
 
         if (!user) {
             throw new UnauthorizedException("User not authenticated");
         }
 
         return await this.subscriptionService.createCheckoutSession({
-            startggUserId: user.startggUserID,
+            startggUserId: user.userId,
             successUrl: dto.successUrl,
             cancelUrl: dto.cancelUrl,
             productType: dto.productType,
@@ -58,14 +59,14 @@ export class SubscriptionController {
         @Req() req: any,
         @Query("productType") productType?: ProductType,
     ): Promise<SubscriptionStatusDTO | { hasAccess: false }> {
-        const user = req.user as any;
+        const user = req.user as AuthUser;
 
         if (!user) {
             throw new UnauthorizedException("User not authenticated");
         }
 
         const subscription = await this.subscriptionService.getSubscriptionStatus(
-            user.startggUserID,
+            user.userId,
             productType,
         );
 
@@ -74,7 +75,7 @@ export class SubscriptionController {
         }
 
         const hasAccess = await this.subscriptionService.hasAccess(
-            user.startggUserID,
+            user.userId,
             productType,
         );
 
@@ -98,14 +99,14 @@ export class SubscriptionController {
         @Req() req: any,
         @Query("productType") productType?: ProductType,
     ): Promise<{ hasAccess: boolean }> {
-        const user = req.user as any;
+        const user = req.user as AuthUser;
 
         if (!user) {
             throw new UnauthorizedException("User not authenticated");
         }
 
         const hasAccess = await this.subscriptionService.hasAccess(
-            user.startggUserID,
+            user.userId,
             productType,
         );
 
@@ -121,19 +122,19 @@ export class SubscriptionController {
         @Req() req: any,
         @Query("productType") productType?: ProductType,
     ): Promise<SubscriptionStatusDTO> {
-        const user = req.user as any;
+        const user = req.user as AuthUser;
 
         if (!user) {
             throw new UnauthorizedException("User not authenticated");
         }
 
         const subscription = await this.subscriptionService.cancelSubscription(
-            user.startggUserID,
+            user.userId,
             productType,
         );
 
         const hasAccess = await this.subscriptionService.hasAccess(
-            user.startggUserID,
+            user.userId,
             productType,
         );
 
@@ -157,19 +158,19 @@ export class SubscriptionController {
         @Req() req: any,
         @Query("productType") productType?: ProductType,
     ): Promise<SubscriptionStatusDTO> {
-        const user = req.user as any;
+        const user = req.user as AuthUser;
 
         if (!user) {
             throw new UnauthorizedException("User not authenticated");
         }
 
         const subscription = await this.subscriptionService.resumeSubscription(
-            user.startggUserID,
+            user.userId,
             productType,
         );
 
         const hasAccess = await this.subscriptionService.hasAccess(
-            user.startggUserID,
+            user.userId,
             productType,
         );
 

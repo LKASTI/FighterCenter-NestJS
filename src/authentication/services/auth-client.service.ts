@@ -38,6 +38,7 @@ export interface AuthUser {
 interface CacheEntry {
     data: any;
     expires: number;
+    lastAccessed: number;
 }
 
 @Injectable()
@@ -48,6 +49,13 @@ export class AuthClientService {
     private readonly cache = new Map<string, CacheEntry>();
     private readonly MAX_CACHE_SIZE = 1000;
     private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+
+    // Circuit breaker state
+    private circuitState: 'CLOSED' | 'OPEN' | 'HALF_OPEN' = 'CLOSED';
+    private failureCount = 0;
+    private readonly FAILURE_THRESHOLD = 5;
+    private readonly CIRCUIT_RESET_TIMEOUT = 60000; // 1 minute
+    private circuitOpenTime = 0;
 
     constructor(
         private readonly httpService: HttpService,
@@ -61,10 +69,66 @@ export class AuthClientService {
         )!;
     }
 
-    private evictOldestCacheEntry(): void {
+    /**
+     * Circuit Breaker Pattern:
+     * - CLOSED: Normal operation, requests go through
+     * - OPEN: Too many failures, reject requests immediately (fail fast)
+     * - HALF_OPEN: Testing if service recovered, allow 1 request through
+     */
+    private checkCircuitBreaker(): void {
+        if (this.circuitState === 'OPEN') {
+            // Check if enough time has passed to try again
+            if (Date.now() - this.circuitOpenTime > this.CIRCUIT_RESET_TIMEOUT) {
+                this.logger.warn('Circuit breaker entering HALF_OPEN state');
+                this.circuitState = 'HALF_OPEN';
+            } else {
+                throw new ServiceUnavailableException(
+                    'Auth service circuit breaker is OPEN. Service temporarily unavailable.'
+                );
+            }
+        }
+    }
+
+    private recordSuccess(): void {
+        if (this.circuitState === 'HALF_OPEN') {
+            this.logger.log('Circuit breaker closing - service recovered');
+            this.circuitState = 'CLOSED';
+            this.failureCount = 0;
+        }
+    }
+
+    private recordFailure(): void {
+        this.failureCount++;
+
+        if (this.failureCount >= this.FAILURE_THRESHOLD) {
+            this.logger.error(
+                `Circuit breaker opening - ${this.failureCount} consecutive failures`
+            );
+            this.circuitState = 'OPEN';
+            this.circuitOpenTime = Date.now();
+        }
+    }
+
+    /**
+     * Evicts the least recently used (LRU) cache entry
+     */
+    private evictLRUCacheEntry(): void {
         if (this.cache.size >= this.MAX_CACHE_SIZE) {
-            const oldestKey = this.cache.keys().next().value;
-            this.cache.delete(oldestKey);
+            let oldestKey: string | null = null;
+            let oldestTime = Infinity;
+
+            // Find the least recently accessed entry
+            for (const [key, entry] of this.cache.entries()) {
+                if (entry.lastAccessed < oldestTime) {
+                    oldestTime = entry.lastAccessed;
+                    oldestKey = key;
+                }
+            }
+
+            if (oldestKey) {
+                this.cache.delete(oldestKey);
+                this.logger.debug(`Evicted LRU cache entry: ${oldestKey}`);
+            }
         }
     }
 
@@ -72,8 +136,13 @@ export class AuthClientService {
         const cacheKey = path;
         const cached = this.cache.get(cacheKey);
         if (cached && cached.expires > Date.now()) {
+            // Update last accessed time for LRU
+            cached.lastAccessed = Date.now();
             return cached.data;
         }
+
+        // Check circuit breaker before making request
+        this.checkCircuitBreaker();
 
         try {
             const response = await firstValueFrom(
@@ -83,17 +152,24 @@ export class AuthClientService {
                 }),
             );
 
-            // Evict oldest entry if cache is full
-            this.evictOldestCacheEntry();
+            // Record success for circuit breaker
+            this.recordSuccess();
+
+            // Evict LRU entry if cache is full
+            this.evictLRUCacheEntry();
 
             // Cache for 5 minutes
             this.cache.set(cacheKey, {
                 data: response.data,
                 expires: Date.now() + this.CACHE_TTL,
+                lastAccessed: Date.now(),
             });
 
             return response.data;
         } catch (error) {
+            // Record failure for circuit breaker
+            this.recordFailure();
+
             if (error instanceof AxiosError) {
                 if (error.response?.status === 404) {
                     return null;
@@ -139,6 +215,9 @@ export class AuthClientService {
         requiredRoles?: string[],
         tournamentSeriesId?: string,
     ): Promise<{ allowed: boolean; reason?: string }> {
+        // Check circuit breaker before making request
+        this.checkCircuitBreaker();
+
         try {
             const response = await firstValueFrom(
                 this.httpService.post(
@@ -150,8 +229,15 @@ export class AuthClientService {
                     },
                 ),
             );
+
+            // Record success for circuit breaker
+            this.recordSuccess();
+
             return response.data;
         } catch (error) {
+            // Record failure for circuit breaker
+            this.recordFailure();
+
             if (error instanceof AxiosError) {
                 if (error.code === "ECONNREFUSED" || error.code === "ETIMEDOUT") {
                     this.logger.error(
