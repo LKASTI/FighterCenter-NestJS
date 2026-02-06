@@ -93,8 +93,8 @@ export class AuthClientService {
         if (this.circuitState === 'HALF_OPEN') {
             this.logger.log('Circuit breaker closing - service recovered');
             this.circuitState = 'CLOSED';
-            this.failureCount = 0;
         }
+        this.failureCount = 0;
     }
 
     private recordFailure(): void {
