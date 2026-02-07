@@ -25,24 +25,24 @@ export class SubscriptionService {
      * Create a checkout session for a user to subscribe
      */
     async createCheckoutSession(params: {
-        startggUserId: string;
+        userId: string;
         successUrl: string;
         cancelUrl: string;
         productType?: ProductType;
     }): Promise<{ sessionUrl: string; sessionId: string }> {
         const {
-            startggUserId,
+            userId,
             successUrl,
             cancelUrl,
             productType = ProductType.AD_FREE
         } = params;
 
         // Fetch user to get email (if available)
-        const user: AuthUser | null = await this.authClientService.getUserById(startggUserId);
+        const user: AuthUser | null = await this.authClientService.getUserById(userId);
 
         // Check if user already has this subscription
-        let subscription = await this.subscriptionRepository.findByStartggUserIdAndProductType(
-            startggUserId,
+        let subscription = await this.subscriptionRepository.findByUserIdAndProductType(
+            userId,
             productType,
         );
 
@@ -53,8 +53,8 @@ export class SubscriptionService {
             stripeCustomerId = subscription.stripeCustomerId;
         } else {
             // Check if user has subscriptions for other products (to reuse customer)
-            const existingSubscriptions = await this.subscriptionRepository.findAllByStartggUserId(
-                startggUserId,
+            const existingSubscriptions = await this.subscriptionRepository.findAllByUserId(
+                userId,
             );
 
             if (existingSubscriptions.length > 0) {
@@ -66,7 +66,7 @@ export class SubscriptionService {
                 const customer = await this.stripeService.createCustomer({
                     email: user?.email || undefined,
                     metadata: {
-                        startggUserId,
+                        userId,
                     },
                 });
                 stripeCustomerId = customer.id;
@@ -74,7 +74,7 @@ export class SubscriptionService {
 
             // Create subscription record with 'none' status
             subscription = await this.subscriptionRepository.createAndSave({
-                startggUserId,
+                userId,
                 stripeCustomerId,
                 productType,
                 stripePriceId: this.configService.get<string>("STRIPE_PRICE_ID"),
@@ -90,7 +90,7 @@ export class SubscriptionService {
             successUrl,
             cancelUrl,
             metadata: {
-                startggUserId,
+                userId,
                 subscriptionId: subscription.subscriptionId,
                 productType,
             },
@@ -106,11 +106,11 @@ export class SubscriptionService {
      * Get subscription status for a user
      */
     async getSubscriptionStatus(
-        startggUserId: string,
+        userId: string,
         productType: ProductType = ProductType.AD_FREE,
     ): Promise<Subscription | null> {
-        return await this.subscriptionRepository.findByStartggUserIdAndProductType(
-            startggUserId,
+        return await this.subscriptionRepository.findByUserIdAndProductType(
+            userId,
             productType,
         );
     }
@@ -119,11 +119,11 @@ export class SubscriptionService {
      * Check if user has active subscription access
      */
     async hasAccess(
-        startggUserId: string,
+        userId: string,
         productType: ProductType = ProductType.AD_FREE,
     ): Promise<boolean> {
-        const subscription = await this.subscriptionRepository.findByStartggUserIdAndProductType(
-            startggUserId,
+        const subscription = await this.subscriptionRepository.findByUserIdAndProductType(
+            userId,
             productType,
         );
 
@@ -144,11 +144,11 @@ export class SubscriptionService {
      * Cancel subscription at period end
      */
     async cancelSubscription(
-        startggUserId: string,
+        userId: string,
         productType: ProductType = ProductType.AD_FREE,
     ): Promise<Subscription> {
-        const subscription = await this.subscriptionRepository.findByStartggUserIdAndProductType(
-            startggUserId,
+        const subscription = await this.subscriptionRepository.findByUserIdAndProductType(
+            userId,
             productType,
         );
 
@@ -178,11 +178,11 @@ export class SubscriptionService {
      * Resume a canceled subscription
      */
     async resumeSubscription(
-        startggUserId: string,
+        userId: string,
         productType: ProductType = ProductType.AD_FREE,
     ): Promise<Subscription> {
-        const subscription = await this.subscriptionRepository.findByStartggUserIdAndProductType(
-            startggUserId,
+        const subscription = await this.subscriptionRepository.findByUserIdAndProductType(
+            userId,
             productType,
         );
 

@@ -6,8 +6,8 @@ export class SharedTechEntry {
   @PrimaryGeneratedColumn('uuid', { name: 'shared_tech_entry_id' })
   sharedTechEntryID: string;
 
-  @Column('uuid', { name: 'startgg_user_id' })
-  startggUserID: string;  // Foreign key to user table (managed by auth service)
+  @Column('uuid', { name: 'user_id' })
+  userId: string;  // Foreign key to user table (managed by auth service)
 
   @Column('text', { name: 'character_code', nullable: false })
   characterCode: string;

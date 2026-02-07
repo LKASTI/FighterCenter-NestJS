@@ -35,8 +35,8 @@ export class NoteBookController {
   @ApiNoteBookPost('Sync notes to cloud', SyncNotesResponseDTO)
   @HttpCode(HttpStatus.CREATED)
   async syncNotes(@Req() req, @Body() syncNotesDto: SyncNotesDTO) {
-    const startggUserID = validateUserSession(req);
-    return await this.noteBookService.syncNotes(startggUserID, syncNotesDto);
+    const userId = validateUserSession(req);
+    return await this.noteBookService.syncNotes(userId, syncNotesDto);
   }
 
   /**
@@ -46,8 +46,8 @@ export class NoteBookController {
   @Get('sync')
   @ApiNoteBookGet('Get notes from cloud', GetNotesResponseDTO)
   async getNotes(@Req() req) {
-    const startggUserID = validateUserSession(req);
-    return await this.noteBookService.getNotes(startggUserID);
+    const userId = validateUserSession(req);
+    return await this.noteBookService.getNotes(userId);
   }
 
   /**
@@ -57,8 +57,8 @@ export class NoteBookController {
   @Get('books')
   @ApiNoteBookGet('List all notebooks', ListNoteBooksResponseDTO)
   async listNoteBooks(@Req() req) {
-    const startggUserID = validateUserSession(req);
-    const books = await this.noteBookService.listNoteBooks(startggUserID);
+    const userId = validateUserSession(req);
+    const books = await this.noteBookService.listNoteBooks(userId);
     return { books };
   }
 
@@ -69,7 +69,7 @@ export class NoteBookController {
   @Delete('sync')
   @ApiNoteBookDelete('Delete notes from cloud', DeleteNotesResponseDTO)
   async deleteNotes(@Req() req) {
-    const startggUserID = validateUserSession(req);
-    return await this.noteBookService.deleteNotes(startggUserID);
+    const userId = validateUserSession(req);
+    return await this.noteBookService.deleteNotes(userId);
   }
 }

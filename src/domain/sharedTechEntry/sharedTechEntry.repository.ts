@@ -21,9 +21,9 @@ export class SharedTechEntryRepository extends Repository<SharedTechEntry> {
     });
   }
 
-  public async findByUser(startggUserID: string): Promise<SharedTechEntry[]> {
+  public async findByUser(userId: string): Promise<SharedTechEntry[]> {
     return this.sharedTechEntryRepository.find({
-      where: { startggUserID },
+      where: { userId },
       order: { createdAt: 'DESC' },
     });
   }

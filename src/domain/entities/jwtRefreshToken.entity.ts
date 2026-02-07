@@ -11,8 +11,8 @@ export class JwtRefreshToken {
     @Column("text", { name: "encrypted_token" })
     encryptedToken: string;  // Encrypted using EncryptionService
 
-    @Column("uuid", { name: "startgg_user_id" })
-    startggUserID: string;  // Foreign key to user table (managed by auth service)
+    @Column("uuid", { name: "user_id" })
+    userId: string;  // Foreign key to user table (managed by auth service)
 
     @Column("bigint", {
         name: "expires_at",

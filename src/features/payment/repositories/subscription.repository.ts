@@ -21,23 +21,23 @@ export class SubscriptionRepository extends Repository<Subscription> {
     /**
      * Find a specific subscription by user ID and product type
      */
-    public async findByStartggUserIdAndProductType(
-        startggUserId: string,
+    public async findByUserIdAndProductType(
+        userId: string,
         productType: ProductType,
     ): Promise<Subscription> {
         return await this.repository.findOne({
-            where: { startggUserId, productType },
+            where: { userId, productType },
         });
     }
 
     /**
      * Find all subscriptions for a user (across all product types)
      */
-    public async findAllByStartggUserId(
-        startggUserId: string,
+    public async findAllByUserId(
+        userId: string,
     ): Promise<Subscription[]> {
         return await this.repository.find({
-            where: { startggUserId },
+            where: { userId },
         });
     }
 

@@ -23,7 +23,7 @@ export class TechLibraryService {
    * Sync tech library for a specific character
    */
   public async syncTechLibrary(
-    startggUserID: string,
+    userId: string,
     characterCode: string,
     data: {
       characterName: string;
@@ -51,7 +51,7 @@ export class TechLibraryService {
     };
 
     let techLibrary = await this.techLibraryRepository.findByUserAndCharacter(
-      startggUserID,
+      userId,
       characterCode,
       'sf6',
     );
@@ -67,7 +67,7 @@ export class TechLibraryService {
     } else {
       // Create new
       techLibrary = await this.techLibraryRepository.createAndSave({
-        startggUserID,
+        userId,
         characterCode,
         brand: 'sf6',
         content: contentWithMetadata,
@@ -90,11 +90,11 @@ export class TechLibraryService {
    * Returns null if no library exists
    */
   public async getTechLibrary(
-    startggUserID: string,
+    userId: string,
     characterCode: string,
   ): Promise<any | null> {
     const techLibrary = await this.techLibraryRepository.findByUserAndCharacter(
-      startggUserID,
+      userId,
       characterCode,
       'sf6',
     );
@@ -109,8 +109,8 @@ export class TechLibraryService {
   /**
    * List all characters that user has tech data for (metadata only)
    */
-  public async listCharacters(startggUserID: string): Promise<any[]> {
-    const libraries = await this.techLibraryRepository.findByUser(startggUserID);
+  public async listCharacters(userId: string): Promise<any[]> {
+    const libraries = await this.techLibraryRepository.findByUser(userId);
 
     return libraries.map((lib) => ({
       id: lib.techLibraryID,
@@ -126,11 +126,11 @@ export class TechLibraryService {
    * Delete tech library for a specific character
    */
   public async deleteTechLibrary(
-    startggUserID: string,
+    userId: string,
     characterCode: string,
   ): Promise<{ success: boolean }> {
     await this.techLibraryRepository.delete({
-      startggUserID,
+      userId,
       characterCode,
     });
     return { success: true };
@@ -141,7 +141,7 @@ export class TechLibraryService {
    * Generates a unique share code and creates a shared entry
    */
   public async shareEntry(
-    startggUserID: string,
+    userId: string,
     data: {
       character_code: string;
       entry_type: string;
@@ -155,7 +155,7 @@ export class TechLibraryService {
     const title = data.entry_data.title || `${data.entry_type} for ${data.character_code}`;
 
     const sharedEntry = await this.sharedTechEntryRepository.createAndSave({
-      startggUserID,
+      userId,
       characterCode: data.character_code,
       entryType: data.entry_type,
       title,
@@ -184,7 +184,7 @@ export class TechLibraryService {
     }
 
     // Fetch user data from auth service
-    const user: AuthUser | null = await this.authClientService.getUserById(entry.startggUserID);
+    const user: AuthUser | null = await this.authClientService.getUserById(entry.userId);
 
     // Increment view count
     await this.sharedTechEntryRepository.incrementViewCount(shareCode);
@@ -198,7 +198,7 @@ export class TechLibraryService {
       viewCount: entry.viewCount + 1, // Return incremented count
       createdAt: entry.createdAt,
       author: {
-        startggUserId: entry.startggUserID,
+        userId: entry.userId,
         username: user?.startggUsername,
         gamertag: user?.startggGamerTag,
       },
@@ -208,8 +208,8 @@ export class TechLibraryService {
   /**
    * List user's shared entries
    */
-  public async listSharedEntries(startggUserID: string): Promise<any[]> {
-    const entries = await this.sharedTechEntryRepository.findByUser(startggUserID);
+  public async listSharedEntries(userId: string): Promise<any[]> {
+    const entries = await this.sharedTechEntryRepository.findByUser(userId);
 
     const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
 
@@ -230,12 +230,12 @@ export class TechLibraryService {
    * Delete a shared entry
    */
   public async deleteSharedEntry(
-    startggUserID: string,
+    userId: string,
     sharedEntryID: string,
   ): Promise<{ success: boolean }> {
     const result = await this.sharedTechEntryRepository.delete({
       sharedTechEntryID: sharedEntryID,
-      startggUserID, // Ensure user owns the entry
+      userId, // Ensure user owns the entry
     });
 
     if (result.affected === 0) {

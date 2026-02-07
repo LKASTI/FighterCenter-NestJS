@@ -22,7 +22,7 @@ export class JwtRefreshTokenService {
      * Similar to how Start.gg tokens are stored
      */
     async createRefreshToken(
-        startggUserID: string,
+        userId: string,
         userAgent?: string,
     ): Promise<{ plainToken: string; dbToken: JwtRefreshToken }> {
         // Generate random token (similar to Start.gg OAuth tokens)
@@ -46,7 +46,7 @@ export class JwtRefreshTokenService {
         const refreshToken = this.jwtRefreshTokenRepo.create({
             tokenHash,
             encryptedToken,
-            startggUserID,
+            userId,
             expiresAt,
             userAgent,
         });
@@ -129,9 +129,9 @@ export class JwtRefreshTokenService {
     /**
      * Revoke all tokens for a user (logout all devices)
      */
-    async revokeAllUserTokens(startggUserID: string): Promise<void> {
+    async revokeAllUserTokens(userId: string): Promise<void> {
         await this.jwtRefreshTokenRepo.update(
-            { startggUserID, isRevoked: false },
+            { userId, isRevoked: false },
             { isRevoked: true }
         );
     }

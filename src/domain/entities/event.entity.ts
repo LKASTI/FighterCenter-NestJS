@@ -29,7 +29,7 @@ export class Event {
     @Column("timestamp", { name: "last_updated_tournament_date"})
     lastUpdatedTournamentDate: Date;
 
-    // startgg_user_id that added/deleted a tournament
+    // user_id that added/deleted a tournament
     @Column("uuid", { name: "updated_by"})
     updatedBy: string;
 

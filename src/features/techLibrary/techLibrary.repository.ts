@@ -14,20 +14,20 @@ export class TechLibraryRepository extends Repository<TechLibrary> {
     );
   }
 
-  public async findByUser(startggUserID: string): Promise<TechLibrary[]> {
+  public async findByUser(userId: string): Promise<TechLibrary[]> {
     return this.techLibraryRepository.find({
-      where: { startggUserID },
+      where: { userId },
       order: { lastSyncedAt: 'DESC' },
     });
   }
 
   public async findByUserAndCharacter(
-    startggUserID: string,
+    userId: string,
     characterCode: string,
     brand: string = 'sf6',
   ): Promise<TechLibrary | null> {
     return this.techLibraryRepository.findOne({
-      where: { startggUserID, characterCode, brand },
+      where: { userId, characterCode, brand },
     });
   }
 

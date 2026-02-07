@@ -43,7 +43,7 @@ export class SubscriptionController {
         }
 
         return await this.subscriptionService.createCheckoutSession({
-            startggUserId: user.userId,
+            userId: user.userId,
             successUrl: dto.successUrl,
             cancelUrl: dto.cancelUrl,
             productType: dto.productType,

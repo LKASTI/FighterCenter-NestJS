@@ -113,10 +113,10 @@ export class GetTechLibraryResponseDTO {
 
 export class SharedTechEntryAuthorDTO {
   @ApiProperty({
-    description: 'Start.gg user ID',
+    description: 'User ID',
     example: '550e8400-e29b-41d4-a716-446655440000',
   })
-  startggUserId: string;
+  userId: string;
 
   @ApiProperty({
     description: 'Start.gg username',

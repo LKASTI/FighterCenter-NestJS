@@ -14,20 +14,20 @@ export class NoteBookRepository extends Repository<NoteBook> {
     );
   }
 
-  public async findByUser(startggUserID: string): Promise<NoteBook[]> {
+  public async findByUser(userId: string): Promise<NoteBook[]> {
     return this.noteBookRepository.find({
-      where: { startggUserID },
+      where: { userId },
       order: { updatedAt: 'DESC' },
     });
   }
 
   public async findByUserAndTitle(
-    startggUserID: string,
+    userId: string,
     title: string,
     brand: string = 'sf6',
   ): Promise<NoteBook | null> {
     return this.noteBookRepository.findOne({
-      where: { startggUserID, title, brand },
+      where: { userId, title, brand },
     });
   }
 

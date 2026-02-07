@@ -11,7 +11,7 @@ import { v4 as uuid } from "uuid";
 import { ProductType } from "../interfaces/productTypes.enum";
 
 @Entity("subscription")
-@Index(["startggUserId", "productType"], { unique: true })
+@Index(["userId", "productType"], { unique: true })
 export class Subscription {
     @PrimaryGeneratedColumn("uuid", { name: "subscription_id" })
     subscriptionId: string;
@@ -21,8 +21,8 @@ export class Subscription {
         this.subscriptionId = uuid();
     }
 
-    @Column("uuid", { name: "startgg_user_id" })
-    startggUserId: string;  // Foreign key to user table (managed by auth service)
+    @Column("uuid", { name: "user_id" })
+    userId: string;  // Foreign key to user table (managed by auth service)
 
     @Column("varchar", { name: "product_type", default: ProductType.AD_FREE })
     productType: ProductType;

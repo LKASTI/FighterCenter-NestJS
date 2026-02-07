@@ -6,8 +6,8 @@ export class NoteBook {
   @PrimaryGeneratedColumn('uuid', { name: 'note_book_id' })
   noteBookID: string;
 
-  @Column('uuid', { name: 'startgg_user_id' })
-  startggUserID: string;  // Foreign key to user table (managed by auth service)
+  @Column('uuid', { name: 'user_id' })
+  userId: string;  // Foreign key to user table (managed by auth service)
 
   @Column('text', { name: 'title', nullable: false })
   title: string;

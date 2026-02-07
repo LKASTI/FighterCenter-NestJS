@@ -48,8 +48,8 @@ export class TechLibraryController {
   @ApiSharedTechPost('Share an individual tech entry', ShareTechEntryResponseDTO)
   @HttpCode(HttpStatus.CREATED)
   async shareEntry(@Req() req, @Body() shareEntryDto: ShareTechEntryDTO) {
-    const startggUserID = validateUserSession(req);
-    return await this.techLibraryService.shareEntry(startggUserID, shareEntryDto);
+    const userId = validateUserSession(req);
+    return await this.techLibraryService.shareEntry(userId, shareEntryDto);
   }
 
   /**
@@ -59,8 +59,8 @@ export class TechLibraryController {
   @Get('shared')
   @ApiSharedTechGet("List user's shared tech entries", [SharedTechEntryListItemDTO])
   async listSharedEntries(@Req() req) {
-    const startggUserID = validateUserSession(req);
-    return await this.techLibraryService.listSharedEntries(startggUserID);
+    const userId = validateUserSession(req);
+    return await this.techLibraryService.listSharedEntries(userId);
   }
 
   /**
@@ -80,8 +80,8 @@ export class TechLibraryController {
   @Delete('shared/:id')
   @ApiSharedTechDelete('Delete a shared tech entry', DeleteSharedEntryResponseDTO)
   async deleteSharedEntry(@Req() req, @Param('id') id: string) {
-    const startggUserID = validateUserSession(req);
-    return await this.techLibraryService.deleteSharedEntry(startggUserID, id);
+    const userId = validateUserSession(req);
+    return await this.techLibraryService.deleteSharedEntry(userId, id);
   }
 
   // ==========================================
@@ -95,8 +95,8 @@ export class TechLibraryController {
   @Get()
   @ApiTechLibraryGet('List all characters with tech data', ListCharactersResponseDTO)
   async listCharacters(@Req() req) {
-    const startggUserID = validateUserSession(req);
-    const characters = await this.techLibraryService.listCharacters(startggUserID);
+    const userId = validateUserSession(req);
+    const characters = await this.techLibraryService.listCharacters(userId);
     return { characters };
   }
 
@@ -112,9 +112,9 @@ export class TechLibraryController {
     @Param('character') character: string,
     @Body() syncTechDto: SyncTechLibraryDTO,
   ) {
-    const startggUserID = validateUserSession(req);
+    const userId = validateUserSession(req);
     return await this.techLibraryService.syncTechLibrary(
-      startggUserID,
+      userId,
       character,
       syncTechDto,
     );
@@ -127,8 +127,8 @@ export class TechLibraryController {
   @Get(':character')
   @ApiTechLibraryGet('Get tech library for a character', GetTechLibraryResponseDTO)
   async getTechLibrary(@Req() req, @Param('character') character: string) {
-    const startggUserID = validateUserSession(req);
-    return await this.techLibraryService.getTechLibrary(startggUserID, character);
+    const userId = validateUserSession(req);
+    return await this.techLibraryService.getTechLibrary(userId, character);
   }
 
   /**
@@ -138,7 +138,7 @@ export class TechLibraryController {
   @Delete(':character')
   @ApiTechLibraryDelete('Delete tech library for a character', DeleteTechLibraryResponseDTO)
   async deleteTechLibrary(@Req() req, @Param('character') character: string) {
-    const startggUserID = validateUserSession(req);
-    return await this.techLibraryService.deleteTechLibrary(startggUserID, character);
+    const userId = validateUserSession(req);
+    return await this.techLibraryService.deleteTechLibrary(userId, character);
   }
 }

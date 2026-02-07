@@ -93,7 +93,7 @@ export class TournamentDataParserController {
         @Param("tournamentId", ParseIntPipe) tournamentId: number,
         @Req() req: any
     ) {
-        const updatedBy = req.user?.startggUserID;
+        const updatedBy = req.user?.userId;
         return await this.tournamentManagerService.deleteTournamentData(tournamentSeriesId, tournamentId, updatedBy);
     }
 

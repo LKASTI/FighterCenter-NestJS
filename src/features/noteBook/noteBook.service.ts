@@ -14,13 +14,13 @@ export class NoteBookService {
    * Sync notes for a user - creates or updates existing notes
    */
   public async syncNotes(
-    startggUserID: string,
+    userId: string,
     data: { books: any[]; notes: { [key: string]: string } },
   ): Promise<{ success: boolean; noteBookID: string; syncedAt: Date }> {
     // For now, we'll store all notes in a single record per user
     // Title will be "My Notes" by default
     let noteBook = await this.noteBookRepository.findByUserAndTitle(
-      startggUserID,
+      userId,
       'My Notes',
       'sf6',
     );
@@ -33,7 +33,7 @@ export class NoteBookService {
     } else {
       // Create new
       noteBook = await this.noteBookRepository.createAndSave({
-        startggUserID,
+        userId,
         title: 'My Notes',
         brand: 'sf6',
         content: data,
@@ -52,14 +52,14 @@ export class NoteBookService {
    * Returns content with updatedAt timestamp for sync comparison
    */
   public async getNotes(
-    startggUserID: string,
+    userId: string,
   ): Promise<{
     books: any[];
     notes: { [key: string]: string };
     updatedAt: Date;
   } | null> {
     const noteBook = await this.noteBookRepository.findByUserAndTitle(
-      startggUserID,
+      userId,
       'My Notes',
       'sf6',
     );
@@ -78,8 +78,8 @@ export class NoteBookService {
   /**
    * List all note books for a user (metadata only)
    */
-  public async listNoteBooks(startggUserID: string): Promise<any[]> {
-    const noteBooks = await this.noteBookRepository.findByUser(startggUserID);
+  public async listNoteBooks(userId: string): Promise<any[]> {
+    const noteBooks = await this.noteBookRepository.findByUser(userId);
 
     return noteBooks.map((nb) => ({
       id: nb.noteBookID,
@@ -97,8 +97,8 @@ export class NoteBookService {
   /**
    * Delete notes for a user
    */
-  public async deleteNotes(startggUserID: string): Promise<{ success: boolean }> {
-    await this.noteBookRepository.delete({ startggUserID });
+  public async deleteNotes(userId: string): Promise<{ success: boolean }> {
+    await this.noteBookRepository.delete({ userId });
     return { success: true };
   }
 }
