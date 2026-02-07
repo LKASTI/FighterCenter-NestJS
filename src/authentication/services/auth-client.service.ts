@@ -131,38 +131,55 @@ export class AuthClientService {
         }
     }
 
-    private async callAuthService<T>(path: string): Promise<T | null> {
-        const cacheKey = path;
-        const cached = this.cache.get(cacheKey);
-        if (cached && cached.expires > Date.now()) {
-            // Update last accessed time for LRU
-            cached.lastAccessed = Date.now();
-            return cached.data;
+    private async callAuthService<T>(
+        path: string,
+        options?: { method?: "POST"; body?: any },
+    ): Promise<T | null> {
+        const isPost = options?.method === "POST";
+
+        // Only cache GET requests
+        if (!isPost) {
+            const cached = this.cache.get(path);
+            if (cached && cached.expires > Date.now()) {
+                cached.lastAccessed = Date.now();
+                return cached.data;
+            }
         }
 
         // Check circuit breaker before making request
         this.checkCircuitBreaker();
 
         try {
+            const requestConfig = {
+                headers: { "x-api-key": this.apiKey },
+                timeout: 5000,
+            };
+
             const response = await firstValueFrom(
-                this.httpService.get(`${this.authServiceUrl}${path}`, {
-                    headers: { "x-api-key": this.apiKey },
-                    timeout: 5000,
-                }),
+                isPost
+                    ? this.httpService.post(
+                          `${this.authServiceUrl}${path}`,
+                          options.body,
+                          requestConfig,
+                      )
+                    : this.httpService.get(
+                          `${this.authServiceUrl}${path}`,
+                          requestConfig,
+                      ),
             );
 
             // Record success for circuit breaker
             this.recordSuccess();
 
-            // Evict LRU entry if cache is full
-            this.evictLRUCacheEntry();
-
-            // Cache for 5 minutes
-            this.cache.set(cacheKey, {
-                data: response.data,
-                expires: Date.now() + this.CACHE_TTL,
-                lastAccessed: Date.now(),
-            });
+            // Cache GET responses only
+            if (!isPost) {
+                this.evictLRUCacheEntry();
+                this.cache.set(path, {
+                    data: response.data,
+                    expires: Date.now() + this.CACHE_TTL,
+                    lastAccessed: Date.now(),
+                });
+            }
 
             return response.data;
         } catch (error) {
@@ -217,42 +234,10 @@ export class AuthClientService {
         requiredRoles?: string[],
         tournamentSeriesId?: string,
     ): Promise<{ allowed: boolean; reason?: string }> {
-        // Check circuit breaker before making request
-        this.checkCircuitBreaker();
-
-        try {
-            const response = await firstValueFrom(
-                this.httpService.post(
-                    `${this.authServiceUrl}/api/users/validate-permissions`,
-                    { userId, requiredRoles, tournamentSeriesId },
-                    {
-                        headers: { "x-api-key": this.apiKey },
-                        timeout: 5000,
-                    },
-                ),
-            );
-
-            // Record success for circuit breaker
-            this.recordSuccess();
-
-            return response.data;
-        } catch (error) {
-            // Record failure for circuit breaker
-            this.recordFailure();
-
-            if (error instanceof AxiosError) {
-                if (error.code === "ECONNREFUSED" || error.code === "ETIMEDOUT") {
-                    this.logger.error(
-                        `Auth service unavailable: ${error.message}`,
-                    );
-                    throw new ServiceUnavailableException(
-                        "Authentication service is currently unavailable",
-                    );
-                }
-            }
-            this.logger.error(`Error validating permissions: ${error}`);
-            throw error;
-        }
+        return this.callAuthService("/api/users/validate-permissions", {
+            method: "POST",
+            body: { userId, requiredRoles, tournamentSeriesId },
+        });
     }
 
     clearCache() {
