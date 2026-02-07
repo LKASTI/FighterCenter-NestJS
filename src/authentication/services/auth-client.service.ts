@@ -2,7 +2,6 @@ import {
     Injectable,
     Logger,
     ServiceUnavailableException,
-    NotFoundException,
 } from "@nestjs/common";
 import { HttpService } from "@nestjs/axios";
 import { ConfigService } from "@nestjs/config";
@@ -167,13 +166,16 @@ export class AuthClientService {
 
             return response.data;
         } catch (error) {
-            // Record failure for circuit breaker
+            // 404 is a normal "not found" response, not a service failure
+            if (error instanceof AxiosError && error.response?.status === 404) {
+                this.recordSuccess();
+                return null;
+            }
+
+            // Record failure for circuit breaker (actual errors only)
             this.recordFailure();
 
             if (error instanceof AxiosError) {
-                if (error.response?.status === 404) {
-                    return null;
-                }
                 if (error.code === "ECONNREFUSED" || error.code === "ETIMEDOUT") {
                     this.logger.error(
                         `Auth service unavailable: ${error.message}`,
@@ -195,19 +197,19 @@ export class AuthClientService {
     }
 
     async getUserById(userId: string): Promise<AuthUser | null> {
-        return this.callAuthService(`/api/users/${userId}`);
+        return this.callAuthService(`/api/users/${encodeURIComponent(userId)}`);
     }
 
     async getUserByStartggId(startggId: string): Promise<AuthUser | null> {
-        return this.callAuthService(`/api/users/by-startgg/${startggId}`);
+        return this.callAuthService(`/api/users/by-startgg/${encodeURIComponent(startggId)}`);
     }
 
     async getUserByGoogleId(googleId: string): Promise<AuthUser | null> {
-        return this.callAuthService(`/api/users/by-google/${googleId}`);
+        return this.callAuthService(`/api/users/by-google/${encodeURIComponent(googleId)}`);
     }
 
     async getUserByEmail(email: string): Promise<AuthUser | null> {
-        return this.callAuthService(`/api/users/by-email/${email}`);
+        return this.callAuthService(`/api/users/by-email/${encodeURIComponent(email)}`);
     }
 
     async validatePermissions(
