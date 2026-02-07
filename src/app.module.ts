@@ -42,9 +42,6 @@ import { PaymentModule } from "@features/payment/payment.module";
             isGlobal: true, // makes config available throughout the app
             envFilePath: '.env',
             validationSchema: Joi.object({
-                STARTGG_CLIENT_ID: Joi.string().required(),
-                STARTGG_CLIENT_SECRET: Joi.string().required(),
-                STARTGG_CALLBACK_URL: Joi.string().uri().required(),
                 JWT_SECRET: Joi.string().min(32).required(),
                 FRONTEND_URL: Joi.string().uri().required(),
                 NODE_ENV: Joi.string()
