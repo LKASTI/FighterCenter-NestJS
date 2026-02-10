@@ -1,6 +1,5 @@
 import { ApiCookieAuth, ApiQuery } from "@nestjs/swagger";
-import { createApiDecorator, StandardResponses } from "@common/decorators";
-import { JwtAuthGuard } from "@authentication/guards/jwtAuth.guard";
+import { createApiDecorator, StandardResponses, JwtAuthGuard } from "@fgclegends/fightercenter-shared-nestjs";
 
 /**
  * Composed decorator for subscription POST endpoints (checkout, cancel, resume)

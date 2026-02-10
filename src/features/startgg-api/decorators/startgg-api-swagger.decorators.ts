@@ -1,6 +1,6 @@
 import { ApiQuery, ApiParam } from "@nestjs/swagger";
 import { FeatureFlagGuard } from "@authentication/guards/feature-flag.guard";
-import { createApiDecorator, StandardResponses } from "@common/decorators";
+import { createApiDecorator, StandardResponses } from "@fgclegends/fightercenter-shared-nestjs";
 
 const startggResponses = (responseType?: any) => [
     StandardResponses.success("Success", responseType),

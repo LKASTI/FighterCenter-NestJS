@@ -5,7 +5,7 @@ import {
     UnauthorizedException,
 } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
-import { AuthClientService, AuthUser } from "../services/auth-client.service";
+import { AuthClientService, AuthUser } from "@fgclegends/fightercenter-shared-nestjs";
 
 @Injectable()
 export abstract class BaseAuthGuard implements CanActivate {

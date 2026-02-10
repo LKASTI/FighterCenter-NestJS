@@ -21,7 +21,7 @@ import {
   ApiNoteBookGet,
   ApiNoteBookDelete,
 } from './decorators/note-book-swagger.decorators';
-import { validateUserSession } from '@authentication/utils';
+import { validateUserSession } from "@fgclegends/fightercenter-shared-nestjs";
 
 @Controller('notes')
 export class NoteBookController {

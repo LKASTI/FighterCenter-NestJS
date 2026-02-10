@@ -1,5 +1,5 @@
 import { ApiParam } from "@nestjs/swagger";
-import { createApiDecorator, StandardResponses } from "@common/decorators";
+import { createApiDecorator, StandardResponses } from "@fgclegends/fightercenter-shared-nestjs";
 
 export function ApiTournamentSeriesGet(
     summary: string,

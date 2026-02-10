@@ -1,5 +1,5 @@
 import { FeatureFlagGuard } from "@authentication/guards/feature-flag.guard";
-import { createApiDecorator, StandardResponses } from "@common/decorators";
+import { createApiDecorator, StandardResponses } from "@fgclegends/fightercenter-shared-nestjs";
 
 export function ApiTournamentMatchPost(summary: string, responseType?: any, isDisabled: boolean = false) {
     return createApiDecorator({

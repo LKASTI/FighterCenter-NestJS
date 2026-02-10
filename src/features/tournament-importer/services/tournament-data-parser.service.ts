@@ -46,11 +46,7 @@ import { Set as StartGGSet, SetConnection } from "@features/startgg-api"
 import {
     PlayerSeriesPerformanceAggService
 } from "@domain/playerSeriesPerformanceAgg/playerSeriesPerformanceAgg.service";
-import {
-    AuthClientService,
-    AuthUser,
-} from "@authentication/services/auth-client.service";
-import { TaggedCacheService } from "@common/cache/tagged-cache.service";
+import { AuthClientService, AuthUser, TaggedCacheService } from "@fgclegends/fightercenter-shared-nestjs";
 import { CacheTags } from "@common/cache/cache-keys.util";
 import { TournamentImportContext } from "../types/tournament-import-context";
 import { TournamentRollbackService } from "./tournament-rollback.service";

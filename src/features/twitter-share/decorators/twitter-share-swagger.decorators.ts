@@ -1,6 +1,6 @@
 import { ApiConsumes, ApiBody } from "@nestjs/swagger";
 import { Throttle } from "@nestjs/throttler";
-import { createApiDecorator, StandardResponses } from "@common/decorators";
+import { createApiDecorator, StandardResponses } from "@fgclegends/fightercenter-shared-nestjs";
 
 export function ApiTwitterShareGet(summary: string, responseType?: any) {
     return createApiDecorator({

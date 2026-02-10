@@ -1,7 +1,7 @@
 import { Module } from '@nestjs/common';
 import { CacheModule } from '@nestjs/cache-manager';
 import { FileNamingService } from './services/file-naming.service';
-import { TaggedCacheService } from './cache/tagged-cache.service';
+import { TaggedCacheService } from "@fgclegends/fightercenter-shared-nestjs";
 
 @Module({
   imports: [

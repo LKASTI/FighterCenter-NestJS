@@ -4,10 +4,7 @@ import { TechLibrary } from 'src/domain/entities/techLibrary.entity';
 import { TechLibraryRepository } from './techLibrary.repository';
 import { SharedTechEntry } from 'src/domain/entities/sharedTechEntry.entity';
 import { SharedTechEntryRepository } from 'src/domain/sharedTechEntry/sharedTechEntry.repository';
-import {
-  AuthClientService,
-  AuthUser,
-} from '@authentication/services/auth-client.service';
+import { AuthClientService, AuthUser } from "@fgclegends/fightercenter-shared-nestjs";
 
 @Injectable()
 export class TechLibraryService {

@@ -7,9 +7,8 @@ import {
 } from "../dtos/request";
 import { SFSixRankedCharacterRanking } from "@entities/sfsixRankedCharacterRanking.entity";
 import { SfsixRankedCharacterRankingRepository } from "../repositories/sfsix-ranked-character-ranking.repository";
-import { TaggedCacheService } from "@common/cache/tagged-cache.service";
+import { TaggedCacheService, hashQuery } from "@fgclegends/fightercenter-shared-nestjs";
 import { CacheKeys, CacheTags } from "@common/cache/cache-keys.util";
-import { hashQuery } from "@common/cache/query-hash.util";
 
 @Injectable()
 export class SfsixRankedCharacterRankingService {

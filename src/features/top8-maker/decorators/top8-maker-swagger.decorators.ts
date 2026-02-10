@@ -1,6 +1,6 @@
 import { ApiSecurity, ApiQuery } from "@nestjs/swagger";
 import { SeriesAuthGuard } from "@authentication/guards/seriesAuth.guard";
-import { createApiDecorator, StandardResponses } from "@common/decorators";
+import { createApiDecorator, StandardResponses } from "@fgclegends/fightercenter-shared-nestjs";
 
 export function ApiTop8MakerGet(summary: string, responseType?: any) {
     return createApiDecorator({

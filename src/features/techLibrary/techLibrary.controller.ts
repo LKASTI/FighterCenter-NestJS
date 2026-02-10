@@ -30,7 +30,7 @@ import {
   ApiSharedTechPublicGet,
   ApiSharedTechDelete,
 } from './decorators/tech-library-swagger.decorators';
-import { validateUserSession } from '@authentication/utils';
+import { validateUserSession } from "@fgclegends/fightercenter-shared-nestjs";
 
 @Controller('tech')
 export class TechLibraryController {

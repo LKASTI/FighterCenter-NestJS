@@ -5,7 +5,7 @@ import {
 } from "@nestjs/common";
 import { JwtService } from "@nestjs/jwt";
 import { Reflector } from "@nestjs/core";
-import { AuthClientService, AuthUser } from "../services/auth-client.service";
+import { AuthClientService, AuthUser } from "@fgclegends/fightercenter-shared-nestjs";
 import { BaseAuthGuard } from "./baseAuth.guard";
 
 @Injectable()

@@ -1,8 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { InjectRepository } from "@nestjs/typeorm";
-import { TaggedCacheService } from "@common/cache/tagged-cache.service";
+import { TaggedCacheService, hashQuery } from "@fgclegends/fightercenter-shared-nestjs";
 import { CacheKeys, CacheTags } from "@common/cache/cache-keys.util";
-import { hashQuery } from "@common/cache/query-hash.util";
 import { TournamentSetRepository } from "../repositories/tournament-set.repository";
 import { CreateTournamentSetDto } from "../dtos/request/create-tournament-set.dto";
 import { UpdateTournamentSetDto } from "../dtos/request/update-tournament-set.dto";

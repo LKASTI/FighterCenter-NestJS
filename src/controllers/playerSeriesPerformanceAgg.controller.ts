@@ -3,7 +3,7 @@ import {
     PlayerSeriesPerformanceAggService
 } from "../domain/playerSeriesPerformanceAgg/playerSeriesPerformanceAgg.service";
 import { FeatureFlagGuard } from "../authentication/guards/feature-flag.guard";
-import { DisableEndpoint } from "../decorators/endpoint-status-toggles";
+import { DisableEndpoint } from "@fgclegends/fightercenter-shared-nestjs";
 import { Roles } from "../decorators/roles.decorator";
 import { SeriesAuthGuard } from "../authentication/guards/seriesAuth.guard";
 

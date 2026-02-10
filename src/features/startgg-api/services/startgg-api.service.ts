@@ -5,7 +5,7 @@ import { GetEventQuery, GetEventTop8PlayerDataQuery, GetTournamentSetsQuery } fr
 import { REQUEST } from "@nestjs/core";
 import { Request } from "express";
 import { EncryptionService } from "@authentication/encryption/encryption.service";
-import { AuthUser } from "@authentication/services/auth-client.service";
+import { AuthUser } from "@fgclegends/fightercenter-shared-nestjs";
 
 @Injectable({ scope: Scope.REQUEST })
 export class StartggApiService {

@@ -5,10 +5,7 @@ import { SubscriptionRepository } from "../repositories/subscription.repository"
 import { StripeService } from "./stripe.service";
 import { Subscription } from "../entities/subscription.entity";
 import { ProductType } from "../interfaces/productTypes.enum";
-import {
-    AuthClientService,
-    AuthUser,
-} from "../../../authentication/services/auth-client.service";
+import { AuthClientService, AuthUser } from "@fgclegends/fightercenter-shared-nestjs";
 import Stripe from "stripe";
 
 @Injectable()

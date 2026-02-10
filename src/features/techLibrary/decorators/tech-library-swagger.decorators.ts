@@ -1,6 +1,5 @@
 import { ApiCookieAuth, ApiParam } from "@nestjs/swagger";
-import { createApiDecorator, StandardResponses } from "@common/decorators";
-import { JwtAuthGuard } from "@authentication/guards/jwtAuth.guard";
+import { createApiDecorator, StandardResponses, JwtAuthGuard } from "@fgclegends/fightercenter-shared-nestjs";
 
 /**
  * Composed decorator for tech library POST endpoints (sync/upload)

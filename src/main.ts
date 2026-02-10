@@ -6,7 +6,7 @@ import helmet from "helmet";
 import "reflect-metadata";
 import { BasicAuth } from "@authentication/basicAuth";
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
-import { GlobalExceptionFilter } from "@common/filters/global-exception.filter";
+import { GlobalExceptionFilter } from "@fgclegends/fightercenter-shared-nestjs";
 
 async function bootstrap() {
     const logger = new Logger('Bootstrap');

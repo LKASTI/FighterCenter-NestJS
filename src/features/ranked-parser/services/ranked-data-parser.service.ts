@@ -2,7 +2,7 @@ import { Injectable, NotFoundException, Logger } from "@nestjs/common";
 import { SFSixRankedProfileService } from "@domain/sfsixRankedProfile";
 import { SfsixRankedCharacterRankingService } from "@domain/sfsixRankedCharacterRanking/services/sfsix-ranked-character-ranking.service";
 import { SFSixRankedCharacterService } from "@domain/sfsixRankedCharacter";
-import { TaggedCacheService } from "@common/cache/tagged-cache.service";
+import { TaggedCacheService } from "@fgclegends/fightercenter-shared-nestjs";
 import { CacheTags } from "@common/cache/cache-keys.util";
 import * as path from "path";
 import * as fs from "fs/promises";

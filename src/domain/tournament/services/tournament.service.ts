@@ -5,9 +5,8 @@ import { TournamentRepository } from "../repositories/tournament.repository";
 import { CreateTournamentDto } from "../dtos/request/create-tournament.dto";
 import { UpdateTournamentDto } from "../dtos/request/update-tournament.dto";
 import { FindTournamentsQueryDto } from "../dtos/request/find-tournaments-query.dto";
-import { TaggedCacheService } from "@common/cache/tagged-cache.service";
+import { TaggedCacheService, hashQuery } from "@fgclegends/fightercenter-shared-nestjs";
 import { CacheKeys, CacheTags } from "@common/cache/cache-keys.util";
-import { hashQuery } from "@common/cache/query-hash.util";
 
 @Injectable()
 export class TournamentService {

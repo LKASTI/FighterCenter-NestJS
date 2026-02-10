@@ -2,9 +2,8 @@ import { Inject, Injectable, Logger } from "@nestjs/common";
 import { FindLatestTournamentsQueryDto } from "../dtos/request/find-latest-tournaments-query.dto";
 import { TournamentSeriesPlayerDto } from "../dtos/response/tournament-series-player.response.dto";
 import { TournamentSeriesRepository } from "../repositories/tournament-series.repository";
-import { TaggedCacheService } from "@common/cache/tagged-cache.service";
+import { TaggedCacheService, hashQuery } from "@fgclegends/fightercenter-shared-nestjs";
 import { CacheKeys, CacheTags } from "@common/cache/cache-keys.util";
-import { hashQuery } from "@common/cache/query-hash.util";
 import { Tournament } from "@domain/entities";
 import { TournamentService } from "@domain/tournament";
 

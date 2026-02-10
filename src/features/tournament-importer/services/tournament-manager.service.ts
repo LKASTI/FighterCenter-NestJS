@@ -12,7 +12,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { PlayerTournamentRunRepository } from "@domain/playerTournamentRun/repositories/player-tournament-run.repository";
 import { EventRepository } from "@domain/event";
 
-import { TaggedCacheService } from "@common/cache/tagged-cache.service";
+import { TaggedCacheService } from "@fgclegends/fightercenter-shared-nestjs";
 import { CacheTags } from "@common/cache/cache-keys.util";
 
 @Injectable()

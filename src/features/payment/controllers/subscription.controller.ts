@@ -13,7 +13,7 @@ import { SubscriptionService } from "../services/subscription.service";
 import { CreateCheckoutSessionDTO } from "../dtos/createCheckoutSession.dto";
 import { SubscriptionStatusDTO } from "../dtos/subscriptionStatus.dto";
 import { ProductType } from "../interfaces/productTypes.enum";
-import { AuthUser } from "../../../authentication/services/auth-client.service";
+import { AuthUser } from "@fgclegends/fightercenter-shared-nestjs";
 import {
     ApiSubscriptionPost,
     ApiSubscriptionGet,
