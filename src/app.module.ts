@@ -95,10 +95,12 @@ import { PaymentModule } from "@features/payment/payment.module";
                     rejectUnauthorized: false,
                 } : false,
                 extra: {
-                    max: 20,                    // Maximum pool size
-                    min: 5,                     // Minimum pool size
-                    idleTimeoutMillis: 30000,   // Close idle connections after 30s
-                    connectionTimeoutMillis: 2000, // Connection acquisition timeout
+                    max: 20,                       // Maximum pool size
+                    min: 2,                        // Minimum pool size (lower = less pressure on reconnect storms)
+                    idleTimeoutMillis: 30000,      // Close idle connections after 30s
+                    connectionTimeoutMillis: 10000, // Connection acquisition timeout (10s for cloud networking)
+                    keepAlive: true,               // Detect dead connections via TCP keep-alive
+                    keepAliveInitialDelayMillis: 10000, // Start keep-alive probes after 10s idle
                 },
             }),
             inject: [ConfigService],
