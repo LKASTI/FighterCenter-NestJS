@@ -1,4 +1,5 @@
 import { Injectable, Logger } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { Cron } from "@nestjs/schedule";
 import {
     BucklerConfigService,
@@ -20,6 +21,7 @@ export class RankedScraperService {
     private readonly logger = new Logger(RankedScraperService.name);
 
     constructor(
+        private readonly appConfigService: ConfigService,
         private readonly configService: BucklerConfigService,
         private readonly httpService: BucklerHttpService,
         private readonly notificationService: BucklerNotificationService,
@@ -36,7 +38,30 @@ export class RankedScraperService {
      * 2. Only after all pages succeed, import to DB via RankedDataParserService
      * 3. If cookies expire mid-scrape, abort and discard buffer (DB untouched)
      */
+    /**
+     * Daily ranked data scraper cron job.
+     * Runs at 11:00 PM UTC. Temporarily disabled in production —
+     * use POST /ranked-scraper/trigger-scrape for manual runs.
+     */
     @Cron("0 23 * * *")
+    async handleCron(): Promise<void> {
+        const env = this.appConfigService.get<string>("NODE_ENV");
+        if (env === "production") {
+            this.logger.log("Ranked scraper cron skipped in production — use manual trigger");
+            return;
+        }
+
+        await this.scrapeRankedData();
+    }
+
+    /**
+     * Core scrape logic. Called by the cron job and the manual trigger endpoint.
+     *
+     * Buffer-then-save strategy:
+     * 1. Scrape all 100 pages into memory (no DB writes)
+     * 2. Only after all pages succeed, import to DB via RankedDataParserService
+     * 3. If cookies expire mid-scrape, abort and discard buffer (DB untouched)
+     */
     async scrapeRankedData(): Promise<void> {
         const startTime = Date.now();
 
@@ -49,6 +74,8 @@ export class RankedScraperService {
         }
 
         this.logger.log("Starting daily ranked data scrape...");
+
+        let currentPage = 0;
 
         try {
             // Build cookies from config
@@ -83,6 +110,8 @@ export class RankedScraperService {
             const allRecords: RankedPlayerRecord[] = [];
 
             for (let page = 1; page <= TOTAL_PAGES; page++) {
+                currentPage = page;
+
                 const html = await this.httpService.fetchPage(
                     RANKING_PATH,
                     cookies,
@@ -119,33 +148,39 @@ export class RankedScraperService {
                 `✅ Ranked scrape completed: ${allRecords.length} records imported in ${(duration / 1000).toFixed(1)}s`,
             );
 
+            await this.notificationService.notifySuccess(
+                "Ranked Scraper Completed",
+                `${allRecords.length} records imported in ${(duration / 1000).toFixed(1)}s.`,
+            );
+
             // Check for phase reminder
             await this.checkPhaseReminder(config);
         } catch (error) {
             const duration = Date.now() - startTime;
+            const pageInfo = currentPage > 0 ? ` on page ${currentPage}/${TOTAL_PAGES}` : "";
 
             if (error instanceof CookieExpiredError) {
-                this.logger.error(`❌ Cookie expiry detected after ${(duration / 1000).toFixed(1)}s: ${error.message}`);
+                this.logger.error(`❌ Cookie expiry detected${pageInfo} after ${(duration / 1000).toFixed(1)}s: ${error.message}`);
                 await this.notificationService.notifyFailure(
                     "Ranked Scraper Failed",
-                    `Cookie expiry detected${error.page ? ` on page ${error.page}` : ""}. Update cookies via PATCH /buckler-config.`,
+                    `Cookie expiry detected${pageInfo}. Update cookies via PATCH /buckler-config.`,
                 );
                 return;
             }
 
             if (error instanceof HTMLParsingError) {
-                this.logger.error(`❌ HTML parsing failed after ${(duration / 1000).toFixed(1)}s: ${error.message}`);
+                this.logger.error(`❌ HTML parsing failed${pageInfo} after ${(duration / 1000).toFixed(1)}s: ${error.message}`);
                 await this.notificationService.notifyFailure(
                     "Ranked Scraper Failed",
-                    `HTML parsing failed${error.page ? ` on page ${error.page}` : ""} - expected elements not found. Buckler may have updated their page structure.`,
+                    `HTML parsing failed${pageInfo} - expected elements not found. Buckler may have updated their page structure.`,
                 );
                 return;
             }
 
-            this.logger.error(`❌ Ranked scrape failed after ${(duration / 1000).toFixed(1)}s`, error.stack || error);
+            this.logger.error(`❌ Ranked scrape failed${pageInfo} after ${(duration / 1000).toFixed(1)}s`, error.stack || error);
             await this.notificationService.notifyFailure(
                 "Ranked Scraper Failed",
-                `Unexpected error: ${error.message}`,
+                `Unexpected error${pageInfo}: ${error.message}`,
             );
         }
     }

@@ -1,8 +1,9 @@
-import { BadGatewayException, Controller, Post } from "@nestjs/common";
+import { BadGatewayException, Controller, HttpCode, Logger, Post } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import { Roles } from "@decorators/roles.decorator";
 import { BucklerConfigService, BucklerHttpService, BucklerNotificationService, CookieExpiredError, HTMLParsingError } from "@features/buckler";
 import { RankedPageParserService } from "../services/ranked-page-parser.service";
+import { RankedScraperService } from "../services/ranked-scraper.service";
 import { TestScrapeResponseDTO } from "../dtos/test-scrape.response.dto";
 import { ApiRankedScraperPost } from "../decorators/ranked-scraper-swagger.decorators";
 
@@ -11,11 +12,14 @@ const RANKING_PATH = "/ranking/master";
 @ApiTags("Ranked Scraper")
 @Controller("ranked-scraper")
 export class RankedScraperController {
+    private readonly logger = new Logger(RankedScraperController.name);
+
     constructor(
         private readonly configService: BucklerConfigService,
         private readonly httpService: BucklerHttpService,
         private readonly notificationService: BucklerNotificationService,
         private readonly pageParser: RankedPageParserService,
+        private readonly scraperService: RankedScraperService,
     ) {}
 
     /**
@@ -74,5 +78,23 @@ export class RankedScraperController {
             }
             throw error;
         }
+    }
+
+    /**
+     * Manually trigger the full 100-page scrape with DB import.
+     * Use this to rerun after a failed cron job.
+     * Fires and forgets — returns immediately, results come via Discord.
+     */
+    @Post("trigger-scrape")
+    @HttpCode(202)
+    @Roles("SUPER_ADMIN")
+    @ApiRankedScraperPost("Trigger full scrape (100 pages + DB import)")
+    async triggerScrape(): Promise<{ message: string }> {
+        // Fire and forget — don't await so the HTTP request returns immediately
+        this.scraperService.scrapeRankedData().catch((error) => {
+            this.logger.error("Manual scrape trigger failed unexpectedly", error.stack || error);
+        });
+
+        return { message: "Scrape triggered. Results will be sent to Discord." };
     }
 }
