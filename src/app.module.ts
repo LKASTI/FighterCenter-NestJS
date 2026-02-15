@@ -35,6 +35,8 @@ import { ThrottlerGuard, ThrottlerModule } from "@nestjs/throttler";
 import { ScheduleModule } from "@nestjs/schedule";
 import { CommonModule } from "@common/common.module";
 import { PaymentModule } from "@features/payment/payment.module";
+import { BucklerModule } from "@features/buckler";
+import { RankedScraperModule } from "@features/ranked-scraper";
 
 @Module({
     imports: [
@@ -140,7 +142,11 @@ import { PaymentModule } from "@features/payment/payment.module";
         // top 8 maker module
         Top8MakerModule,
         // payment module
-        PaymentModule
+        PaymentModule,
+        // buckler infrastructure (shared scraper services)
+        BucklerModule,
+        // ranked data scraper (daily cron job)
+        RankedScraperModule
     ],
     controllers: [AppController],
     providers: [

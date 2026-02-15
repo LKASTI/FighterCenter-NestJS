@@ -7,7 +7,7 @@ import { CacheTags } from "@common/cache/cache-keys.util";
 import * as path from "path";
 import * as fs from "fs/promises";
 
-type RankedPlayerRecord = {
+export type RankedPlayerRecord = {
     key: number;
     CFN: string;
     Rank: number;
@@ -281,7 +281,7 @@ export class RankedDataParserService {
      * Process records in batches for optimal database performance (single file)
      * Used by parseJSONrankedFile for individual file processing
      */
-    private async processBatchRecords(
+    async processBatchRecords(
         records: RankedPlayerRecord[],
         date: Date,
         phase: number,
