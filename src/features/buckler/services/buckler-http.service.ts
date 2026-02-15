@@ -80,16 +80,7 @@ export class BucklerHttpService {
 
             this.lastRequestTime = Date.now();
 
-            // Detect cookie expiry: response contains login page redirect
-            const html = response.data;
-            if (typeof html === "string" && html.includes("/profile/auth")) {
-                throw new CookieExpiredError(
-                    undefined,
-                    `Buckler redirected to login page for ${path}`,
-                );
-            }
-
-            return html;
+            return response.data;
         } catch (error) {
             this.lastRequestTime = Date.now();
 

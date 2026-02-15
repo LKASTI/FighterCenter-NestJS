@@ -1,7 +1,7 @@
 import { BadGatewayException, Controller, Post } from "@nestjs/common";
 import { ApiTags } from "@nestjs/swagger";
 import { Roles } from "@decorators/roles.decorator";
-import { BucklerConfigService, BucklerHttpService, CookieExpiredError, HTMLParsingError } from "@features/buckler";
+import { BucklerConfigService, BucklerHttpService, BucklerNotificationService, CookieExpiredError, HTMLParsingError } from "@features/buckler";
 import { RankedPageParserService } from "../services/ranked-page-parser.service";
 import { TestScrapeResponseDTO } from "../dtos/test-scrape.response.dto";
 import { ApiRankedScraperPost } from "../decorators/ranked-scraper-swagger.decorators";
@@ -14,6 +14,7 @@ export class RankedScraperController {
     constructor(
         private readonly configService: BucklerConfigService,
         private readonly httpService: BucklerHttpService,
+        private readonly notificationService: BucklerNotificationService,
         private readonly pageParser: RankedPageParserService,
     ) {}
 
@@ -49,6 +50,11 @@ export class RankedScraperController {
             );
 
             const records = this.pageParser.parsePage(html, 1);
+
+            await this.notificationService.notifySuccess(
+                "Test Scrape Passed",
+                `Fetched and parsed page 1: ${records.length} records. Cookies and HTML parsing are working.`,
+            );
 
             return {
                 recordCount: records.length,
