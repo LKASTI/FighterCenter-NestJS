@@ -1,4 +1,4 @@
-import { ApiCookieAuth } from "@nestjs/swagger";
+import { ApiBearerAuth } from "@nestjs/swagger";
 import { createApiDecorator, StandardResponses } from "@fgclegends/fightercenter-shared-nestjs";
 import { SeriesAuthGuard } from "@authentication/guards/seriesAuth.guard";
 
@@ -16,7 +16,7 @@ export function ApiBucklerConfigGet(summary: string, responseType?: any) {
             { status: 403, description: "Insufficient permissions - SUPER_ADMIN required" },
         ],
         additionalDecorators: [
-            ApiCookieAuth("auth-token"),
+            ApiBearerAuth("bearer"),
         ],
     });
 }
@@ -35,7 +35,7 @@ export function ApiBucklerConfigPatch(summary: string, responseType?: any) {
             { status: 403, description: "Insufficient permissions - SUPER_ADMIN required" },
         ],
         additionalDecorators: [
-            ApiCookieAuth("auth-token"),
+            ApiBearerAuth("bearer"),
         ],
     });
 }

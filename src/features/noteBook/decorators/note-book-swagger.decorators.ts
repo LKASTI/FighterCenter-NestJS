@@ -1,4 +1,4 @@
-import { ApiCookieAuth } from "@nestjs/swagger";
+import { ApiBearerAuth } from "@nestjs/swagger";
 import { createApiDecorator, StandardResponses, JwtAuthGuard } from "@fgclegends/fightercenter-shared-nestjs";
 
 /**
@@ -16,7 +16,7 @@ export function ApiNoteBookPost(summary: string, responseType?: any) {
             StandardResponses.serverError(),
         ],
         additionalDecorators: [
-            ApiCookieAuth("auth-token"),
+            ApiBearerAuth("bearer"),
         ],
     });
 }
@@ -35,7 +35,7 @@ export function ApiNoteBookGet(summary: string, responseType?: any) {
             StandardResponses.notFound("Notes"),
         ],
         additionalDecorators: [
-            ApiCookieAuth("auth-token"),
+            ApiBearerAuth("bearer"),
         ],
     });
 }
@@ -55,7 +55,7 @@ export function ApiNoteBookDelete(summary: string, responseType?: any) {
             StandardResponses.serverError(),
         ],
         additionalDecorators: [
-            ApiCookieAuth("auth-token"),
+            ApiBearerAuth("bearer"),
         ],
     });
 }

@@ -53,10 +53,20 @@ export abstract class BaseAuthGuard implements CanActivate {
     }
 
     /**
-     * Extract token from request cookies or headers
+     * Extract token from request cookies or Authorization Bearer header
      */
-    protected extractToken(request: any): string {
-        return request.cookies["auth-token"];
+    protected extractToken(request: any): string | null {
+        // Cookie first (production flow)
+        const cookieToken = request.cookies?.["auth-token"];
+        if (cookieToken) return cookieToken;
+
+        // Bearer header fallback (Swagger UI flow)
+        const authHeader = request.headers?.authorization;
+        if (authHeader?.startsWith("Bearer ")) {
+            return authHeader.slice(7);
+        }
+
+        return null;
     }
 
     /**

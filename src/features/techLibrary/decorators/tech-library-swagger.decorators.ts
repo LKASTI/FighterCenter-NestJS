@@ -1,4 +1,4 @@
-import { ApiCookieAuth, ApiParam } from "@nestjs/swagger";
+import { ApiBearerAuth, ApiParam } from "@nestjs/swagger";
 import { createApiDecorator, StandardResponses, JwtAuthGuard } from "@fgclegends/fightercenter-shared-nestjs";
 
 /**
@@ -16,7 +16,7 @@ export function ApiTechLibraryPost(summary: string, responseType?: any) {
             StandardResponses.serverError(),
         ],
         additionalDecorators: [
-            ApiCookieAuth("auth-token"),
+            ApiBearerAuth("bearer"),
         ],
     });
 }
@@ -35,7 +35,7 @@ export function ApiTechLibraryGet(summary: string, responseType?: any) {
             StandardResponses.notFound("Tech library"),
         ],
         additionalDecorators: [
-            ApiCookieAuth("auth-token"),
+            ApiBearerAuth("bearer"),
         ],
     });
 }
@@ -55,7 +55,7 @@ export function ApiTechLibraryDelete(summary: string, responseType?: any) {
             StandardResponses.serverError(),
         ],
         additionalDecorators: [
-            ApiCookieAuth("auth-token"),
+            ApiBearerAuth("bearer"),
         ],
     });
 }
@@ -77,7 +77,7 @@ export function ApiSharedTechPost(summary: string, responseType?: any) {
             StandardResponses.serverError(),
         ],
         additionalDecorators: [
-            ApiCookieAuth("auth-token"),
+            ApiBearerAuth("bearer"),
         ],
     });
 }
@@ -122,7 +122,7 @@ export function ApiSharedTechGet(summary: string, responseType?: any) {
             StandardResponses.serverError(),
         ],
         additionalDecorators: [
-            ApiCookieAuth("auth-token"),
+            ApiBearerAuth("bearer"),
         ],
     });
 }
@@ -144,7 +144,7 @@ export function ApiSharedTechDelete(summary: string, responseType?: any) {
             StandardResponses.serverError(),
         ],
         additionalDecorators: [
-            ApiCookieAuth("auth-token"),
+            ApiBearerAuth("bearer"),
         ],
     });
 }

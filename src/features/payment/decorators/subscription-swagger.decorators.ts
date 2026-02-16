@@ -1,4 +1,4 @@
-import { ApiCookieAuth, ApiQuery } from "@nestjs/swagger";
+import { ApiBearerAuth, ApiQuery } from "@nestjs/swagger";
 import { createApiDecorator, StandardResponses, JwtAuthGuard } from "@fgclegends/fightercenter-shared-nestjs";
 
 /**
@@ -15,7 +15,7 @@ export function ApiSubscriptionPost(summary: string, responseType?: any) {
             StandardResponses.notFound("Subscription"),
         ],
         additionalDecorators: [
-            ApiCookieAuth("auth-token"),
+            ApiBearerAuth("bearer"),
         ],
     });
 }
@@ -33,7 +33,7 @@ export function ApiSubscriptionGet(summary: string, responseType?: any) {
             { status: 401, description: "User not authenticated" },
         ],
         additionalDecorators: [
-            ApiCookieAuth("auth-token"),
+            ApiBearerAuth("bearer"),
             ApiQuery({
                 name: "productType",
                 required: false,
@@ -61,7 +61,7 @@ export function ApiSubscriptionPostWithQuery(
             StandardResponses.notFound("Subscription"),
         ],
         additionalDecorators: [
-            ApiCookieAuth("auth-token"),
+            ApiBearerAuth("bearer"),
             ApiQuery({
                 name: "productType",
                 required: false,

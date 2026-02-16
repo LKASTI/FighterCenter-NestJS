@@ -1,4 +1,4 @@
-import { ApiCookieAuth } from "@nestjs/swagger";
+import { ApiBearerAuth } from "@nestjs/swagger";
 import { createApiDecorator, StandardResponses } from "@fgclegends/fightercenter-shared-nestjs";
 import { SeriesAuthGuard } from "@authentication/guards/seriesAuth.guard";
 
@@ -17,7 +17,7 @@ export function ApiRankedScraperPost(summary: string, responseType?: any) {
             { status: 502, description: "Buckler request failed (cookie expiry or connection error)" },
         ],
         additionalDecorators: [
-            ApiCookieAuth("auth-token"),
+            ApiBearerAuth("bearer"),
         ],
     });
 }

@@ -1,4 +1,4 @@
-import { ApiSecurity, ApiQuery } from "@nestjs/swagger";
+import { ApiBearerAuth, ApiQuery } from "@nestjs/swagger";
 import { SeriesAuthGuard } from "@authentication/guards/seriesAuth.guard";
 import { createApiDecorator, StandardResponses } from "@fgclegends/fightercenter-shared-nestjs";
 
@@ -14,7 +14,7 @@ export function ApiTop8MakerGet(summary: string, responseType?: any) {
             StandardResponses.serverError(),
         ],
         additionalDecorators: [
-            ApiSecurity('x-auth-token'),
+            ApiBearerAuth("bearer"),
             ApiQuery({
                 name: 'slug',
                 description: 'Event slug from Start.gg (e.g., "tournament-slug/event/event-slug")',

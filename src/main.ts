@@ -165,7 +165,7 @@ async function bootstrap() {
 
     const config = new DocumentBuilder()
         .setTitle('FighterCenter Swagger API')
-        .addApiKey({type: "apiKey", name: 'x-auth-token', in: 'header'}, 'x-auth-token')
+        .addBearerAuth({ type: "http", scheme: "bearer", bearerFormat: "JWT" }, "bearer")
         .build();
 
     if (process.env.NODE_ENV !== 'production') {
