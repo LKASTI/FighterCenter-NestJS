@@ -24,6 +24,11 @@ const BROWSER_HEADERS = {
 /** Default delay between requests in milliseconds */
 const DEFAULT_RATE_LIMIT_MS = 1000;
 
+/** Retry config for transient errors (502, 503) */
+const MAX_RETRIES = 3;
+const RETRY_BASE_DELAY_MS = 5000;
+const RETRYABLE_STATUS_CODES = [502, 503];
+
 @Injectable()
 export class BucklerHttpService {
     private readonly logger = new Logger(BucklerHttpService.name);
@@ -36,8 +41,9 @@ export class BucklerHttpService {
     /**
      * Fetch a page from the Buckler website with authentication cookies.
      *
-     * Handles rate limiting (default 1s between requests) and cookie
-     * expiry detection. Returns raw HTML string.
+     * Handles rate limiting (default 1s between requests), cookie expiry
+     * detection, and retry with exponential backoff for transient errors
+     * (502, 503). Retries up to 3 times with 5s/10s/20s delays.
      *
      * @param path - URL path relative to Buckler base (e.g., "/ranking/master")
      * @param cookies - Authentication cookies from BucklerAuthService
@@ -52,63 +58,79 @@ export class BucklerHttpService {
         params?: Record<string, string>,
         rateLimitMs: number = DEFAULT_RATE_LIMIT_MS,
     ): Promise<string> {
-        // Rate limiting: wait if we're requesting too fast
-        const timeSinceLastRequest = Date.now() - this.lastRequestTime;
-        if (timeSinceLastRequest < rateLimitMs) {
-            const waitTime = rateLimitMs - timeSinceLastRequest;
-            await new Promise((resolve) => setTimeout(resolve, waitTime));
-        }
-
         const url = `${BUCKLER_BASE_URL}${path}`;
         const cookieHeader = Object.entries(cookies)
             .map(([key, value]) => `${key}=${value}`)
             .join("; ");
 
-        try {
-            const response = await firstValueFrom(
-                this.httpService.get<string>(url, {
-                    headers: {
-                        ...BROWSER_HEADERS,
-                        cookie: cookieHeader,
-                    },
-                    params,
-                    maxRedirects: 0,
-                    validateStatus: (status) => status < 400,
-                    responseType: "text",
-                }),
-            );
+        let lastError: any;
 
-            this.lastRequestTime = Date.now();
-
-            return response.data;
-        } catch (error) {
-            this.lastRequestTime = Date.now();
-
-            // Re-throw CookieExpiredError as-is
-            if (error instanceof CookieExpiredError) {
-                throw error;
+        for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+            // Rate limiting: wait if we're requesting too fast
+            const timeSinceLastRequest = Date.now() - this.lastRequestTime;
+            if (timeSinceLastRequest < rateLimitMs) {
+                const waitTime = rateLimitMs - timeSinceLastRequest;
+                await new Promise((resolve) => setTimeout(resolve, waitTime));
             }
 
-            // Axios error with 403: cookie expiry
-            if (error?.response?.status === 403) {
-                throw new CookieExpiredError(
-                    undefined,
-                    `Buckler returned 403 Forbidden for ${path}`,
+            try {
+                const response = await firstValueFrom(
+                    this.httpService.get<string>(url, {
+                        headers: {
+                            ...BROWSER_HEADERS,
+                            cookie: cookieHeader,
+                        },
+                        params,
+                        maxRedirects: 0,
+                        validateStatus: (status) => status < 400,
+                        responseType: "text",
+                    }),
                 );
-            }
 
-            // Axios error with redirect to login
-            if (error?.response?.status === 302 || error?.response?.status === 301) {
-                const location = error.response.headers?.location || "";
-                if (location.includes("auth") || location.includes("login")) {
+                this.lastRequestTime = Date.now();
+                return response.data;
+            } catch (error) {
+                this.lastRequestTime = Date.now();
+                lastError = error;
+
+                // Re-throw CookieExpiredError as-is (not retryable)
+                if (error instanceof CookieExpiredError) {
+                    throw error;
+                }
+
+                // 403: cookie expiry (not retryable)
+                if (error?.response?.status === 403) {
                     throw new CookieExpiredError(
                         undefined,
-                        `Buckler redirected to ${location}`,
+                        `Buckler returned 403 Forbidden for ${path}`,
                     );
                 }
-            }
 
-            throw error;
+                // Redirect to login (not retryable)
+                if (error?.response?.status === 302 || error?.response?.status === 301) {
+                    const location = error.response.headers?.location || "";
+                    if (location.includes("auth") || location.includes("login")) {
+                        throw new CookieExpiredError(
+                            undefined,
+                            `Buckler redirected to ${location}`,
+                        );
+                    }
+                }
+
+                // Retry on transient errors (502, 503)
+                if (attempt < MAX_RETRIES && RETRYABLE_STATUS_CODES.includes(error?.response?.status)) {
+                    const delay = RETRY_BASE_DELAY_MS * Math.pow(2, attempt);
+                    this.logger.warn(
+                        `Buckler returned ${error.response.status} for ${path} (attempt ${attempt + 1}/${MAX_RETRIES + 1}). Retrying in ${delay / 1000}s...`,
+                    );
+                    await new Promise((resolve) => setTimeout(resolve, delay));
+                    continue;
+                }
+
+                throw error;
+            }
         }
+
+        throw lastError;
     }
 }

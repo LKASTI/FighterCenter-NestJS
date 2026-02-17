@@ -156,7 +156,7 @@ async function bootstrap() {
         crossOriginEmbedderPolicy: false, // Disabled - may interfere with external embeds
     }));
 
-    // Apply basic auth in local and development environments
+    // Apply basic auth to Swagger UI in local and development environments
     if (process.env.NODE_ENV === "local" || process.env.NODE_ENV === "development") {
         const basicAuthMiddleware = new BasicAuth();
         app.use("/swagger", basicAuthMiddleware.use.bind(basicAuthMiddleware));
