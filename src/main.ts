@@ -159,7 +159,7 @@ async function bootstrap() {
     // Apply basic auth in local and development environments
     if (process.env.NODE_ENV === "local" || process.env.NODE_ENV === "development") {
         const basicAuthMiddleware = new BasicAuth();
-        app.use(basicAuthMiddleware.use.bind(basicAuthMiddleware));
+        app.use("/swagger", basicAuthMiddleware.use.bind(basicAuthMiddleware));
     }
 
 
