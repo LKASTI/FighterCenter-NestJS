@@ -5,7 +5,7 @@ import { TwitterShareService } from "../services/twitter-share.service";
 import { CreateTwitterShareDto } from "../dtos/request/create-twitter-share.dto";
 import { Response } from "express";
 import { FileInterceptor } from "@nestjs/platform-express";
-import { R2UploadService } from "../services/r2/r2-upload.service";
+import { R2TierlistService } from "@common/r2/r2-tierlist.service";
 import { imageUploadConfig } from "@common/interceptors/image-upload.config";
 import { ApiTwitterShareGet, ApiTwitterSharePost, ApiTwitterShareUpload } from "../decorators/twitter-share-swagger.decorators";
 import { validateImageFile } from "@common/utils/file-validation.util";
@@ -17,7 +17,7 @@ export class TwitterShareController {
 
     constructor(
         private readonly twitterShareService: TwitterShareService,
-        private readonly r2UploadService: R2UploadService,
+        private readonly r2TierlistService: R2TierlistService,
         private readonly configService: ConfigService,
     ) {}
 
@@ -38,7 +38,7 @@ export class TwitterShareController {
         // Validate file content via magic bytes (defense in depth)
         await validateImageFile(file);
 
-        const imageUrl = await this.r2UploadService.uploadTierlistImage(
+        const imageUrl = await this.r2TierlistService.uploadTierlistImage(
             file.buffer,
             file.mimetype
         );

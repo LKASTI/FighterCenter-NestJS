@@ -6,7 +6,6 @@ export * from './controllers/twitter-share.controller';
 
 // Services
 export * from './services/twitter-share.service';
-export * from './services/r2/r2-upload.service';
 
 // Repositories
 export * from './repositories/twitter-share.repository';

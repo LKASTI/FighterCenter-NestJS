@@ -55,10 +55,14 @@ import { RankedScraperModule } from "@features/ranked-scraper";
                 AUTH_SERVICE_API_KEY: Joi.string().min(32).required(),
                 // R2 configuration
                 CLOUDFLARE_ACCOUNT_ID: Joi.string().required(),
-                R2_ACCESS_KEY_ID: Joi.string().required(),
-                R2_SECRET_ACCESS_KEY: Joi.string().required(),
-                R2_BUCKET_NAME: Joi.string().required(),
-                R2_PUBLIC_URL: Joi.string().uri().required(),
+                R2_IMAGES_BUCKET_NAME: Joi.string().required(),
+                R2_IMAGES_ACCESS_KEY_ID: Joi.string().required(),
+                R2_IMAGES_SECRET_ACCESS_KEY: Joi.string().required(),
+                R2_IMAGES_PUBLIC_URL: Joi.string().uri().required(),
+                R2_TIERLIST_BUCKET_NAME: Joi.string().required(),
+                R2_TIERLIST_ACCESS_KEY_ID: Joi.string().required(),
+                R2_TIERLIST_SECRET_ACCESS_KEY: Joi.string().required(),
+                R2_TIERLIST_PUBLIC_URL: Joi.string().uri().required(),
                 // Stripe configuration
                 STRIPE_SECRET_KEY: Joi.string().required(),
                 STRIPE_WEBHOOK_SECRET: Joi.string().required(),

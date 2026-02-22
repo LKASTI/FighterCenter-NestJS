@@ -20,7 +20,6 @@ import { StartggApiModule } from "@features/startgg-api";
 import { PlayerSeriesPerformanceAggModule } from "@domain/playerSeriesPerformanceAgg/playerSeriesPerformanceAgg.module";
 import { CommonModule } from "@common/common.module";
 import { TournamentGraphicUploadService } from "./services/tournament-graphic-upload.service";
-import { R2UploadService } from "@features/twitter-share";
 import { TournamentImportAuditLogModule } from "@domain/tournamentImportAuditLog/tournament-import-audit-log.module";
 import { TournamentRollbackService } from "./services/tournament-rollback.service";
 
@@ -63,7 +62,6 @@ import { TournamentRollbackService } from "./services/tournament-rollback.servic
         TournamentManagerRepository,
         TournamentRollbackService,
         TournamentGraphicUploadService,
-        R2UploadService,
     ],
     controllers: [TournamentDataParserController],
     exports: [TournamentDataParserService, TournamentManagerService],
