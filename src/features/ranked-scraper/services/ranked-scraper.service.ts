@@ -148,10 +148,10 @@ export class RankedScraperService {
                 `✅ Ranked scrape completed: ${allRecords.length} records imported in ${(duration / 1000).toFixed(1)}s`,
             );
 
-            await this.notificationService.notifySuccess(
-                "Ranked Scraper Completed",
-                `${allRecords.length} records imported in ${(duration / 1000).toFixed(1)}s.`,
-            );
+            // await this.notificationService.notifySuccess(
+            //     "Ranked Scraper Completed",
+            //     `${allRecords.length} records imported in ${(duration / 1000).toFixed(1)}s.`,
+            // );
 
             // Check for phase reminder
             await this.checkPhaseReminder(config);
