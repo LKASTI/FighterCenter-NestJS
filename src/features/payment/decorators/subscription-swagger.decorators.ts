@@ -1,5 +1,6 @@
 import { ApiBearerAuth, ApiQuery } from "@nestjs/swagger";
-import { createApiDecorator, StandardResponses, JwtAuthGuard } from "@fgclegends/fightercenter-shared-nestjs";
+import { createApiDecorator, StandardResponses } from "@fgclegends/fightercenter-shared-nestjs";
+import { SupabaseJwtAuthGuard } from "../../../authentication/guards/supabase-jwt-auth.guard";
 
 /**
  * Composed decorator for subscription POST endpoints (checkout, cancel, resume)
@@ -8,7 +9,7 @@ import { createApiDecorator, StandardResponses, JwtAuthGuard } from "@fgclegends
 export function ApiSubscriptionPost(summary: string, responseType?: any) {
     return createApiDecorator({
         summary,
-        guard: JwtAuthGuard,
+        guard: SupabaseJwtAuthGuard,
         responses: [
             StandardResponses.created("Success", responseType),
             { status: 401, description: "User not authenticated" },
@@ -27,7 +28,7 @@ export function ApiSubscriptionPost(summary: string, responseType?: any) {
 export function ApiSubscriptionGet(summary: string, responseType?: any) {
     return createApiDecorator({
         summary,
-        guard: JwtAuthGuard,
+        guard: SupabaseJwtAuthGuard,
         responses: [
             StandardResponses.success("Success", responseType),
             { status: 401, description: "User not authenticated" },
@@ -54,7 +55,7 @@ export function ApiSubscriptionPostWithQuery(
 ) {
     return createApiDecorator({
         summary,
-        guard: JwtAuthGuard,
+        guard: SupabaseJwtAuthGuard,
         responses: [
             StandardResponses.success("Success", responseType),
             { status: 401, description: "User not authenticated" },

@@ -53,6 +53,14 @@ import { RankedScraperModule } from "@features/ranked-scraper";
                 // Auth Service
                 AUTH_SERVICE_URL: Joi.string().uri().required(),
                 AUTH_SERVICE_API_KEY: Joi.string().min(32).required(),
+                SUPABASE_ISSUER_URL: Joi.string().uri().required(),
+                SUPABASE_JWKS_URL: Joi.string().uri().when("SUPABASE_JWT_SECRET", {
+                    is: Joi.string().trim().min(1),
+                    then: Joi.optional(),
+                    otherwise: Joi.required(),
+                }),
+                SUPABASE_JWT_AUDIENCE: Joi.string().default("authenticated"),
+                SUPABASE_JWT_SECRET: Joi.string().allow("").optional(),
                 // R2 configuration
                 CLOUDFLARE_ACCOUNT_ID: Joi.string().required(),
                 R2_IMAGES_BUCKET_NAME: Joi.string().required(),

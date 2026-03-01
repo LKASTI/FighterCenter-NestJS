@@ -2,31 +2,50 @@ import {
     ExecutionContext,
     ForbiddenException,
     Injectable,
+    UnauthorizedException,
 } from "@nestjs/common";
-import { JwtService } from "@nestjs/jwt";
+import { AuthGuard } from "@nestjs/passport";
 import { Reflector } from "@nestjs/core";
-import { AuthClientService, AuthUser } from "@fgclegends/fightercenter-shared-nestjs";
-import { BaseAuthGuard } from "./baseAuth.guard";
+import {
+    AuthClientService,
+    AuthUser,
+} from "@fgclegends/fightercenter-shared-nestjs";
 
 @Injectable()
-export class SeriesAuthGuard extends BaseAuthGuard {
+export class SeriesAuthGuard extends AuthGuard("supabase-jwt") {
     constructor(
-        protected readonly jwtService: JwtService,
         private readonly reflector: Reflector,
-        protected readonly authClientService: AuthClientService,
+        private readonly authClientService: AuthClientService,
     ) {
-        super(jwtService, authClientService);
+        super();
     }
 
-    /**
-     * Additional validation for role and tournament series access
-     */
-    protected async additionalValidation(
-        request: any,
-        user: AuthUser,
-        context: ExecutionContext,
-    ): Promise<boolean> {
-        // Get the required roles from controller decorator Roles()
+    async canActivate(context: ExecutionContext): Promise<boolean> {
+        const activated = (await super.canActivate(context)) as boolean;
+        if (!activated) return false;
+
+        const request = context.switchToHttp().getRequest();
+        const principal = request.user;
+
+        if (!principal) {
+            throw new UnauthorizedException("Authentication failed");
+        }
+
+        let user: AuthUser | null = null;
+        if (principal.supabaseUserId) {
+            user = await this.authClientService.getUserBySupabaseId(
+                principal.supabaseUserId,
+            );
+        } else if (principal.userId) {
+            user = await this.authClientService.getUserById(principal.userId);
+        }
+
+        if (!user) {
+            throw new UnauthorizedException("User not found");
+        }
+
+        request.user = user;
+
         const requiredRoles = this.reflector.get<string[]>(
             "roles",
             context.getHandler(),
@@ -35,19 +54,14 @@ export class SeriesAuthGuard extends BaseAuthGuard {
         const userRoles = user.roles || [];
         const userTournamentSeriesAssigned = user.tournamentSeriesAssigned || [];
 
-        // Verify if approved user role is present
         if (requiredRoles && requiredRoles.length > 0) {
-            const hasRole = requiredRoles.some((role) =>
-                userRoles.includes(role),
-            );
+            const hasRole = requiredRoles.some((role) => userRoles.includes(role));
             if (!hasRole) {
                 throw new ForbiddenException("Insufficient permissions");
             }
         }
 
-        // SUPER_ADMIN can access all series
         if (!userRoles.includes("SUPER_ADMIN")) {
-            // Verify if user has access to the series
             const seriesId = request.params.tournamentSeriesId;
             if (seriesId) {
                 const hasAccessToSeries =
@@ -61,5 +75,13 @@ export class SeriesAuthGuard extends BaseAuthGuard {
         }
 
         return true;
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    handleRequest(err: any, user: any, info: any) {
+        if (err || !user) {
+            throw err || new UnauthorizedException("Authentication failed");
+        }
+        return user;
     }
 }

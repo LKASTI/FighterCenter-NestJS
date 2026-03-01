@@ -1,5 +1,6 @@
 import { ApiBearerAuth, ApiParam } from "@nestjs/swagger";
-import { createApiDecorator, StandardResponses, JwtAuthGuard } from "@fgclegends/fightercenter-shared-nestjs";
+import { createApiDecorator, StandardResponses } from "@fgclegends/fightercenter-shared-nestjs";
+import { SupabaseJwtAuthGuard } from "../../../authentication/guards/supabase-jwt-auth.guard";
 
 /**
  * Composed decorator for tech library POST endpoints (sync/upload)
@@ -8,7 +9,7 @@ import { createApiDecorator, StandardResponses, JwtAuthGuard } from "@fgclegends
 export function ApiTechLibraryPost(summary: string, responseType?: any) {
     return createApiDecorator({
         summary,
-        guard: JwtAuthGuard,
+        guard: SupabaseJwtAuthGuard,
         responses: [
             StandardResponses.created("Success", responseType),
             StandardResponses.unauthorized(),
@@ -28,7 +29,7 @@ export function ApiTechLibraryPost(summary: string, responseType?: any) {
 export function ApiTechLibraryGet(summary: string, responseType?: any) {
     return createApiDecorator({
         summary,
-        guard: JwtAuthGuard,
+        guard: SupabaseJwtAuthGuard,
         responses: [
             StandardResponses.success("Success", responseType),
             StandardResponses.unauthorized(),
@@ -47,7 +48,7 @@ export function ApiTechLibraryGet(summary: string, responseType?: any) {
 export function ApiTechLibraryDelete(summary: string, responseType?: any) {
     return createApiDecorator({
         summary,
-        guard: JwtAuthGuard,
+        guard: SupabaseJwtAuthGuard,
         responses: [
             StandardResponses.success("Tech library deleted successfully", responseType),
             StandardResponses.unauthorized(),
@@ -69,7 +70,7 @@ export function ApiSharedTechPost(summary: string, responseType?: any) {
         isDisabled: true,
         excludeFromSwagger: true,
         summary,
-        guard: JwtAuthGuard,
+        guard: SupabaseJwtAuthGuard,
         responses: [
             StandardResponses.created("Shared entry created successfully", responseType),
             StandardResponses.unauthorized(),
@@ -115,7 +116,7 @@ export function ApiSharedTechGet(summary: string, responseType?: any) {
         isDisabled: true,
         excludeFromSwagger: true,
         summary,
-        guard: JwtAuthGuard,
+        guard: SupabaseJwtAuthGuard,
         responses: [
             StandardResponses.success("Success", responseType),
             StandardResponses.unauthorized(),
@@ -136,7 +137,7 @@ export function ApiSharedTechDelete(summary: string, responseType?: any) {
         isDisabled: true,
         excludeFromSwagger: true,
         summary,
-        guard: JwtAuthGuard,
+        guard: SupabaseJwtAuthGuard,
         responses: [
             StandardResponses.success("Shared entry deleted successfully", responseType),
             StandardResponses.unauthorized(),

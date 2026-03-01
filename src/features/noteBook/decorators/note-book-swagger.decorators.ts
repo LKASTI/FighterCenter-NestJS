@@ -1,5 +1,6 @@
 import { ApiBearerAuth } from "@nestjs/swagger";
-import { createApiDecorator, StandardResponses, JwtAuthGuard } from "@fgclegends/fightercenter-shared-nestjs";
+import { createApiDecorator, StandardResponses } from "@fgclegends/fightercenter-shared-nestjs";
+import { SupabaseJwtAuthGuard } from "../../../authentication/guards/supabase-jwt-auth.guard";
 
 /**
  * Composed decorator for note book POST endpoints (sync/upload)
@@ -8,7 +9,7 @@ import { createApiDecorator, StandardResponses, JwtAuthGuard } from "@fgclegends
 export function ApiNoteBookPost(summary: string, responseType?: any) {
     return createApiDecorator({
         summary,
-        guard: JwtAuthGuard,
+        guard: SupabaseJwtAuthGuard,
         responses: [
             StandardResponses.created("Success", responseType),
             StandardResponses.unauthorized(),
@@ -28,7 +29,7 @@ export function ApiNoteBookPost(summary: string, responseType?: any) {
 export function ApiNoteBookGet(summary: string, responseType?: any) {
     return createApiDecorator({
         summary,
-        guard: JwtAuthGuard,
+        guard: SupabaseJwtAuthGuard,
         responses: [
             StandardResponses.success("Success", responseType),
             StandardResponses.unauthorized(),
@@ -47,7 +48,7 @@ export function ApiNoteBookGet(summary: string, responseType?: any) {
 export function ApiNoteBookDelete(summary: string, responseType?: any) {
     return createApiDecorator({
         summary,
-        guard: JwtAuthGuard,
+        guard: SupabaseJwtAuthGuard,
         responses: [
             StandardResponses.success("Notes deleted successfully", responseType),
             StandardResponses.unauthorized(),
