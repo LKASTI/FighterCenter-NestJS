@@ -27,10 +27,11 @@ export class R2ImagesService {
     async uploadImageWithOptions(
         buffer: Buffer,
         filePath: string,
-        options?: { contentType?: string; folderPrefix?: string }
+        options?: { contentType?: string; folderPrefix?: string; cacheControl?: string }
     ): Promise<string> {
         const folderPrefix = options?.folderPrefix ?? '';
         const contentType = options?.contentType ?? 'image/png';
+        const cacheControl = options?.cacheControl;
         const key = `${folderPrefix}${filePath}`;
 
         await this.s3Client.send(new PutObjectCommand({
@@ -38,6 +39,7 @@ export class R2ImagesService {
             Key: key,
             Body: buffer,
             ContentType: contentType,
+            ...(cacheControl ? { CacheControl: cacheControl } : {}),
         }));
 
         return `${this.publicUrl}/${key}`;

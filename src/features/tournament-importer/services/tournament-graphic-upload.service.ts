@@ -36,7 +36,8 @@ export class TournamentGraphicUploadService {
       filePath,
       {
         contentType: file.mimetype,
-        folderPrefix: this.FOLDER_PREFIX
+        folderPrefix: this.FOLDER_PREFIX,
+        cacheControl: 'no-cache, max-age=0, must-revalidate',
       }
     );
 
